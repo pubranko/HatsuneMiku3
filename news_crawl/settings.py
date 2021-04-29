@@ -12,7 +12,6 @@ BOT_NAME = 'news_crawl'
 SPIDER_MODULES = ['news_crawl.spiders']
 NEWSPIDER_MODULE = 'news_crawl.spiders'
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'news_crawl (+http://www.yourdomain.com)'
 
@@ -90,7 +89,7 @@ ITEM_PIPELINES = {
 # レスポンスがキャッシュから取得できる。
 HTTPCACHE_ENABLED = True
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 3600
+HTTPCACHE_EXPIRATION_SECS = 900
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
@@ -99,6 +98,14 @@ HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 # よくわからないが、ファイル自体のレスポンスに関する何か？
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+##########################################
+# 拡張してみた
+##########################################
+#何かしら時間による処理を行いたい場合、使用するタイムゾーンを定義する。
+#  例：spider内のsitemap_fillterで、lastmodの時間を絞り込みしたい。引数に与える時間のタイムゾーンには、settingsのTIME_ZONEを使用する。
+from datetime  import timedelta,timezone
+TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
 '''公式よりミドルウェアの優先順
 {
@@ -118,3 +125,4 @@ HTTPCACHE_DIR = 'httpcache'
     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
 }
 '''
+
