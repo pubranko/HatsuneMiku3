@@ -11,36 +11,34 @@ class SankeiComSitemapSpider(SitemapSpider):
     allowed_domains = ['sankei.com']
     sitemap_urls = ['https://www.sankei.com/robots.txt',]
 
-    lastmod_range_from = None
-    lastmod_range_to = None
+    lastmod_recent_time:int = 0     #直近の15分など。分単位で指定することにしよう。0は制限なしとする。
+    start_time:datetime             #Scrapy起動時点の基準となる時間
+    recent_time_limit:datetime      #lastmod_recent_timeとnowから計算した制限をかける時間
+    url_pattern:str = ''            #指定したパターンをurlに含むもので限定
+    continued:bool = False          #前回の続きから(最後に取得したlastmodの日時) ※実装は後回し
 
-    lastmod_recent_time = None  #直近の15分など。分単位で指定することにしよう。
-    continued = None    #前回の続きから(最後に取得したlastmodの日時)
-    pattern = None      #指定したパターンをurlに含むもので限定
+    custom_settings = {
+        'DEPTH_LIMIT' : 1,
+        'DEPTH_STATS_VERBOSE' : True
+    }
 
     # def __init__(self, category=None, *args, **kwargs):
     #     super(SankeiComSitemapSpider, self).__init__(*args, **kwargs)
     #     self.start_urls = ['http://www.example.com/categories/%s' % category]
     def __init__(self, *args, **kwargs):
         super(SankeiComSitemapSpider, self).__init__(*args, **kwargs)
-        if 'lastmod_range_from' in kwargs:
-            self.lastmod_range_from = parser.parse(kwargs['lastmod_range_from']) #.astimezone(timezone.utc)
-        if 'lastmod_range_to' in kwargs:
-            self.lastmod_range_to = kwargs['lastmod_range_to']
+        if 'lastmod_recent_time' in kwargs:
+            self.lastmod_recent_time = int(kwargs['lastmod_recent_time'])
+        if 'url_pattern' in kwargs:
+            self.url_pattern = kwargs['url_pattern']
+        if 'continued' in kwargs:
+            self.continued = kwargs['continued']
         '''  どんな引数がいる？
             直近の１時間などの絞り込み。
             sitemapspiderの場合、直近〜の絞り込みしかない？
             一応当日分だけ対象にするかもしれない。
             ※変更分は別途網羅的にやるかも？
         '''
-
-    # sitemap_rules = [
-    #     # (r'/politics/news/\d{6}/.+$','parse'),
-    #     # (r'/affairs/news/\d{6}/.+$','parse'),
-    #     # (r'/world/news/\d{6}/.+$','parse'),
-    #     # (r'/economy/news/\d{6}/.+$','parse'),
-    #     # (r'/column/news/\d{6}/.+$','parse'),
-    # ]
 
     def sitemap_filter(self, entries):
         '''
@@ -49,35 +47,25 @@ class SankeiComSitemapSpider(SitemapSpider):
         サイトマップから取得したurlへrequestを行う前に条件で除外することができる。
         対象のurlの場合、”yield entry”で返すと親クラス側でrequestされる。
         '''
-        print("===========")
-        print(self.settings['TIMEZONE'])
 
-        #dt.replace(tzinfo=tz)
-        self.lastmod_range_from.replace(tzinfo=self.settings['TIMEZONE'])
-        print(self.lastmod_range_from)
+        self.start_time = datetime.now().astimezone(self.settings['TIMEZONE'])       #当日
+        self.recent_time_limit = self.start_time - timedelta(minutes=self.lastmod_recent_time)
 
-        today = datetime.now().astimezone(self.settings['TIMEZONE'])       #当日
-        #zenjitu = today - timedelta(days=1)   #前日
-        test_limit_time = today - timedelta(hours=1)
-        today_yymmdd = today.strftime('%y%m%d')
-
-        for entry in entries:
+        for entry in entries:   #entryの使い方：entry['lastmod'],entry['loc'],entry.items()
             '''
-            ここで当日分に限定してみよう。
-            過去の変更分も含めると大変な数になるｗ
+            引数に絞り込み指定がある場合、その条件を満たす場合のみ対象とする。
             '''
-            #print("=== sitemap_filter オーバーライド成功！",entry['lastmod'],entry['loc'],entry.items())
-            #date_lastmod = parser.parse(entry['lastmod']).astimezone(timezone.utc)
-            date_lastmod = parser.parse(entry['lastmod']).astimezone(self.settings['TIMEZONE'])
-            #print([date_lastmod,test_limit_time])
-            if date_lastmod >= test_limit_time:
-                #print(entry['loc'])
-                yield entry
+            crwal_flg :bool = True
+            if self.lastmod_recent_time != 0:
+                date_lastmod = parser.parse(entry['lastmod']).astimezone(self.settings['TIMEZONE'])
+                if date_lastmod < self.recent_time_limit:
+                    crwal_flg = False
+            if self.url_pattern != '':
+                pattern = re.compile(self.url_pattern)
+                if pattern.search(entry['loc']) == None:
+                    crwal_flg = False
 
-            # url = re.compile(today_yymmdd)
-            # if url.search(entry['loc']):
-            #     #print(entry['loc'])
-            #     yield entry
+            if crwal_flg: yield entry
 
     def parse(self, response):
         '''
@@ -85,11 +73,11 @@ class SankeiComSitemapSpider(SitemapSpider):
         '''
         print('=== parse :',response.url)
 
-        now = datetime.now()
+        response_time = datetime.now()
         yield NewsCrawlItem(
             #_id=(str(self.allowed_domains[0])+'@'+str(now).replace(' ','@',)),
             url=response.url,
-            response_time=now,
+            response_time=response_time,
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
         )   #ヘッダーとボディーは文字列が長くログが読めなくなるため、items.pyのNewsclipItemに細工して文字列を短縮。

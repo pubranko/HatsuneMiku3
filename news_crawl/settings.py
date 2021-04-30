@@ -13,12 +13,14 @@ SPIDER_MODULES = ['news_crawl.spiders']
 NEWSPIDER_MODULE = 'news_crawl.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
+# リクエストに含まれるユーザーエージェントの指定
 #USER_AGENT = 'news_crawl (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
+# 同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS = 32
 
 # Configure a delay for requests for the same website (default: 0)
@@ -27,16 +29,20 @@ ROBOTSTXT_OBEY = True
 #DOWNLOAD_DELAY = 3
 DOWNLOAD_DELAY = 1.5
 # The download delay setting will honor only one of:
+# webサイトのドメインごとに、同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
+# webサイトのIPごとの同時並行リクエストの最大値。これを指定すると、DOWNLOAD_DELAYもipごとになり、CONCURRENT_REQUESTS_PER_DOMAINは無視される。
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
+# Cookieを有効にするかどうか。
 #COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
+# リクエストにデフォルトで含めるヘッダーをdictで指定する。
 #DEFAULT_REQUEST_HEADERS = {
 #   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 #   'Accept-Language': 'en',
@@ -44,32 +50,34 @@ DOWNLOAD_DELAY = 1.5
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+# スパイダーのミドルウェアを作る場合に使用する。
 #SPIDER_MIDDLEWARES = {
 #    'news_crawl.middlewares.NewsCrawlSpiderMiddleware': 543,
 #}
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+# ダウンロードのミドルウェアを自作のものを使いたい場合、以下の設定を変える。
 #DOWNLOADER_MIDDLEWARES = {
 #    'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
 #}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
+#'<プロジェクト名><ファイル名><クラス名>:優先度
 #EXTENSIONS = {
 #    'scrapy.extensions.telnet.TelnetConsole': None,
 #}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+#アイテムのパイプラインの設定
 #ITEM_PIPELINES = {
 #    'news_crawl.pipelines.NewsCrawlPipeline': 300,
 #}
 ITEM_PIPELINES = {
-    #'newsclip.pipelines.MongoPipeline': 305,
     'news_crawl.pipelines.MongoPipeline': 300,
 }
-
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -86,10 +94,11 @@ ITEM_PIPELINES = {
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
+# HTTPキャッシュを使うかどうかの指定。キャッシュを使うと、２回目以降はサーバーにリクエストが送られず、
 # レスポンスがキャッシュから取得できる。
 HTTPCACHE_ENABLED = True
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 900
+HTTPCACHE_EXPIRATION_SECS = 60
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
@@ -102,6 +111,9 @@ HTTPCACHE_DIR = 'httpcache'
 ##########################################
 # 拡張してみた
 ##########################################
+#DEPTH_LIMIT = 2
+#DEPTH_STATS_VERBOSE = True
+
 #何かしら時間による処理を行いたい場合、使用するタイムゾーンを定義する。
 #  例：spider内のsitemap_fillterで、lastmodの時間を絞り込みしたい。引数に与える時間のタイムゾーンには、settingsのTIME_ZONEを使用する。
 from datetime  import timedelta,timezone
