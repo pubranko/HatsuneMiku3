@@ -12,10 +12,9 @@ class NewsCrawlItem(scrapy.Item):
     response_headers = scrapy.Field()
     response_body = scrapy.Field()
 
-    #ログへの出力時、長くなりすぎないように工夫しているようだ、、、難しいw
+    #ログからresponse_headers,response_bodyを削除するために細工
     def __repr__(self):
-        #print('=== items.py ===')   #pipelinesのprocess_itemより呼び出されているようだ、、、
         p = NewsCrawlItem(self)              #当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
-        p['response_headers'] = p['response_headers'][:10]
-        p['response_body'] = p['response_body'][:10]
+        del p['response_headers']
+        del p['response_body']
         return super(NewsCrawlItem,p).__repr__()     #super。クラスの多重継承（？）ができるらしい。初心者には難しいよ〜、、、

@@ -17,11 +17,11 @@ class SankeiComSitemapSpider(SitemapSpider):
         'DEPTH_STATS_VERBOSE': True
     }
     __lastmod_recent_time: int = 0  # 直近の15分など。分単位で指定することにしよう。0は制限なしとする。
-    __start_time: datetime  # Scrapy起動時点の基準となる時間
-    __recent_time_limit: datetime  # lastmod_recent_timeとnowから計算した制限をかける時間
-    __url_pattern: str = ''  # 指定したパターンをurlに含むもので限定
-    __continued: bool = False  # 前回の続きから(最後に取得したlastmodの日時) ※実装は後回し
-    mongo:MongoModel
+    __start_time: datetime          # Scrapy起動時点の基準となる時間
+    __recent_time_limit: datetime   # lastmod_recent_timeとnowから計算した制限をかける時間
+    __url_pattern: str = ''         # 指定したパターンをurlに含むもので限定
+    __continued: bool = False       # 前回の続きから(最後に取得したlastmodの日時) ※実装は後回し
+    mongo: MongoModel               # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesでも使用。
 
     def __init__(self, *args, **kwargs):
         super(SankeiComSitemapSpider, self).__init__(*args, **kwargs)

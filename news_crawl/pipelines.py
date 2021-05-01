@@ -7,39 +7,26 @@
 
 from itemadapter import ItemAdapter
 from pymongo import MongoClient
+from news_crawl.models.mongo_model import MongoModel
+from news_crawl.models.crawler_response_model import CrawlerResponseModel
 import os
 
 class MongoPipeline(object):
 
     def __init__(self):
-        #print("=== pipelines.py __init__ start")
-        self.mongo_uri = os.environ['MONGO_SERVER']
-        self.mongo_port = os.environ['MONGO_PORT']
-        self.mongo_db = os.environ['MONGO_USE_DB']
-        self.mongo_user = os.environ['MONGO_USER']
-        self.mongo_pass = os.environ['MONGO_PASS']
-        self.mongo_collection = os.environ['MONGO_CRAWLER_RESPONSE']
+        pass
 
     def open_spider(self, spider):
-        #print("=== pipelines.py open_spider start")
-        self.client = MongoClient(self.mongo_uri,int(self.mongo_port))
-        self.db = self.client[self.mongo_db]
-        self.db.authenticate(self.mongo_user, self.mongo_pass)
-
-        self.collection = self.db[self.mongo_collection]
-
-        print(spider.custom_settings)
+        pass
 
     def close_spider(self, spider):
-        #print("=== pipelines.py close_spider start")
-        self.client.close()
+        spider.mongo.close()
 
     def process_item(self, item, spider):
-        #print("=== pipelines.py process start")
-        #dict：keyのリストと値のリストを辞書形式へ変換。これで、items.pyで短縮したresponseが元に戻る
-        self.collection.insert_one(dict(item))
 
-        #print(spider.mongo)
+        mongo:MongoModel = spider.mongo
+        crawler_response = CrawlerResponseModel(mongo)
+        crawler_response.insert_one(dict(item))
+
         #spider.mongo.insert_one('crawler_response', dict(item))
-
         return item
