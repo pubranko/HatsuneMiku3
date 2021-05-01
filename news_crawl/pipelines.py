@@ -18,7 +18,7 @@ class MongoPipeline(object):
         self.mongo_db = os.environ['MONGO_USE_DB']
         self.mongo_user = os.environ['MONGO_USER']
         self.mongo_pass = os.environ['MONGO_PASS']
-        self.mongo_collection = os.environ['MONGO_COLLECTION']
+        self.mongo_collection = os.environ['MONGO_CRAWLER_RESPONSE']
 
     def open_spider(self, spider):
         #print("=== pipelines.py open_spider start")
@@ -28,6 +28,8 @@ class MongoPipeline(object):
 
         self.collection = self.db[self.mongo_collection]
 
+        print(spider.custom_settings)
+
     def close_spider(self, spider):
         #print("=== pipelines.py close_spider start")
         self.client.close()
@@ -36,4 +38,8 @@ class MongoPipeline(object):
         #print("=== pipelines.py process start")
         #dict：keyのリストと値のリストを辞書形式へ変換。これで、items.pyで短縮したresponseが元に戻る
         self.collection.insert_one(dict(item))
+
+        #print(spider.mongo)
+        #spider.mongo.insert_one('crawler_response', dict(item))
+
         return item
