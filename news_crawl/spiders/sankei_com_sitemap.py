@@ -6,12 +6,13 @@ import re
 import pickle
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
+from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 
 
 class SankeiComSitemapSpider(SitemapSpider):
     name = 'sankei_com_sitemap'
     allowed_domains = ['sankei.com']
-    sitemap_urls = ['https://www.sankei.com/robots.txt', ]
+    sitemap_urls = ['https://www.sankei.com/sitemap.xml', ]
     custom_settings = {
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True
@@ -46,6 +47,20 @@ class SankeiComSitemapSpider(SitemapSpider):
             self.settings['TIMEZONE'])
         self.__recent_time_limit = self.__start_time - \
             timedelta(minutes=self.__lastmod_recent_time)
+
+        #latest_lastmod: str = next(iter(entries))['lastmod']
+        entry: dict = next(iter(entries))   #1件目のlastmod（最新の更新）を取得
+
+        crawler_controller = CrawlerControllerModel(self.mongo)
+        # crawler_controller.insert_one({
+        #     'sankei_com':{
+        #         'sitemap_spider':{
+        #             'latest_lastmod': entry['lastmod'],
+        #             'latest_url': entry['loc'],
+        #             'crawl_start_time':self.__start_time
+        #         }
+        #     }
+        # })
 
         for entry in entries:
             '''
