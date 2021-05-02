@@ -2,21 +2,18 @@ from pymongo import MongoClient
 from pymongo.database import Database
 import os
 
-#from typing import Final
-
 
 class MongoModel(object):
     '''
     MongoDB用モデル
     '''
-
     __mongo_uri: str
     __mongo_port: str
     __mongo_db: str
     __mongo_user: str
     __mongo_pass: str
-    __mongo_client:MongoClient
-    crawler_db:Database
+    __mongo_client: MongoClient
+    crawler_db: Database
     collection: dict
 
     def __init__(self):
@@ -31,8 +28,8 @@ class MongoModel(object):
         }
 
         self.__mongo_client = MongoClient(
-            self.__mongo_uri, int(self.__mongo_port), #tz_aware='JST'
-            )
+            self.__mongo_uri, int(self.__mongo_port),
+        )
         self.crawler_db = self.__mongo_client[self.__mongo_db]
         self.crawler_db.authenticate(self.__mongo_user, self.__mongo_pass)
 
@@ -41,6 +38,3 @@ class MongoModel(object):
         MongoClientを閉じる。
         '''
         self.__mongo_client.close()
-
-    # def insert_one(self, collection, item):
-    #     self.crawler_db[self.__collection[collection]].insert_one(item)
