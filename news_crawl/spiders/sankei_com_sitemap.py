@@ -23,19 +23,19 @@ class SankeiComSitemapSpider(SitemapSpider):
     _url_pattern: str = ''         # 指定したパターンをurlに含むもので限定(正規表現)
     _continued: bool = False       # 前回の続きから(最後に取得したlastmodの日時)
     _term_days: int = 0                  # 当日を含め、指定した日数を含むurlに限定
-    debug_flg = False               # debugモードを引数で指定された場合True
+    _debug_flg = False               # debugモードを引数で指定された場合True
     # MongoDB関連
     mongo: MongoModel               # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
-    crawler_controller_recode: Any  # crawler_controllerコレクションから取得した対象ドメインのレコード
+    _crawler_controller_recode: Any  # crawler_controllerコレクションから取得した対象ドメインのレコード
     # スパイダーの挙動制御関連、固有の条法など
     _until_this_time: datetime     # sitemapで対象とするlastmodに制限をかける時間
     _crawl_start_time: datetime    # Scrapy起動時点の基準となる時間
-    crawl_start_time_iso: str       # Scrapy起動時点の基準となる時間(ISOフォーマットの文字列)
+    _crawl_start_time_iso: str       # Scrapy起動時点の基準となる時間(ISOフォーマットの文字列)
     # sitemapで最初の1件目にあるlastmod(最新の更新)を保持。pipelineで使用。
-    latest_lastmod: str
-    latest_url: str                 # 上記'latest_lastmod'のurl
-    domain_name = 'sankei_com'      # 各種処理で使用するドメイン名の一元管理
-    spider_type = 'SitemapSpider'   # spiderの種類。pipelineで使用。
+    _latest_lastmod: str
+    _latest_url: str                 # 上記'latest_lastmod'のurl
+    _domain_name = 'sankei_com'      # 各種処理で使用するドメイン名の一元管理
+    _spider_type = 'SitemapSpider'   # spiderの種類。pipelineで使用。
 
     def __init__(self, *args, **kwargs):
         super(SankeiComSitemapSpider, self).__init__(*args, **kwargs)
@@ -44,7 +44,7 @@ class SankeiComSitemapSpider(SitemapSpider):
         # 単項目チェック
         if 'debug' in kwargs:
             if kwargs['debug'] == 'Yes':
-                self.debug_flg = True
+                self._debug_flg = True
                 print('=== debugモード ON ===')
         if 'term_days' in kwargs:
             if kwargs['term_days'].isdecimal():
@@ -61,10 +61,10 @@ class SankeiComSitemapSpider(SitemapSpider):
         if 'continued' in kwargs:
             if kwargs['continued'] == 'Yes':
                 self.crawler_controller = CrawlerControllerModel(self.mongo)
-                self.crawler_controller_recode = self.crawler_controller.find_one(
-                    {'domain': self.domain_name})
-                if self.crawler_controller_recode == None:
-                    sys.exit('引数エラー：domain = ' + self.domain_name +
+                self._crawler_controller_recode = self.crawler_controller.find_one(
+                    {'domain': self._domain_name})
+                if self._crawler_controller_recode == None:
+                    sys.exit('引数エラー：domain = ' + self._domain_name +
                              ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
                 else:
                     self._continued = True
@@ -84,11 +84,11 @@ class SankeiComSitemapSpider(SitemapSpider):
         '''
         # 1件目のlastmod（最新の更新）とurlを取得
         _entry: dict = next(iter(entries))
-        self.latest_lastmod = _entry['lastmod']
-        self.latest_url = _entry['loc']
+        self._latest_lastmod = _entry['lastmod']
+        self._latest_url = _entry['loc']
 
         # sitemap調査用。debugモードの場合のみ。
-        if self.debug_flg:
+        if self._debug_flg:
             _file = open('debug_entries.txt', 'w')
             for _entry in entries:
                 _file.write(_entry['lastmod'] + ', ' + _entry['loc'] + '\n')
@@ -96,7 +96,7 @@ class SankeiComSitemapSpider(SitemapSpider):
 
         self._crawl_start_time = datetime.now().astimezone(
             self.settings['TIMEZONE'])
-        self.crawl_start_time_iso = self._crawl_start_time.isoformat()
+        self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
         if self._lastmod_recent_time != 0:
             self._until_this_time = self._crawl_start_time - \
@@ -106,7 +106,7 @@ class SankeiComSitemapSpider(SitemapSpider):
                 (self._crawl_start_time - timedelta(days=i)).strftime('%y%m%d') for i in range(self._term_days)]
         if self._continued:
             self._until_this_time = parser.parse(
-                self.crawler_controller_recode['spider_name'][self.name]['latest_lastmod']).astimezone(self.settings['TIMEZONE'])
+                self._crawler_controller_recode['spider_name'][self.name]['latest_lastmod']).astimezone(self.settings['TIMEZONE'])
 
         for _entry in entries:
             '''
@@ -131,7 +131,7 @@ class SankeiComSitemapSpider(SitemapSpider):
                 if date_lastmod < self._until_this_time:
                     _crwal_flg = False
                 elif date_lastmod == self._until_this_time \
-                        and self.crawler_controller_recode['spider_name'][self.name]['latest_url']:
+                        and self._crawler_controller_recode['spider_name'][self.name]['latest_url']:
                     _crwal_flg = False
 
             if _crwal_flg:
@@ -148,3 +148,26 @@ class SankeiComSitemapSpider(SitemapSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
         )  # ログに不要な値を出さないようitems.pyで細工して文字列を短縮。
+
+
+    def closed(self, spider):
+        '''
+        spider終了時、次回クロール向けの情報をcrawler_controllerへ記録する。
+        '''
+        self.logger.info('=== Spider closed: %s', self.name)
+        # SitemapSpiderの場合、sitemapでどこまで見たか記録する。
+        if self._spider_type == 'SitemapSpider':
+            crawler_controller = CrawlerControllerModel(self.mongo)
+            crawler_controller.update(
+                {'domain': self._domain_name},
+                {'domain': self._domain_name,
+                 'spider_name': {
+                     self.name: {
+                         'latest_lastmod': self._latest_lastmod,
+                         'latest_url': self._latest_url,
+                         'crawl_start_time': self._crawl_start_time_iso
+                     }
+                 }}
+            )
+
+        self.mongo.close()
