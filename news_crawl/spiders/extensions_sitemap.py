@@ -41,6 +41,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _latest_lastmod: str
     _latest_url: str                    # 上記'latest_lastmod'のurl
     _spider_type:str = 'SitemapSpider'  # spiderの種類。pipelineで使用。
+    _extensions_sitemap_version:float = 1.0         # 当クラスのバージョン
+    _extensions_sitemap_filter_type:str = 'base'    # spiderの拡張type  継承先のクラスで上書きすることを前提とする。
+    _extensions_sitemap_filter_version:float = 0.0  # 上記のバージョン  継承先のクラスで上書きすることを前提とする。
 
     def __init__(self, *args, **kwargs):
         super(ExtensionsSitemapSpider, self).__init__(*args, **kwargs)
@@ -89,6 +92,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_time=response_time,
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
+            spider_type=self._spider_type,
+            extensions_sitemap_filter_type = self._extensions_sitemap_filter_version,
+            spider_version='extensions_sitemap:' + str(self._extensions_sitemap_version) + '/filter:' + str(self._extensions_sitemap_filter_version),
         )  # ログに不要な値を出さないようitems.pyで細工して文字列を短縮。
 
 

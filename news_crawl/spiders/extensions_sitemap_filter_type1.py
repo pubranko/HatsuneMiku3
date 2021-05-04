@@ -10,6 +10,9 @@ class ExtensionsSitemapFilterTyep1Spider(ExtensionsSitemapSpider):
     (前提)name,allowed_domains,sitemap_urls,_domain_nameの値は当クラスを継承するクラスで設定すること
     '''
     name = 'extension_sitemap_filter_type1'
+    _extensions_sitemap_filter_type:str = 'type1'   # spiderの拡張type
+    _extensions_sitemap_filter_version:float = 1.0  # 上記のバージョン
+
     def sitemap_filter(self, entries):
         '''
         親クラスのSitemapSpiderの同名メソッドをオーバーライド。
