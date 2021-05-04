@@ -12,9 +12,7 @@ class NewsCrawlItem(scrapy.Item):
     url = scrapy.Field()
     response_headers = scrapy.Field()
     response_body = scrapy.Field()
-    spider_type = scrapy.Field()
-    extensions_sitemap_filter_type = scrapy.Field()
-    spider_version = scrapy.Field()
+    spider_version_info = scrapy.Field()
 
     # ログからresponse_headers,response_bodyを削除するために細工
     def __repr__(self):
@@ -24,8 +22,6 @@ class NewsCrawlItem(scrapy.Item):
         del p['response_time']
         del p['response_headers']
         del p['response_body']
-        del p['spider_type']
-        del p['extensions_sitemap_filter_type']
-        del p['spider_version']
+        del p['spider_version_info']
         # super。クラスの多重継承（？）ができるらしい。初心者には難しいよ〜、、、
         return super(NewsCrawlItem, p).__repr__()
