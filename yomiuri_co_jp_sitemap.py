@@ -1,15 +1,13 @@
+from datetime import datetime, timedelta,timezone
 from dateutil import parser
 import re
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
 
 
 class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
-    name = 'yomiuri_co_jp_sitemap'
-    allowed_domains = ['yomiuri.co.jp']
-    sitemap_urls = [
-        'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-04.xml',
-        'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-03.xml',
-    ]
+    name:str = 'yomiuri_co_jp_sitemap'
+    allowed_domains:list = ['yomiuri.co.jp']
+    sitemap_urls:list = []
     _domain_name: str = 'yomiuri_co_jp'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
@@ -18,10 +16,20 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
     _sitemap_contened: dict = {name: {}, }
 
-    custom_settings = {
-        'DEPTH_LIMIT': 3,
-        'DEPTH_STATS_VERBOSE': True
-    }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        def generate_sitemap_urls():
+            #'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-04.xml',
+            #'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-03.xml',
+            _now = datetime.now().astimezone(timezone(timedelta(hours=9), 'JST'))
+
+            u = 'https://www.yomiuri.co.jp/sitemap-pt-post-%s.xml' % (_now.strftime('%Y-%m-%d'))
+            self.sitemap_urls = [u]
+            print(self.sitemap_urls)
+
+        generate_sitemap_urls()
+        print('=== YomiuriCoJpSitemapSpider の__init__終了')
 
     def sitemap_filter(self, entries):
         '''
@@ -34,11 +42,7 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
         self.sitemap_filter_common_prosses(entries)
 
-        # 1件目のlastmod（最新の更新）とurlを取得
-        # _entry: dict = next(iter(entries))
-        # self._latest_lastmod = _entry['lastmod']
-        # self._latest_url = _entry['loc']
-
+        # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
         _max_lstmod: str = ''
         _max_url: str = ''
 
@@ -57,14 +61,14 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
                 _pattern = re.compile(self._url_pattern)
                 if _pattern.search(_entry['loc']) == None:
                     _crwal_flg = False
-            if self._term_days != 0:                       # 期間指定あり
-                _pattern = re.compile('|'.join(self._tarm_days_list))
+            if self._url_term_days != 0:                       # 期間指定あり
+                _pattern = re.compile('|'.join(self._url_tarm_days_list_yyyy_mm_dd))
                 if _pattern.search(_entry['loc']) == None:
                     _crwal_flg = False
             if self._lastmod_recent_time != 0:             # lastmod絞り込み指定あり
                 if date_lastmod < self._until_this_time:
                     _crwal_flg = False
-            if self._continued:                            # 前回クロールからの続きの場合
+            if self._sitemap_continued:                            # 前回クロールからの続きの場合
                 if date_lastmod < self._until_this_time:
                     _crwal_flg = False
                 elif date_lastmod == self._until_this_time \
@@ -74,6 +78,7 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
             if _crwal_flg:
                 yield _entry
 
+        # crawler_controllerコレクションへ保存する内容を設定
         self._sitemap_contened[self.name][self.sitemap_urls[self._sitemap_urls_count]] = {
             'latest_lastmod': _max_lstmod,
             'latest_url': _max_url,
