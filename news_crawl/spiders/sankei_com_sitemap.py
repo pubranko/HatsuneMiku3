@@ -33,24 +33,20 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
 
         # 直近の数分間の指定がある場合
         until_this_time: datetime = self._crawl_start_time
-
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
-            # timedelta(minutes=self._lastmod_recent_time)
 
-        url_term_days_list: list = []
+        # urlに含まれる日付に指定がある場合
+        _url_term_days_list: list = []
         if 'url_term_days' in self.kwargs_save:   #
-            url_term_days_list = self.term_days_Calculation(
+            _url_term_days_list = self.term_days_Calculation(
                 self._crawl_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
-            print('=== あれれ？')
-            print(url_term_days_list)
-
 
         # 前回からの続きの指定がある場合
-        last_time:datetime = datetime.now()
+        _last_time:datetime = datetime.now()
         if 'sitemap_continued' in self.kwargs_save:
-            last_time = parser.parse(
+            _last_time = parser.parse(
                 self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_lastmod'])
 
         # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
@@ -66,7 +62,7 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
                 _max_url = _entry['loc']
 
             _crwal_flg: bool = True
-            date_lastmod = parser.parse(_entry['lastmod']).astimezone(
+            _date_lastmod = parser.parse(_entry['lastmod']).astimezone(
                 self.settings['TIMEZONE'])
 
             if 'url_pattern' in self.kwargs_save:   # url絞り込み指定あり
@@ -74,17 +70,16 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
                 if pattern.search(_entry['loc']) == None:
                     _crwal_flg = False
             if 'url_term_days' in self.kwargs_save:                       # 期間指定あり
-                _pattern = re.compile('|'.join(url_term_days_list))
+                _pattern = re.compile('|'.join(_url_term_days_list))
                 if _pattern.search(_entry['loc']) == None:
                     _crwal_flg = False
             if 'lastmod_recent_time' in self.kwargs_save:             # lastmod絞り込み指定あり
-                if date_lastmod < until_this_time:
+                if _date_lastmod < until_this_time:
                     _crwal_flg = False
-            #if self._sitemap_continued:                            # 前回クロールからの続きの場合
             if 'sitemap_continued' in self.kwargs_save:
-                if date_lastmod < last_time:
+                if _date_lastmod < _last_time:
                     _crwal_flg = False
-                elif date_lastmod == last_time \
+                elif _date_lastmod == _last_time \
                         and self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_url']:
                     _crwal_flg = False
 
