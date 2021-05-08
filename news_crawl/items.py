@@ -14,14 +14,12 @@ class NewsCrawlItem(scrapy.Item):
     response_body = scrapy.Field()
     spider_version_info = scrapy.Field()
 
-    # ログからresponse_headers,response_bodyを削除するために細工
     def __repr__(self):
         # 当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
-        p = NewsCrawlItem(self)
+        p = NewsCrawlItem(self) # ログからresponse_headers,response_bodyを削除するために細工
         del p['url']
         del p['response_time']
         del p['response_headers']
         del p['response_body']
         del p['spider_version_info']
-        # super。クラスの多重継承（？）ができるらしい。初心者には難しいよ〜、、、
         return super(NewsCrawlItem, p).__repr__()

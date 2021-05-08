@@ -47,6 +47,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
     kwargs_save: dict                    # 取得した引数を保存
 
     def __init__(self, *args, **kwargs):
+        ''' (拡張メソッド)
+        親クラスの__init__処理後に追加で初期処理を行う。
+        '''
         super().__init__(*args, **kwargs)
         self.mongo = MongoModel()
         self.kwargs_save: dict = kwargs
@@ -55,25 +58,28 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _crawler_controller = CrawlerControllerModel(self.mongo)
         self._crawler_controller_recode = _crawler_controller.find_one(
             {'domain': self._domain_name})
+        self.logger.info(
+            '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
 
         # 引数チェック・保存
         self.__argument_check(
-            self.mongo, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
+            self._domain_name, self._crawler_controller_recode, *args, **kwargs)
 
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
         self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
-    def __argument_check(self, mongo: MongoModel, domain_name: str, crawler_controller_recode: Any, *args, **kwargs) -> None:
-        '''あとで
+    def __argument_check(self, domain_name: str, crawler_controller_recode: Any, *args, **kwargs) -> None:
+        ''' (拡張メソッド)
+        引数のチェックを行う。
         '''
         ### 単項目チェック ###
         if 'debug' in kwargs:
             if kwargs['debug'] == 'Yes':
                 self.logger.info('=== debugモード ON: %s', self.name)
                 # デバック用のファイルを初期化
-                _ = open('debug_entries.txt', 'w')
+                _ = open('debug_entries(' + self.name + ').txt', 'w')
                 _.close()
             else:
                 sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
@@ -113,19 +119,24 @@ class ExtensionsSitemapSpider(SitemapSpider):
         対象のurlの場合、”yield entry”で返すと親クラス側でrequestされる。
         '''
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
-        self.sitemap_filter_common_prosses(entries)
+        self.sitemap_filter_common_prosses(
+            entries, self.sitemap_urls[self._sitemap_urls_count])
 
         # 直近の数分間の指定がある場合
         until_this_time: datetime = self._crawl_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
+            self.logger.info(
+                '=== sitemap_filter : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
 
         # urlに含まれる日付に指定がある場合
         _url_term_days_list: list = []
         if 'url_term_days' in self.kwargs_save:   #
             _url_term_days_list = self.term_days_Calculation(
                 self._crawl_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
+            self.logger.info(
+                '=== sitemap_filter : url_term_daysより計算した日付 %s', ', '.join(_url_term_days_list))
 
         # 前回からの続きの指定がある場合
         _last_time: datetime = datetime.now()
@@ -179,20 +190,20 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 
-    def sitemap_filter_common_prosses(self, entries):
-        ''' 独自に拡張。
-        １．起動時の引数に応じた処理を行うため、以下の抽出に使う変数を求める。
-          => self._crawl_start_time, self._crawl_start_time_iso, self._until_this_time, self._tarm_days_list*, self._until_this_time
-        ２．デバックモードが指定された場合、entriesをdebug_entries.txtへ出力する。
+    def sitemap_filter_common_prosses(self, entries, sitemap_url: str):
+        ''' (拡張メソッド)
+        デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
-            _ = open('debug_entries.txt', 'a')
+            #_ = open('debug_entries.txt', 'a')
+            _ = open('debug_entries(' + self.name + ').txt', 'a')
             for _entry in entries:
-                _.write(_entry['lastmod'] + ', ' + _entry['loc'] + '\n')
+                _.write(sitemap_url + ',' +
+                        _entry['lastmod'] + ',' + _entry['loc'] + '\n')
             _.close()
 
     def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
-        '''
+        ''' (拡張メソッド)
         クロール開始時刻(crawl_start_time)を起点に、期間(term_days)分の日付リスト(文字列)を返す。
         日付の形式(date_pattern)には、datetime.strftimeのパターンを指定する。
         '''
@@ -211,7 +222,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info
-        )  # ログに不要な値を出さないようitems.pyで細工して文字列を短縮。
+        )
 
     def closed(self, spider):
         '''
@@ -225,5 +236,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
              self.name: self._sitemap_next_crawl_info[self.name],
              },
         )
+
+        _ = crawler_controller.find_one(
+            {'domain': self._domain_name})
+        self.logger.info(
+            '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
 
         self.mongo.close()
