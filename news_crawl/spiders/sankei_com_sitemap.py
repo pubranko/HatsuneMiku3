@@ -1,7 +1,4 @@
-from dateutil import parser
-
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
-from datetime import datetime, timedelta
 
 
 class SankeiComSitemapSpider(ExtensionsSitemapSpider):

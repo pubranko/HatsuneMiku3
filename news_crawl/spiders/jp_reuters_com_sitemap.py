@@ -1,13 +1,13 @@
 import sys
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 
-class JpReutersComSpider(ExtensionsSitemapSpider):
-    name = 'jp_reuters_com'
+class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
+    name = 'jp_reuters_com_sitemap'
     allowed_domains = ['jp.reuters.com']
     sitemap_urls: list = []
-    _domain_name: str = 'jp_reuters_com'        # 各種処理で使用するドメイン名の一元管理
+    _domain_name: str = 'jp_reuters_com_sitemap'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
@@ -16,6 +16,9 @@ class JpReutersComSpider(ExtensionsSitemapSpider):
     _sitemap_next_crawl_info: dict = {name: {}, }
 
     def __init__(self, *args, **kwargs):
+        ''' (拡張メソッド)
+        親クラスの__init__処理後に追加で初期処理を行う。
+        '''
         super().__init__(*args, **kwargs)
 
         # 単項目チェック（追加）
@@ -34,6 +37,6 @@ class JpReutersComSpider(ExtensionsSitemapSpider):
 
         self.sitemap_urls = [
             'https://jp.reuters.com/sitemap_%s-%s.xml' % (s, e) for s, e in zip(_sitemap_term_days_list_start, _sitemap_term_days_list_end)]
-        # 'https://www.yomiuri.co.jp/sitemap-pt-post-%s.xml' % (i) for i in _sitemap_term_days_list]
 
-        self.logger.info('sitemap_urls 生成完了: %s', self.sitemap_urls)
+        self.logger.info('=== __init__ sitemap_urls 生成完了: %s',
+                         self.sitemap_urls)

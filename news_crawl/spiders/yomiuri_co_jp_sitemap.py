@@ -15,11 +15,15 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     _sitemap_next_crawl_info: dict = {name: {}, }
 
     def __init__(self, *args, **kwargs):
+        ''' (拡張メソッド)
+        親クラスの__init__処理後に追加で初期処理を行う。
+        '''
         super().__init__(*args, **kwargs)
 
         # 単項目チェック（追加）
         if not 'sitemap_term_days' in kwargs:
-            sys.exit('引数エラー：当スパイダー(' + self.name + ')の場合、sitemap_term_daysは必須です。')
+            sys.exit('引数エラー：当スパイダー(' + self.name +
+                     ')の場合、sitemap_term_daysは必須です。')
 
         # 以下のようなurlを生成する。
         #     'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-04.xml',
@@ -30,5 +34,5 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
         self.sitemap_urls = [
             'https://www.yomiuri.co.jp/sitemap-pt-post-%s.xml' % (i) for i in _sitemap_term_days_list]
 
-        self.logger.info('sitemap_urls 生成完了: %s', self.sitemap_urls)
-
+        self.logger.info('=== __init__ sitemap_urls 生成完了: %s',
+                         self.sitemap_urls)
