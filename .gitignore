@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 ### 拡張してみた
-debug_entries*.txt
+/news_crawl/debug/*
