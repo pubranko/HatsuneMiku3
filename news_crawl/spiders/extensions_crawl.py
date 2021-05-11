@@ -1,20 +1,16 @@
 from bs4.element import ResultSet
 from scrapy.http import Response
-from typing import Any, Tuple
-from scrapy.spiders import CrawlSpider, Rule
+from typing import Any
+from scrapy.spiders import CrawlSpider
 from datetime import datetime
 import pickle
 import sys
-import re
 import os
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from datetime import datetime, timedelta
-from dateutil import parser
 from news_crawl.settings import TIMEZONE
-
-from scrapy.linkextractors import LinkExtractor
 from bs4 import BeautifulSoup as bs4
 
 
@@ -52,11 +48,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
 
     kwargs_save: dict                    # 取得した引数を保存
 
-    rules = (
-        Rule(LinkExtractor(
-            allow=(r'/article/')), callback='parse_news'),
-    )
-
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
         親クラスの__init__処理後に追加で初期処理を行う。
@@ -90,8 +81,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
             if kwargs['debug'] == 'Yes':
                 self.logger.info('=== debugモード ON: %s', self.name)
                 # デバック用のファイルを初期化
-                # _ = open('debug/debug_start_url(' + self.name + ').txt', 'w')
-                # _.close()
                 path = os.path.join(
                     'news_crawl', 'debug', 'debug_start_url(' + self.name + ').txt')
                 with open(path, 'w') as _:
@@ -116,35 +105,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         '''
         start_urls自体のレスポンスの処理
         '''
-        # soup = bs4(response.body, 'lxml')
-        # links = soup.find_all('a', attrs={'href', re.compile(".*")})
-        # _ = open('debug/debug_start_url(' + self.name + ').txt', 'a')
-        # for link in links:
-        #     print(link['href'])
-        #     _.write(
-        #         self.start_urls[self._crawl_urls_count] + ',' + link['href'] + ',')
-        # _.close()
-
         self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-
         self._crawl_urls_count += 1  # 次のurl用にカウントアップ
-        # soup.find_all(href=re.compile("news.yahoo.co.jp/pickup"))
-        # soup.find_all("a", class_="link", href="/link")
-        # soup.find_all("a", attrs={"class": "link", "href": "/link"})
-        # soup.find_all(class_="link", href="/link")
-        # soup.find_all(attrs={"class": "link", "href": "/link"})
-        # soup.find_all(re.compile("^b")) #bで始まるタグ
-        # soup.find_all("a", text=re.compile("hello"))
-        # print(a4.a.get("href"),'\n')
-        # print(type(_)) #bs4.element.Tag'
-        #a = response.css('a[href]')
-        # a1 = soup.find('a')
-        # a2 = soup.find_all('a')
-        # a3 = soup.a.get("href")
-        # response
-        # print()
-
-        # self.parse_item(response)
 
     def common_prosses(self, start_urls, response: Response):
         ''' (拡張メソッド)
@@ -153,10 +115,10 @@ class ExtensionsCrawlSpider(CrawlSpider):
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
             soup = bs4(response.body, 'lxml')
 
-            links:ResultSet = soup.find_all('a')
-            path:str = os.path.join(
+            links: ResultSet = soup.find_all('a')
+            path: str = os.path.join(
                 'news_crawl', 'debug', 'debug_start_url(' + self.name + ').txt')
-            _fullpath:str = ''
+            _fullpath: str = ''
             with open(path, 'a') as _:
                 for link in links:
                     if link['href'][0:2] == '//':
@@ -195,17 +157,4 @@ class ExtensionsCrawlSpider(CrawlSpider):
         spider終了時、次回クロール向けの情報をcrawler_controllerへ記録する。
         '''
         self.logger.info('=== Spider closed: %s', self.name)
-        # crawler_controller = CrawlerControllerModel(self.mongo)
-        # crawler_controller.update(
-        #     {'domain': self._domain_name},
-        #     {'domain': self._domain_name,
-        #      self.name: self._crawl_next_info[self.name],
-        #      },
-        # )
-
-        # _ = crawler_controller.find_one(
-        #     {'domain': self._domain_name})
-        # self.logger.info(
-        #     '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
-
         self.mongo.close()
