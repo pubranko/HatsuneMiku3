@@ -28,7 +28,7 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 1.5
 # The download delay setting will honor only one of:
 # webサイトのドメインごとに、同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
@@ -99,7 +99,7 @@ ITEM_PIPELINES = {
 # レスポンスがキャッシュから取得できる。
 HTTPCACHE_ENABLED = True
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 60
+HTTPCACHE_EXPIRATION_SECS = 3600
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
