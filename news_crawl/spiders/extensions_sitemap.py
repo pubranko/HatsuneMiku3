@@ -79,7 +79,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if kwargs['debug'] == 'Yes':
                 self.logger.info('=== debugモード ON: %s', self.name)
                 # デバック用のファイルを初期化
-                _ = open('debug_entries(' + self.name + ').txt', 'w')
+                _ = open('debug/debug_entries(' + self.name + ').txt', 'w')
                 _.close()
             else:
                 sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
@@ -195,8 +195,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
-            #_ = open('debug_entries.txt', 'a')
-            _ = open('debug_entries(' + self.name + ').txt', 'a')
+            _ = open('debug/debug_entries(' + self.name + ').txt', 'a')
             for _entry in entries:
                 _.write(sitemap_url + ',' +
                         _entry['lastmod'] + ',' + _entry['loc'] + '\n')

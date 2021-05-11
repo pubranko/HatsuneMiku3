@@ -4,10 +4,10 @@ from datetime import timedelta
 
 
 class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
-    name = 'jp_reuters_com_sitemap'
+    name:str = 'jp_reuters_com_sitemap'
     allowed_domains = ['jp.reuters.com']
     sitemap_urls: list = []
-    _domain_name: str = 'jp_reuters_com_sitemap'        # 各種処理で使用するドメイン名の一元管理
+    _domain_name: str = 'jp_reuters_com_crawl'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
