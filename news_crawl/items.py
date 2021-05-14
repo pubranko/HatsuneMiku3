@@ -16,7 +16,8 @@ class NewsCrawlItem(scrapy.Item):
 
     def __repr__(self):
         # 当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
-        p = NewsCrawlItem(self) # ログからresponse_headers,response_bodyを削除するために細工
+        # ログからresponse_headers,response_bodyを削除するために細工
+        p: NewsCrawlItem = NewsCrawlItem(self)
         del p['url']
         del p['response_time']
         del p['response_headers']
