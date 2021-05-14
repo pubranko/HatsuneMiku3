@@ -26,7 +26,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     allowed_domains: list = ['sample.com']                          # 継承先で上書き要。
     start_urls: list = ['https://www.sample.com/crawl.html', ]   # 継承先で上書き要。
     custom_settings: dict = {
-        'DEPTH_LIMIT': 1,
+        'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True
     }
     spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
@@ -101,12 +101,12 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ### 項目関連チェック ###
         # pass
 
-    def parse_start_url(self, response: Response):
-        '''
-        start_urls自体のレスポンスの処理
-        '''
-        self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-        self._crawl_urls_count += 1  # 次のurl用にカウントアップ
+    # def parse_start_url(self, response: Response):
+    #     '''
+    #     start_urls自体のレスポンスの処理
+    #     '''
+    #     self.common_prosses(self.start_urls[self._crawl_urls_count], response)
+    #     self._crawl_urls_count += 1  # 次のurl用にカウントアップ
 
     def common_prosses(self, start_urls, response: Response):
         ''' (拡張メソッド)

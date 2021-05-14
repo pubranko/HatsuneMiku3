@@ -4,6 +4,7 @@ from datetime import datetime
 import pickle
 import sys
 import re
+import os
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
@@ -79,8 +80,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if kwargs['debug'] == 'Yes':
                 self.logger.info('=== debugモード ON: %s', self.name)
                 # デバック用のファイルを初期化
-                _ = open('debug/debug_entries(' + self.name + ').txt', 'w')
-                _.close()
+                path = os.path.join(
+                    'news_crawl', 'debug', 'debug_entries(' + self.name + ').txt')
+                with open(path, 'w') as _:
+                    pass
+
             else:
                 sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
         if 'url_term_days' in kwargs:
@@ -195,11 +199,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
-            _ = open('debug/debug_entries(' + self.name + ').txt', 'a')
-            for _entry in entries:
-                _.write(sitemap_url + ',' +
-                        _entry['lastmod'] + ',' + _entry['loc'] + '\n')
-            _.close()
+            path: str = os.path.join(
+                'news_crawl', 'debug', 'debug_entries(' + self.name + ').txt')
+            with open(path, 'a') as _:
+                for _entry in entries:
+                    _.write(sitemap_url + ',' + _entry['lastmod'] + ',' + _entry['loc'] + '\n')
 
     def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
         ''' (拡張メソッド)

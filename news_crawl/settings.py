@@ -59,9 +59,10 @@ DOWNLOAD_DELAY = 1.5
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # ダウンロードのミドルウェアを自作のものを使いたい場合、以下の設定を変える。
-#DOWNLOADER_MIDDLEWARES = {
-#    'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+    # 'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
+    'scrapy_selenium.SeleniumMiddleware': 800,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -99,7 +100,7 @@ ITEM_PIPELINES = {
 # レスポンスがキャッシュから取得できる。
 HTTPCACHE_ENABLED = True
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 3600
+HTTPCACHE_EXPIRATION_SECS = 60 #3600
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
@@ -119,6 +120,13 @@ HTTPCACHE_DIR = 'httpcache'
 #  例：spider内のsitemap_fillterで、lastmodの時間を絞り込みしたい。引数に与える時間のタイムゾーンには、settingsのTIME_ZONEを使用する。
 from datetime  import timedelta,timezone
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
+
+#Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
+from shutil import which
+SELENIUM_DRIVER_NAME = 'firefox'
+SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
+SELENIUM_DRIVER_ARGUMENTS=['-headless']
+
 
 '''公式よりミドルウェアの優先順
 {
