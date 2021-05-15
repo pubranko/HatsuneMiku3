@@ -1,13 +1,16 @@
-from typing import Type
+from typing import Any, Type
 from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
 from scrapy.http import Response
+from scrapy.http.response.html import HtmlResponse
 from scrapy_selenium import SeleniumRequest
 from news_crawl.items import NewsCrawlItem
 from datetime import datetime
-import pickle
+import pickle,os
 
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
@@ -15,7 +18,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
-
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.webelement import FirefoxWebElement
+import urllib.parse
 
 class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
     name:str = 'jp_reuters_com_crawl'
@@ -44,12 +49,38 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         '''start_urlsを使わずに直接リクエストを送る。
         あとで
         '''
+        # yield scrapy.Request('http://www.example.com/1.html', self.parse)
+        # yield scrapy.Request('http://www.example.com/2.html', self.parse)
+        # yield scrapy.Request('http://www.example.com/3.html', self.parse)
+        # print('=== web driver start ===',datetime.now())
+        # options = Options()
+        # options.set_headless()
+        # driver = webdriver.Firefox(options=options)
+
+        # driver.get("https://jp.reuters.com/theWire")
+        # print('=== web driver 2 ===',datetime.now())
+        # driver.find_element_by_css_selector('.load-more-link').click()
+        # print('=== web driver 3 ===',datetime.now())
+        # element = WebDriverWait(driver, 10).until(
+        #     EC.presence_of_element_located((By.CLASS_NAME, 'load-more-link'))
+        # )
+        # print('=== web driver 4 ===',datetime.now())
+        # links = driver.find_element_by_class_name('article')
+        # print(type(links))
+        # _ = 0
+        # for link in links:
+        #     _ += 1
+        # print(_)
+
+        # print('=== web driver 5 ===',datetime.now())
+        #print(element)
+
         yield SeleniumRequest(
             url='https://jp.reuters.com/theWire',
             callback=self.parse_start_response,
             #callback=self.parse,
             wait_time=10,
-            wait_until=EC.element_to_be_clickable((By.CLASS_NAME, 'load-more-content')),
+            wait_until=EC.element_to_be_clickable((By.CLASS_NAME, 'load-more-link')),
             #screenshot=True,
             )
 
@@ -103,14 +134,56 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
 
 
-    def parse_start_response(self, response: Response):
+    def parse_start_response(self, response: HtmlResponse):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
+        print('=== parse_start_response ===')
+        #print(type(response))
+        #print(response.request.meta['driver'])
+        driver:FirefoxWebElement = response.request.meta['driver']
+
+        # このログを消したい：selenium.webdriver.remote.remote_connection
+        #print(driver)
+        #print(driver.service)
+        #driver.find_element_by_css_selector('.load-more-link').click()
+        articles = driver.find_elements_by_css_selector('li>h3.article-heading>a')
+        #print(type(articles))
+        for art in articles:
+            #print(type(art))
+            #b.decode('unicode-escape')
+            url = urllib.parse.unquote(art.get_attribute('href'))
+            print(url)
+            print(art.text)
+        
+
+        #aa = driver.find_element_by_class_name('load-more-link')
+        #print('=== ',datetime.now())
+        #print(aa)
+        #element:FirefoxWebElement = WebDriverWait(driver, 10).until(
+        print('=== s ',datetime.now())
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'more-arrow'))
+        )
+        print('=== e ',datetime.now())
+
+        #html = driver.find_element_by_css_selector('html')
+        #html = driver.find_elements_by_css_selector('html')
+        #print(vars(driver))
+
+        a:Any = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'more-arrow'))
+        )
+
+        #print(a.page_source)
+
         soup = bs4(response.body, 'lxml')
 
-        links: ResultSet = soup.find_all('li')
-        print('=== ',links.count)
+        links: ResultSet = soup.select('li.article')
+        _ = 0
+        for link in links:
+            _ += 1
+        print(_)
 
         self.common_prosses(self.start_urls[self._crawl_urls_count], response)
 
