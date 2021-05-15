@@ -98,7 +98,8 @@ ITEM_PIPELINES = {
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 # HTTPキャッシュを使うかどうかの指定。キャッシュを使うと、２回目以降はサーバーにリクエストが送られず、
 # レスポンスがキャッシュから取得できる。
-HTTPCACHE_ENABLED = True
+#HTTPCACHE_ENABLED = True
+HTTPCACHE_ENABLED = False
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
 HTTPCACHE_EXPIRATION_SECS = 30 #3600
 
@@ -121,6 +122,9 @@ HTTPCACHE_DIR = 'httpcache'
 from datetime  import timedelta,timezone
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
+#LOGのレベル(CRITICAL > ERROR > WARNING > INFO > DEBUG)
+LOG_LEVEL = 'INFO'
+
 #Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 from shutil import which
 SELENIUM_DRIVER_NAME = 'firefox'
@@ -142,6 +146,7 @@ SELENIUM_DRIVER_ARGUMENTS=['-headless']
     'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
     'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
+    ここにseleniumuが入るイメージ
     'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
 }
