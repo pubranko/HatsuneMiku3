@@ -1,3 +1,4 @@
+from typing import Type
 from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
@@ -12,6 +13,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
+from bs4 import BeautifulSoup as bs4
+from bs4.element import ResultSet
+
 
 class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
     name:str = 'jp_reuters_com_crawl'
@@ -44,7 +48,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             url='https://jp.reuters.com/theWire',
             callback=self.parse_start_response,
             #callback=self.parse,
-            wait_time=2,
+            wait_time=10,
             wait_until=EC.element_to_be_clickable((By.CLASS_NAME, 'load-more-content')),
             #screenshot=True,
             )
@@ -103,6 +107,11 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
+        soup = bs4(response.body, 'lxml')
+
+        links: ResultSet = soup.find_all('li')
+        print('=== ',links.count)
+
         self.common_prosses(self.start_urls[self._crawl_urls_count], response)
 
         _info = self.name + ':' + str(self.spider_version) + ' / ' \
