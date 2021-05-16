@@ -141,6 +141,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
+        print('=== parse_news動いているか確認')
         _info = self.name + ':' + str(self.spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
 
