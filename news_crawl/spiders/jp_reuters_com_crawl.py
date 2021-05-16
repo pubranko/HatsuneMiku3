@@ -7,11 +7,12 @@ from scrapy.http.response.html import HtmlResponse
 from scrapy_selenium import SeleniumRequest
 from news_crawl.items import NewsCrawlItem
 from datetime import datetime
-import pickle,os
-
+import pickle,os,scrapy
+from time import sleep
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
@@ -139,64 +140,34 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         取得したレスポンスよりDBへ書き込み
         '''
         print('=== parse_start_response ===')
-        #print(type(response))
-        #print(response.request.meta['driver'])
         driver:FirefoxWebElement = response.request.meta['driver']
 
-        # このログを消したい：selenium.webdriver.remote.remote_connection
-        #print(driver)
-        #print(driver.service)
-        #driver.find_element_by_css_selector('.load-more-link').click()
+        driver.find_element_by_css_selector('.load-more-link').click()
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '.load-more-content.active'))  #クリック後のajax完了まで待つ
+        )
         articles = driver.find_elements_by_css_selector('li>h3.article-heading>a')
-        #print(type(articles))
+
+        cnt = 0
         for art in articles:
-            #print(type(art))
-            #b.decode('unicode-escape')
             url = urllib.parse.unquote(art.get_attribute('href'))
+            #yield scrapy.Request(response.urljoin(url), self.parse_news)
+            yield scrapy.Request(response.urljoin(url))
             print(url)
             print(art.text)
-        
-
-        #aa = driver.find_element_by_class_name('load-more-link')
-        #print('=== ',datetime.now())
-        #print(aa)
-        #element:FirefoxWebElement = WebDriverWait(driver, 10).until(
-        print('=== s ',datetime.now())
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, 'more-arrow'))
-        )
-        print('=== e ',datetime.now())
-
-        #html = driver.find_element_by_css_selector('html')
-        #html = driver.find_elements_by_css_selector('html')
-        #print(vars(driver))
-
-        a:Any = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, 'more-arrow'))
-        )
-
-        #print(a.page_source)
-
-        soup = bs4(response.body, 'lxml')
-
-        links: ResultSet = soup.select('li.article')
-        _ = 0
-        for link in links:
-            _ += 1
-        print(_)
+            cnt += 1
+        print('=== cnt = ',cnt)
 
         self.common_prosses(self.start_urls[self._crawl_urls_count], response)
 
+        #yield scrapy.Request(response.urljoin(href), self.parse_news)
+
         _info = self.name + ':' + str(self.spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
-
-        #with open('image.png', 'wb') as image_file:
-        #    image_file.write(response.meta['screenshot'])
-
-        yield NewsCrawlItem(
-            url=response.url,
-            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-            response_headers=pickle.dumps(response.headers),
-            response_body=pickle.dumps(response.body),
-            spider_version_info=_info
-        )
+        # yield NewsCrawlItem(
+        #     url=response.url,
+        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+        #     response_headers=pickle.dumps(response.headers),
+        #     response_body=pickle.dumps(response.body),
+        #     spider_version_info=_info
+        # )
