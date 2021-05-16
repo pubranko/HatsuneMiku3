@@ -36,6 +36,7 @@ class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
             self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
 
         self.sitemap_urls = [
+            #'https://jp.reuters.com/sitemap_index.xml']
             'https://jp.reuters.com/sitemap_%s-%s.xml' % (s, e) for s, e in zip(_sitemap_term_days_list_start, _sitemap_term_days_list_end)]
 
         self.logger.info('=== __init__ sitemap_urls 生成完了: %s',
