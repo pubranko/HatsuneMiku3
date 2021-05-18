@@ -123,7 +123,8 @@ from datetime  import timedelta,timezone
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
 #LOGのレベル(CRITICAL > ERROR > WARNING > INFO > DEBUG)
-LOG_LEVEL = 'INFO'
+#LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'DEBUG'
 
 #Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 from shutil import which
