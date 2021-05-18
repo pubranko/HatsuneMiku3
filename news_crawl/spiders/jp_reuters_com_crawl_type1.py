@@ -27,8 +27,8 @@ from selenium.webdriver.firefox.webelement import FirefoxWebElement
 import urllib.parse
 
 
-class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
-    name: str = 'jp_reuters_com_crawl'
+class JpReutersComCrawlType1Spider(ExtensionsCrawlSpider):
+    name: str = 'jp_reuters_com_crawl_type1'
     allowed_domains: list = ['jp.reuters.com']
     start_urls: list = [
         # 'http://jp.reuters.com/',
@@ -79,7 +79,6 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        self.logger.info('=== parse_start_response 開始')
         driver: FirefoxWebElement = response.request.meta['driver']
 
         # クリック対象が読み込み完了していることを確認
