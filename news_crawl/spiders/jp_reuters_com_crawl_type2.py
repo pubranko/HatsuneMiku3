@@ -115,7 +115,7 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         # for art in articles:
         #     url = urllib.parse.unquote(art.get_attribute('href'))
         #     yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
-
+        #test
         if False:
             yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
 
