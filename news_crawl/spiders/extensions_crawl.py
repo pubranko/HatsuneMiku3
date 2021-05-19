@@ -156,5 +156,19 @@ class ExtensionsCrawlSpider(CrawlSpider):
         '''
         spider終了時、次回クロール向けの情報をcrawler_controllerへ記録する。
         '''
+
+        crawler_controller = CrawlerControllerModel(self.mongo)
+        crawler_controller.update(
+            {'domain': self._domain_name},
+            {'domain': self._domain_name,
+             self.name: self._crawl_next_info[self.name],
+             },
+        )
+
+        _ = crawler_controller.find_one(
+            {'domain': self._domain_name})
+        self.logger.info(
+            '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
+
         self.logger.info('=== Spider closed: %s', self.name)
         self.mongo.close()

@@ -10,6 +10,7 @@ from news_crawl.items import NewsCrawlItem
 from datetime import datetime
 import pickle
 import os
+import re
 import scrapy
 from time import sleep
 from selenium import webdriver
@@ -31,45 +32,30 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     name: str = 'jp_reuters_com_crawl_type2'
     allowed_domains: list = ['jp.reuters.com']
     start_urls: list = [
-        'https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10' #最新ニュース
+        'https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10'  # 最新ニュース
         # 'https://jp.reuters.com/news/archive?view=page&page=2&pageSize=10' #2ページ目
     ]
     _domain_name: str = 'jp_reuters_com_crawl'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
-    # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
+    # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _cwawl_next_info: dict = {name: {}, }
+    _crawl_next_info: dict = {name: {}, }
 
     rules = (
-        # Rule(LinkExtractor(
-        #    allow=(r'/theWire')), callback='parse_top_news'),
         Rule(LinkExtractor(
             allow=(r'/article/')), callback='parse_news'),
     )
-
-    # def parse_start_url(self, response: Response):
-    #     '''
-    #     start_urls自体のレスポンスの処理
-    #     '''
-    #     self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-    #     self._crawl_urls_count += 1  # 次のurl用にカウントアップ
 
     def start_requests(self):
         '''start_urlsを使わずに直接リクエストを送る。
         あとで
         '''
-        # yield scrapy.Request('http://www.example.com/1.html', self.parse)
-        # yield scrapy.Request('http://www.example.com/2.html', self.parse)
-        # yield SeleniumRequest('https://jp.reuters.com/news/topNews',self.parse_top_news,)
-        # yield SeleniumRequest('https://jp.reuters.com/news/topNews',self.parse_top_news,)
+        self._crawl_urls_count += 1
         yield SeleniumRequest(
             url='https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10',
             callback=self.parse_start_response,
-            # wait_time=10,
-            # wait_until=EC.element_to_be_clickable(
-            #     (By.CSS_SELECTOR, '.load-more-link')),
         )
 
     def parse_start_response(self, response: HtmlResponse):
@@ -77,47 +63,47 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         取得したレスポンスよりDBへ書き込み
         '''
         driver: FirefoxWebElement = response.request.meta['driver']
-
         # クリック対象が読み込み完了していることを確認
-        # WebDriverWait(driver, 10).until(
-        #     EC.presence_of_element_located(
-        #         (By.CSS_SELECTOR, '.load-more-content.active'))
-        # )
-        # articles = driver.find_elements_by_css_selector(
-        #     'li>h3.article-heading>a')
-        # self.logger.info(
-        #     '=== parse_start_response : 記事数 = %s', len(articles))
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, '.control-nav-next'))
+        )
 
-        next = driver.find_element_by_css_selector('.control-nav-next')
-        print('=== next = ',next.get_attribute("href"))
-        #https://jp.reuters.com/news/archive?view=page&page=2&pageSize=10
-        # driver.find_element_by_css_selector('.control-nav-next').click()
-        #<i class="page-arrow page-arrow-right"></i>
-        '''
-        <a class="control-nav-next"
-            rel="next"
-            href="?view=page&amp;page=12&amp;pageSize=10">
-			次のページ
-            <i class="page-arrow page-arrow-right"></i>
-		</a>
-        '''
+        # ループ条件
+        # 1.現在のページ数は、10ページまで（仮）
+        # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
 
-        # クリック後のajax完了まで待つ
-        # WebDriverWait(driver, 10).until(
-        #     EC.presence_of_element_located(
-        #         (By.CSS_SELECTOR, '.load-more-content.active'))
-        # )
-        # articles = driver.find_elements_by_css_selector(
-        #     'li>h3.article-heading>a')
-        # self.logger.info(
-        #     '=== parse_start_response : 記事数 = %s', len(articles))
+        # 現在のページより次ページのURLを取得
+        element: FirefoxWebElement = driver.find_element_by_css_selector(
+            '.control-nav-next')
+        next_page_url: str = element.get_attribute("href")
+        print('=== next_page_url = ', next_page_url)
+        # 次のページのページ数を取得
+        _ = re.compile('https://jp.reuters.com/news/archive\?view=page&page=')
+        temp: str = _.sub('', next_page_url)
+        _ = re.compile('&pageSize=10')
+        page = _.sub('', temp)
+        print('===次のページ数 = ', page)
 
-        # for art in articles:
-        #     url = urllib.parse.unquote(art.get_attribute('href'))
-        #     yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
-        #test
-        if False:
+        # 現在のページ内の記事のリンクをリストへ保存
+        urls_list: list = []
+        links: list = driver.find_elements_by_css_selector(
+            '.story-content a')
+        for link in links:
+            link: FirefoxWebElement
+            url: str = urllib.parse.unquote(link.get_attribute("href"))
+            urls_list.append(url)
+            print('=== ページ内対象リンク = ', url)
+
+        # リストにためたurlをリクエストへ登録する。
+        for url in urls_list:
             yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
+        # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
+        self._crawl_next_info[self.name][self.start_urls[self._crawl_urls_count]] = {
+            'urls': urls_list[0:10],
+            'crawl_start_time': self._crawl_start_time_iso,
+        }
+
 
         self.common_prosses(self.start_urls[self._crawl_urls_count], response)
 
