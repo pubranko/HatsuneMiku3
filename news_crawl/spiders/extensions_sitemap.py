@@ -102,17 +102,17 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 sys.exit('引数エラー：lastmod_recent_timeは数字のみ使用可。分単位で指定してください。')
             elif kwargs['lastmod_recent_time'] == 0:
                 sys.exit('引数エラー：lastmod_recent_timeは0分の指定は不可です。')
-        if 'sitemap_continued' in kwargs:
-            if kwargs['sitemap_continued'] == 'Yes':
+        if 'continued' in kwargs:
+            if kwargs['continued'] == 'Yes':
                 if crawler_controller_recode == None:
                     sys.exit('引数エラー：domain = ' + domain_name +
-                             ' は前回のcrawl情報がありません。初回から"sitemap_continued"の使用は不可です。')
+                             ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
             else:
-                sys.exit('引数エラー：sitemap_continuedに使用できるのは、"Yes"のみです。')
+                sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
 
         ### 項目関連チェック ###
-        if 'lastmod_recent_time' in kwargs and 'sitemap_continued' in kwargs:
-            sys.exit('引数エラー：lastmod_recent_timeとsitemap_continuedは同時には使えません。')
+        if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:
+            sys.exit('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
 
     def sitemap_filter(self, entries):
         '''
@@ -144,7 +144,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         # 前回からの続きの指定がある場合
         _last_time: datetime = datetime.now()
-        if 'sitemap_continued' in self.kwargs_save:
+        if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
                 self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_lastmod'])
 
@@ -175,7 +175,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if 'lastmod_recent_time' in self.kwargs_save:             # lastmod絞り込み指定あり
                 if _date_lastmod < until_this_time:
                     _crwal_flg = False
-            if 'sitemap_continued' in self.kwargs_save:
+            if 'continued' in self.kwargs_save:
                 if _date_lastmod < _last_time:
                     _crwal_flg = False
                 elif _date_lastmod == _last_time \

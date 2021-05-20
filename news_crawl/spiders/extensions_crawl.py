@@ -108,27 +108,16 @@ class ExtensionsCrawlSpider(CrawlSpider):
     #     self.common_prosses(self.start_urls[self._crawl_urls_count], response)
     #     self._crawl_urls_count += 1  # 次のurl用にカウントアップ
 
-    def common_prosses(self, start_urls, response: Response):
+    def common_prosses(self, start_url, urls_list: list):
         ''' (拡張メソッド)
         デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
-            soup = bs4(response.body, 'lxml')
-
-            links: ResultSet = soup.find_all('a')
             path: str = os.path.join(
                 'news_crawl', 'debug', 'debug_start_url(' + self.name + ').txt')
-            _fullpath: str = ''
             with open(path, 'a') as _:
-                for link in links:
-                    if link['href'][0:2] == '//':
-                        _fullpath = 'https:' + link['href']
-                    elif link['href'][0:1] == '/':
-                        _fullpath = 'https://jp.reuters.com' + link['href']
-                    else:
-                        _fullpath = link['href']
-
-                    _.write(_fullpath + '\n')
+                for url in urls_list:
+                    _.write(start_url + ',' + url + '\n')
 
     def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
         ''' (拡張メソッド)

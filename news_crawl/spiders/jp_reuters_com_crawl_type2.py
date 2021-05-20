@@ -11,22 +11,22 @@ from datetime import datetime
 import pickle
 import os
 import re
+import urllib.parse
 import scrapy
+from bs4 import BeautifulSoup as bs4
+from bs4.element import ResultSet
 from time import sleep
-from selenium import webdriver
+#from selenium import webdriver
+from selenium.webdriver.remote.webdriver import WebDriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
-from bs4 import BeautifulSoup as bs4
-from bs4.element import ResultSet
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.webelement import FirefoxWebElement
-import urllib.parse
-
 
 class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     name: str = 'jp_reuters_com_crawl_type2'
@@ -52,7 +52,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         '''start_urlsを使わずに直接リクエストを送る。
         あとで
         '''
-        self._crawl_urls_count += 1
         yield SeleniumRequest(
             url='https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10',
             callback=self.parse_start_response,
@@ -62,40 +61,60 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        driver: FirefoxWebElement = response.request.meta['driver']
-        # クリック対象が読み込み完了していることを確認
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, '.control-nav-next'))
-        )
-
         # ループ条件
         # 1.現在のページ数は、10ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
 
-        # 現在のページより次ページのURLを取得
-        element: FirefoxWebElement = driver.find_element_by_css_selector(
-            '.control-nav-next')
-        next_page_url: str = element.get_attribute("href")
-        print('=== next_page_url = ', next_page_url)
-        # 次のページのページ数を取得
-        _ = re.compile('https://jp.reuters.com/news/archive\?view=page&page=')
-        temp: str = _.sub('', next_page_url)
-        _ = re.compile('&pageSize=10')
-        page = _.sub('', temp)
-        print('===次のページ数 = ', page)
-
-        # 現在のページ内の記事のリンクをリストへ保存
+        driver: WebDriver = response.request.meta['driver']
+        page_number: int = 1
         urls_list: list = []
-        links: list = driver.find_elements_by_css_selector(
-            '.story-content a')
-        for link in links:
-            link: FirefoxWebElement
-            url: str = urllib.parse.unquote(link.get_attribute("href"))
-            urls_list.append(url)
-            print('=== ページ内対象リンク = ', url)
 
-        # リストにためたurlをリクエストへ登録する。
+        # 前回からの続きの指定がある場合、前回の１ページ目の１０件のURLを取得する。
+        last_time_urls:list = []
+        if 'continued' in self.kwargs_save:
+            last_time_urls:list = self._crawler_controller_recode[self.name][self.start_urls[self._crawl_urls_count]]['urls']
+            print('=== continuedで動くよ〜')
+
+        self._crawler_controller_recode
+
+        while page_number <= 3:
+            self.logger.info(
+                '=== parse_start_response 現在処理中のURL = %s', driver.current_url)
+
+            # クリック対象が読み込み完了していることを確認   例）href="?view=page&amp;page=2&amp;pageSize=10"
+            page_number += 1    #次のページ数
+            next_page_selecter: str = '.control-nav-next[href$="view=page&page=' + \
+                str(page_number) + '&pageSize=10"]'
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located(
+                    (By.CSS_SELECTOR, next_page_selecter))
+            )
+
+            # 現在のページ内の記事のリンクをリストへ保存
+            links: list = driver.find_elements_by_css_selector(
+                '.story-content a')
+            for link in links:
+                link: WebElement
+                url: str = urllib.parse.unquote(link.get_attribute("href"))
+                urls_list.append(url)
+
+                # 前回取得したurlが確認できたら確認済み（削除）にする。
+                if url in last_time_urls:
+                    last_time_urls.remove(url)
+
+            # 前回からの続きの指定がある場合、前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
+            if 'continued' in self.kwargs_save:
+                print('=== continuedの結果確認〜',len(last_time_urls))
+                if len(last_time_urls) == 0:
+                    self.logger.info(
+                        '=== parse_start_response 前回の続きまで再取得完了 (%s)', driver.current_url)
+                    break
+
+            # 次のページを読み込む
+            elem:WebElement = driver.find_element_by_css_selector('.control-nav-next')
+            elem.click()
+
+        # リストに溜めたurlをリクエストへ登録する。
         for url in urls_list:
             yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
@@ -104,17 +123,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
             'crawl_start_time': self._crawl_start_time_iso,
         }
 
+        self.common_prosses(self.start_urls[self._crawl_urls_count], urls_list)
 
-        self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-
-        # yield scrapy.Request(response.urljoin(href), self.parse_news)
-
-        _info = self.name + ':' + str(self.spider_version) + ' / ' \
-            + 'extensions_crawl:' + str(self._extensions_crawl_version)
-        # yield NewsCrawlItem(
-        #     url=response.url,
-        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-        #     response_headers=pickle.dumps(response.headers),
-        #     response_body=pickle.dumps(response.body),
-        #     spider_version_info=_info
-        # )
+        self._crawl_urls_count += 1
