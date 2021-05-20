@@ -13,7 +13,7 @@ def extensions_sitemap_argument_check(self, mongo: MongoModel, domain_name: str,
     url_pattern: str = ''                   # 指定したパターンをurlに含むもので限定(正規表現)
     lastmod_recent_time: int = 0            # 直近の15分など。分単位で指定することにしよう。0は制限なしとする。
     crawler_controller_recode: Any = None   # crawler_controllerコレクションのレコード
-    sitemap_continued: bool = False         # 前回の続きから(最後に取得したlastmodの日時)
+    continued: bool = False         # 前回の続きから(最後に取得したlastmodの日時)
 
     ### 単項目チェック ###
     if 'debug' in kwargs:
@@ -39,22 +39,22 @@ def extensions_sitemap_argument_check(self, mongo: MongoModel, domain_name: str,
             lastmod_recent_time = int(kwargs['lastmod_recent_time'])
         else:
             sys.exit('引数エラー：lastmod_recent_timeは数字(0〜9)のみ使用可。分単位で指定してください。')
-    if 'sitemap_continued' in kwargs:
-        if kwargs['sitemap_continued'] == 'Yes':
+    if 'continued' in kwargs:
+        if kwargs['continued'] == 'Yes':
             _crawler_controller = CrawlerControllerModel(mongo)
             crawler_controller_recode = _crawler_controller.find_one(
                 {'domain': domain_name})
             if self._crawler_controller_recode == None:
                 sys.exit('引数エラー：domain = ' + domain_name +
-                         ' は前回のcrawl情報がありません。初回から"sitemap_continued"の使用は不可です。')
+                         ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
             else:
-                sitemap_continued = True
+                continued = True
                 #self._sitemap_contened: dict = { self.name : '', }
         else:
-            sys.exit('引数エラー：sitemap_continuedに使用できるのは、"Yes"のみです。')
+            sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
 
     ### 項目関連チェック ###
-    if 'lastmod_recent_time' in kwargs and 'sitemap_continued' in kwargs:
-        sys.exit('引数エラー：lastmod_recent_timeとsitemap_continuedは同時には使えません。')
+    if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:
+        sys.exit('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
 
-    return debug_flg, url_term_days, sitemap_term_days, url_pattern, lastmod_recent_time, crawler_controller_recode, sitemap_continued
+    return debug_flg, url_term_days, sitemap_term_days, url_pattern, lastmod_recent_time, crawler_controller_recode, continued

@@ -107,17 +107,4 @@ class JpReutersComCrawlType1Spider(ExtensionsCrawlSpider):
             url = urllib.parse.unquote(art.get_attribute('href'))
             yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
 
-
-        self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-
-        # yield scrapy.Request(response.urljoin(href), self.parse_news)
-
-        _info = self.name + ':' + str(self.spider_version) + ' / ' \
-            + 'extensions_crawl:' + str(self._extensions_crawl_version)
-        # yield NewsCrawlItem(
-        #     url=response.url,
-        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-        #     response_headers=pickle.dumps(response.headers),
-        #     response_body=pickle.dumps(response.body),
-        #     spider_version_info=_info
-        # )
+        #self.common_prosses(self.start_urls[self._crawl_urls_count], response)
