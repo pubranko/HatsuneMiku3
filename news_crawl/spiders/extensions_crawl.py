@@ -6,6 +6,7 @@ from datetime import datetime
 import pickle
 import sys
 import os
+import re
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
@@ -97,6 +98,25 @@ class ExtensionsCrawlSpider(CrawlSpider):
                 sys.exit('引数エラー：lastmod_recent_timeは数字のみ使用可。分単位で指定してください。')
             elif kwargs['lastmod_recent_time'] == 0:
                 sys.exit('引数エラー：lastmod_recent_timeは0分の指定は不可です。')
+        if 'continued' in kwargs:
+            if kwargs['continued'] == 'Yes':
+                if crawler_controller_recode == None:
+                    sys.exit('引数エラー：domain = ' + domain_name +
+                             ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
+            else:
+                sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
+        if 'pages' in kwargs:
+            print('=== さあ、pagesのテストだ！')
+            ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$$')
+            if ptn.search(kwargs['pages']):
+                pages = eval(kwargs['pages'])
+                print('=== パターンにマッチ : ', pages)
+                if pages[0] > pages[1]:
+                    sys.exit(
+                    '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages']+')')
+            else:
+                sys.exit(
+                    '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages']+')')
 
         ### 項目関連チェック ###
         # pass
@@ -121,10 +141,22 @@ class ExtensionsCrawlSpider(CrawlSpider):
 
     def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
         ''' (拡張メソッド)
-        クロール開始時刻(crawl_start_time)を起点に、期間(term_days)分の日付リスト(文字列)を返す。
+        クロール開始時刻(crawl_start_time)を起点に、期間(term_days)分の日付リスト(文字列)を返す。\n
         日付の形式(date_pattern)には、datetime.strftimeのパターンを指定する。
         '''
         return [(crawl_start_time - timedelta(days=i)).strftime(date_pattern) for i in range(term_days)]
+
+    def pages_setting(self, start_page: int, end_page: int) -> dict:
+        ''' (拡張メソッド)
+        クロール対象のurlを抽出するページの開始・終了の範囲を決める。\n
+        ・起動時の引数にpagesがある場合は、その指定に従う。\n
+        ・それ以外は、各サイトの標準値に従う。
+        '''
+        if 'pages' in self.kwargs_save:
+            pages:list = eval(self.kwargs_save['pages'])
+            return{'start_page':pages[0],'end_page':pages[1]}
+        else:
+            return{'start_page':start_page,'end_page':end_page}
 
     def parse_news(self, response: Response):
         ''' (拡張メソッド)

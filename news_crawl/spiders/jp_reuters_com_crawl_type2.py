@@ -32,10 +32,10 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     name: str = 'jp_reuters_com_crawl_type2'
     allowed_domains: list = ['jp.reuters.com']
     start_urls: list = [
-        'https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10'  # 最新ニュース
+        # 'https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10'  # 最新ニュース
         # 'https://jp.reuters.com/news/archive?view=page&page=2&pageSize=10' #2ページ目
     ]
-    _domain_name: str = 'jp_reuters_com_crawl'        # 各種処理で使用するドメイン名の一元管理
+    _domain_name: str = 'jp_reuters_com'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
@@ -52,8 +52,15 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         '''start_urlsを使わずに直接リクエストを送る。
         あとで
         '''
+        # 開始ページからURLを生成
+        pages:dict = self.pages_setting(1,3)
+        start_page: int = pages['start_page']
+        url='https://jp.reuters.com/news/archive?view=page&page=' + str(start_page) + '&pageSize=10'
+
+        self.start_urls.append(url)
+
         yield SeleniumRequest(
-            url='https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10',
+            url=url,
             callback=self.parse_start_response,
         )
 
@@ -65,8 +72,11 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         # 1.現在のページ数は、10ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
 
+        pages:dict = self.pages_setting(1,3)
+        start_page: int = pages['start_page']
+        end_page: int = pages['end_page']
+
         driver: WebDriver = response.request.meta['driver']
-        page_number: int = 1
         urls_list: list = []
 
         # 前回からの続きの指定がある場合、前回の１ページ目の１０件のURLを取得する。
@@ -77,14 +87,14 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
 
         self._crawler_controller_recode
 
-        while page_number <= 3:
+        while start_page <= end_page:
             self.logger.info(
                 '=== parse_start_response 現在処理中のURL = %s', driver.current_url)
 
             # クリック対象が読み込み完了していることを確認   例）href="?view=page&amp;page=2&amp;pageSize=10"
-            page_number += 1    #次のページ数
+            start_page += 1    #次のページ数
             next_page_selecter: str = '.control-nav-next[href$="view=page&page=' + \
-                str(page_number) + '&pageSize=10"]'
+                str(start_page) + '&pageSize=10"]'
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, next_page_selecter))
