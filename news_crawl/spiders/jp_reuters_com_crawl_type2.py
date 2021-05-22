@@ -1,32 +1,15 @@
-from typing import Any, Type
 from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
-from scrapy.http import Response
 from scrapy.http.response.html import HtmlResponse
 from scrapy_selenium import SeleniumRequest
-#from scrapy import statscollectors
-from news_crawl.items import NewsCrawlItem
-from datetime import datetime
-import pickle
-import os
-import re
 import urllib.parse
 import scrapy
-from bs4 import BeautifulSoup as bs4
-from bs4.element import ResultSet
-from time import sleep
-#from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.webelement import FirefoxWebElement
 
 class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     name: str = 'jp_reuters_com_crawl_type2'
@@ -83,7 +66,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         last_time_urls:list = []
         if 'continued' in self.kwargs_save:
             last_time_urls:list = self._crawler_controller_recode[self.name][self.start_urls[self._crawl_urls_count]]['urls']
-            print('=== continuedで動くよ〜')
 
         self._crawler_controller_recode
 
@@ -114,7 +96,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
 
             # 前回からの続きの指定がある場合、前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if 'continued' in self.kwargs_save:
-                print('=== continuedの結果確認〜',len(last_time_urls))
                 if len(last_time_urls) == 0:
                     self.logger.info(
                         '=== parse_start_response 前回の続きまで再取得完了 (%s)', driver.current_url)
