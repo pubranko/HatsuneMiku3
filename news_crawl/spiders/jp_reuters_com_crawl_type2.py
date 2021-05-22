@@ -53,7 +53,7 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         あとで
         '''
         # 開始ページからURLを生成
-        pages:dict = self.pages_setting(1,3)
+        pages:dict = self.pages_setting(1,5)
         start_page: int = pages['start_page']
         url='https://jp.reuters.com/news/archive?view=page&page=' + str(start_page) + '&pageSize=10'
 
