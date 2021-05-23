@@ -70,7 +70,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
             TIMEZONE)
         self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
-
     def common_prosses(self, start_url, urls_list: list):
         ''' (拡張メソッド)
         デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
