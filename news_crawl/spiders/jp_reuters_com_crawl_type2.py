@@ -1,32 +1,15 @@
-from typing import Any, Type
 from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
-from scrapy.http import Response
 from scrapy.http.response.html import HtmlResponse
 from scrapy_selenium import SeleniumRequest
-#from scrapy import statscollectors
-from news_crawl.items import NewsCrawlItem
-from datetime import datetime
-import pickle
-import os
-import re
 import urllib.parse
 import scrapy
-from bs4 import BeautifulSoup as bs4
-from bs4.element import ResultSet
-from time import sleep
-#from selenium import webdriver
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.webelement import FirefoxWebElement
 
 class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     name: str = 'jp_reuters_com_crawl_type2'
@@ -53,7 +36,7 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         あとで
         '''
         # 開始ページからURLを生成
-        pages:dict = self.pages_setting(1,3)
+        pages:dict = self.pages_setting(1,5)
         start_page: int = pages['start_page']
         url='https://jp.reuters.com/news/archive?view=page&page=' + str(start_page) + '&pageSize=10'
 

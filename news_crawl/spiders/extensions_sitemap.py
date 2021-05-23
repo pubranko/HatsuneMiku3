@@ -1,4 +1,4 @@
-from typing import Any, Tuple
+from typing import Any
 from scrapy.spiders import SitemapSpider
 from datetime import datetime
 import pickle
@@ -11,6 +11,8 @@ from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from datetime import datetime, timedelta
 from dateutil import parser
 from news_crawl.settings import TIMEZONE
+from news_crawl.spiders.function.argument_check import argument_check
+from scrapy.utils.sitemap import Sitemap
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -62,59 +64,16 @@ class ExtensionsSitemapSpider(SitemapSpider):
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
 
-        # 引数チェック・保存
-        self.__argument_check(
-            self._domain_name, self._crawler_controller_recode, *args, **kwargs)
+        # 引数チェック
+        argument_check(
+            self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
 
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
         self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
-    def __argument_check(self, domain_name: str, crawler_controller_recode: Any, *args, **kwargs) -> None:
-        ''' (拡張メソッド)
-        引数のチェックを行う。
-        '''
-        ### 単項目チェック ###
-        if 'debug' in kwargs:
-            if kwargs['debug'] == 'Yes':
-                self.logger.info('=== debugモード ON: %s', self.name)
-                # デバック用のファイルを初期化
-                path = os.path.join(
-                    'news_crawl', 'debug', 'debug_entries(' + self.name + ').txt')
-                with open(path, 'w') as _:
-                    pass
-
-            else:
-                sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
-        if 'url_term_days' in kwargs:
-            if not kwargs['url_term_days'].isdecimal():
-                sys.exit('引数エラー：url_term_daysは数字のみ使用可。日単位で指定してください。')
-            elif kwargs['url_term_days'] == 0:
-                sys.exit('引数エラー：url_term_daysは0日の指定は不可です。1日以上を指定してください。')
-        if 'sitemap_term_days' in kwargs:
-            if not kwargs['sitemap_term_days'].isdecimal():
-                sys.exit('引数エラー：sitemap_term_daysは数字のみ使用可。日単位で指定してください。')
-            elif kwargs['sitemap_term_days'] == 0:
-                sys.exit('引数エラー：sitemap_term_daysは0日の指定は不可です。1日以上を指定してください。')
-        if 'lastmod_recent_time' in kwargs:
-            if not kwargs['lastmod_recent_time'].isdecimal():
-                sys.exit('引数エラー：lastmod_recent_timeは数字のみ使用可。分単位で指定してください。')
-            elif kwargs['lastmod_recent_time'] == 0:
-                sys.exit('引数エラー：lastmod_recent_timeは0分の指定は不可です。')
-        if 'continued' in kwargs:
-            if kwargs['continued'] == 'Yes':
-                if crawler_controller_recode == None:
-                    sys.exit('引数エラー：domain = ' + domain_name +
-                             ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
-            else:
-                sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
-
-        ### 項目関連チェック ###
-        if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:
-            sys.exit('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
-
-    def sitemap_filter(self, entries):
+    def sitemap_filter(self, entries: Sitemap):
         '''
         親クラスのSitemapSpiderの同名メソッドをオーバーライド。
         entriesには、サイトマップから取得した情報(loc,lastmodなど）が辞書形式で格納されている。
@@ -123,7 +82,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         対象のurlの場合、”yield entry”で返すと親クラス側でrequestされる。
         '''
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
-        self.sitemap_filter_common_prosses(
+        self.sitemap_entries_debug_file_generate(
             entries, self.sitemap_urls[self._sitemap_urls_count])
 
         # 直近の数分間の指定がある場合
@@ -194,16 +153,17 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 
-    def sitemap_filter_common_prosses(self, entries, sitemap_url: str):
+    def sitemap_entries_debug_file_generate(self, entries, sitemap_url: str):
         ''' (拡張メソッド)
         デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
             path: str = os.path.join(
-                'news_crawl', 'debug', 'debug_entries(' + self.name + ').txt')
+                'debug', 'start_urls(' + self.name + ').txt')
             with open(path, 'a') as _:
                 for _entry in entries:
-                    _.write(sitemap_url + ',' + _entry['lastmod'] + ',' + _entry['loc'] + '\n')
+                    _.write(sitemap_url + ',' +
+                            _entry['lastmod'] + ',' + _entry['loc'] + '\n')
 
     def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
         ''' (拡張メソッド)
