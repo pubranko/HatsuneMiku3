@@ -19,7 +19,7 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         # 'https://jp.reuters.com/news/archive?view=page&page=2&pageSize=10' #2ページ目
     ]
     _domain_name: str = 'jp_reuters_com'        # 各種処理で使用するドメイン名の一元管理
-    spider_version: float = 1.0
+    _spider_version: float = 1.0
 
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0

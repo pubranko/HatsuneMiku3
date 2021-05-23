@@ -6,7 +6,7 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
     allowed_domains: list = ['sankei.com']
     sitemap_urls: list = ['https://www.sankei.com/sitemap.xml', ]
     _domain_name: str = 'sankei_com'        # 各種処理で使用するドメイン名の一元管理
-    spider_version: float = 1.0
+    _spider_version: float = 1.0
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0

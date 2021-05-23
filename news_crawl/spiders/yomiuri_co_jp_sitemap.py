@@ -7,7 +7,7 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     allowed_domains: list = ['yomiuri.co.jp']
     sitemap_urls: list = []
     _domain_name: str = 'yomiuri_co_jp'        # 各種処理で使用するドメイン名の一元管理
-    spider_version: float = 1.0
+    _spider_version: float = 1.0
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
