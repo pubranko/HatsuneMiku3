@@ -27,7 +27,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True
     }
-    spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
+    _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_crawl_version: float = 1.0         # 当クラスのバージョン
 
     # 引数の値保存
@@ -104,7 +104,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        _info = self.name + ':' + str(self.spider_version) + ' / ' \
+        _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
 
         yield NewsCrawlItem(

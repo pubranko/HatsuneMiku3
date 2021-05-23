@@ -38,7 +38,7 @@ class JpReutersComCrawlType1Spider(ExtensionsCrawlSpider):
         # 'https://jp.reuters.com/news/archive?view=page&page=2&pageSize=10' #2ページ目
     ]
     _domain_name: str = 'jp_reuters_com_crawl'        # 各種処理で使用するドメイン名の一元管理
-    spider_version: float = 1.0
+    _spider_version: float = 1.0
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _crawl_urls_count: int = 0

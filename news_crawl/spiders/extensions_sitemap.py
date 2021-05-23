@@ -30,7 +30,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True
     }
-    spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
+    _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_sitemap_version: float = 1.0         # 当クラスのバージョン
 
     # 引数の値保存
@@ -46,8 +46,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _sitemap_urls_count: int = 0
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
     _sitemap_next_crawl_info: dict = {name: {}, }
-
-    kwargs_save: dict                    # 取得した引数を保存
+    # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
+    # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
+    _custom_url_flg:bool = False
+    # 取得した引数を保存
+    kwargs_save: dict
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -115,6 +118,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
             '''
             引数に絞り込み指定がある場合、その条件を満たす場合のみ対象とする。
             '''
+            _entry:dict
+
             if _max_lstmod < _entry['lastmod']:
                 _max_lstmod = _entry['lastmod']
                 _max_url = _entry['loc']
@@ -142,6 +147,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     _crwal_flg = False
 
             if _crwal_flg:
+                if self._custom_url_flg:
+                    _entry['loc'] = self._custom_url(_entry)
+
                 yield _entry
 
         # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
@@ -172,11 +180,17 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         return [(crawl_start_time - timedelta(days=i)).strftime(date_pattern) for i in range(term_days)]
 
+    def _custom_url(self,_entry:dict) -> str:
+        ''' (拡張メソッド)
+        sitemapのurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
+        '''
+        return _entry['url']
+
     def parse(self, response):
         '''
         取得したレスポンスよりDBへ書き込み
         '''
-        _info = self.name + ':' + str(self.spider_version) + ' / ' \
+        _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
         yield NewsCrawlItem(
