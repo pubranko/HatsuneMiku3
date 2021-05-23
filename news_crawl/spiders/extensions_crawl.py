@@ -106,27 +106,18 @@ class ExtensionsCrawlSpider(CrawlSpider):
             else:
                 sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
         if 'pages' in kwargs:
-            print('=== さあ、pagesのテストだ！')
-            ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$$')
+            ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$')
             if ptn.search(kwargs['pages']):
                 pages = eval(kwargs['pages'])
-                print('=== パターンにマッチ : ', pages)
                 if pages[0] > pages[1]:
                     sys.exit(
-                    '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages']+')')
+                        '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages'] + ')')
             else:
                 sys.exit(
-                    '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages']+')')
+                    '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages'] + ')')
 
         ### 項目関連チェック ###
         # pass
-
-    # def parse_start_url(self, response: Response):
-    #     '''
-    #     start_urls自体のレスポンスの処理
-    #     '''
-    #     self.common_prosses(self.start_urls[self._crawl_urls_count], response)
-    #     self._crawl_urls_count += 1  # 次のurl用にカウントアップ
 
     def common_prosses(self, start_url, urls_list: list):
         ''' (拡張メソッド)
@@ -153,10 +144,10 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ・それ以外は、各サイトの標準値に従う。
         '''
         if 'pages' in self.kwargs_save:
-            pages:list = eval(self.kwargs_save['pages'])
-            return{'start_page':pages[0],'end_page':pages[1]}
+            pages: list = eval(self.kwargs_save['pages'])
+            return{'start_page': pages[0], 'end_page': pages[1]}
         else:
-            return{'start_page':start_page,'end_page':end_page}
+            return{'start_page': start_page, 'end_page': end_page}
 
     def parse_news(self, response: Response):
         ''' (拡張メソッド)

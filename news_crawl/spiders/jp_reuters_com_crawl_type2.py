@@ -83,7 +83,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         last_time_urls:list = []
         if 'continued' in self.kwargs_save:
             last_time_urls:list = self._crawler_controller_recode[self.name][self.start_urls[self._crawl_urls_count]]['urls']
-            print('=== continuedで動くよ〜')
 
         self._crawler_controller_recode
 
@@ -114,7 +113,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
 
             # 前回からの続きの指定がある場合、前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if 'continued' in self.kwargs_save:
-                print('=== continuedの結果確認〜',len(last_time_urls))
                 if len(last_time_urls) == 0:
                     self.logger.info(
                         '=== parse_start_response 前回の続きまで再取得完了 (%s)', driver.current_url)
