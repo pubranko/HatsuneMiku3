@@ -61,7 +61,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
 
-        # 引数チェック・保存
+        # 引数チェック
         argument_check(
             self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
 
