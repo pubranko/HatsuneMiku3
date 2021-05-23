@@ -1,18 +1,15 @@
-from bs4.element import ResultSet
 from scrapy.http import Response
 from typing import Any
 from scrapy.spiders import CrawlSpider
 from datetime import datetime
 import pickle
-import sys
 import os
-import re
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from datetime import datetime, timedelta
 from news_crawl.settings import TIMEZONE
-from bs4 import BeautifulSoup as bs4
+from news_crawl.spiders.function.argument_check import argument_check
 
 
 class ExtensionsCrawlSpider(CrawlSpider):
@@ -64,60 +61,15 @@ class ExtensionsCrawlSpider(CrawlSpider):
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
 
-        # 引数チェック・保存
-        self.__argument_check(
-            self._domain_name, self._crawler_controller_recode, *args, **kwargs)
+        # 引数チェック
+        argument_check(
+            self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
 
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
         self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
-    def __argument_check(self, domain_name: str, crawler_controller_recode: Any, *args, **kwargs) -> None:
-        ''' (拡張メソッド)
-        引数のチェックを行う。
-        '''
-        ### 単項目チェック ###
-        if 'debug' in kwargs:
-            if kwargs['debug'] == 'Yes':
-                self.logger.info('=== debugモード ON: %s', self.name)
-                # デバック用のファイルを初期化
-                path = os.path.join(
-                    'news_crawl', 'debug', 'debug_start_url(' + self.name + ').txt')
-                with open(path, 'w') as _:
-                    pass
-            else:
-                sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
-        if 'url_term_days' in kwargs:
-            if not kwargs['url_term_days'].isdecimal():
-                sys.exit('引数エラー：url_term_daysは数字のみ使用可。日単位で指定してください。')
-            elif kwargs['url_term_days'] == 0:
-                sys.exit('引数エラー：url_term_daysは0日の指定は不可です。1日以上を指定してください。')
-        if 'lastmod_recent_time' in kwargs:
-            if not kwargs['lastmod_recent_time'].isdecimal():
-                sys.exit('引数エラー：lastmod_recent_timeは数字のみ使用可。分単位で指定してください。')
-            elif kwargs['lastmod_recent_time'] == 0:
-                sys.exit('引数エラー：lastmod_recent_timeは0分の指定は不可です。')
-        if 'continued' in kwargs:
-            if kwargs['continued'] == 'Yes':
-                if crawler_controller_recode == None:
-                    sys.exit('引数エラー：domain = ' + domain_name +
-                             ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
-            else:
-                sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
-        if 'pages' in kwargs:
-            ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$')
-            if ptn.search(kwargs['pages']):
-                pages = eval(kwargs['pages'])
-                if pages[0] > pages[1]:
-                    sys.exit(
-                        '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages'] + ')')
-            else:
-                sys.exit(
-                    '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages'] + ')')
-
-        ### 項目関連チェック ###
-        # pass
 
     def common_prosses(self, start_url, urls_list: list):
         ''' (拡張メソッド)
@@ -125,7 +77,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         '''
         if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
             path: str = os.path.join(
-                'news_crawl', 'debug', 'debug_start_url(' + self.name + ').txt')
+                'debug', 'start_urls(' + self.name + ').txt')
             with open(path, 'a') as _:
                 for url in urls_list:
                     _.write(start_url + ',' + url + '\n')
