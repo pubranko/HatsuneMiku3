@@ -32,8 +32,8 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     )
 
     def start_requests(self):
-        '''start_urlsを使わずに直接リクエストを送る。
-        あとで
+        '''
+        start_urlsを使わずに直接リクエストを送る。
         '''
         # 開始ページからURLを生成
         pages:dict = self.pages_setting(1,5)
@@ -52,10 +52,10 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         取得したレスポンスよりDBへ書き込み
         '''
         # ループ条件
-        # 1.現在のページ数は、10ページまで（仮）
+        # 1.現在のページ数は、5ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
 
-        pages:dict = self.pages_setting(1,3)
+        pages:dict = self.pages_setting(1,5)
         start_page: int = pages['start_page']
         end_page: int = pages['end_page']
 
@@ -66,8 +66,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         last_time_urls:list = []
         if 'continued' in self.kwargs_save:
             last_time_urls:list = self._crawler_controller_recode[self.name][self.start_urls[self._crawl_urls_count]]['urls']
-
-        self._crawler_controller_recode
 
         while start_page <= end_page:
             self.logger.info(
