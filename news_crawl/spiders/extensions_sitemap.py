@@ -57,9 +57,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         親クラスの__init__処理後に追加で初期処理を行う。
         '''
         super().__init__(*args, **kwargs)
+        # MongoDBオープン
         self.mongo = MongoModel()
-        self.kwargs_save: dict = kwargs
-
         # 前回のドメイン別のクロール結果を取得
         _crawler_controller = CrawlerControllerModel(self.mongo)
         self._crawler_controller_recode = _crawler_controller.find_one(
@@ -67,7 +66,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
 
-        # 引数チェック
+        # 引数保存・チェック
+        self.kwargs_save: dict = kwargs
         argument_check(
             self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
 
