@@ -10,7 +10,6 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
     各引数が存在したらチェックを行う。
     '''
     # 単項目チェック
-
     def __debug_check() -> None:
         if kwargs['debug'] == 'Yes':
             spider.logger.info('=== debugモード ON: %s', spider.name)
@@ -49,19 +48,23 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
             sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')
 
     def __pages_check() -> None:
-        if 'pages' in kwargs:
-            ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$$')
-            if ptn.search(kwargs['pages']):
-                pages = eval(kwargs['pages'])
-                if pages[0] > pages[1]:
-                    sys.exit(
-                        '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages']+')')
-            else:
+        ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$')
+        if ptn.search(kwargs['pages']):
+            pages = eval(kwargs['pages'])
+            if pages[0] > pages[1]:
                 sys.exit(
-                    '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages']+')')
+                    '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages'] +')')
+        else:
+            sys.exit(
+                '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages'] +')')
+
+    def __category_urls() -> None:
+        ptn = re.compile(r'^\[.+\]$')
+        if not ptn.search(kwargs['category_urls']):
+            sys.exit(
+                '引数エラー：category_urlsは配列形式[Any,,,]で指定してください。（例）[100,108] （値 = ' + kwargs['category_urls'] +')')
 
     # 項目関連チェック
-
     def __lastmod_recent_time_and_continued() -> None:
         sys.exit('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
 
@@ -78,6 +81,8 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
         __continued_check()
     if 'pages' in kwargs:
         __pages_check()
+    if 'category_urls' in kwargs:
+        __category_urls()
 
     ### 項目関連チェック ###
     if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:
