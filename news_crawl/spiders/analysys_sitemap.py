@@ -9,7 +9,7 @@ class AnalysysSitemapSpider(ExtensionsSitemapSpider):
     name: str = 'analysys_sitemap'
     allowed_domains = []
     sitemap_urls: list = [
-        'https://jp.reuters.com/sitemap_20210517-20210518.xml']
+        'http://www.asahi.com/sitemap.xml']
     # _domain_name: str = 'jp_reuters_com_crawl'        # 各種処理で使用するドメイン名の一元管理
     #spider_version: float = 1.0
     custom_settings: dict = {
