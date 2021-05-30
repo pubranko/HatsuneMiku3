@@ -1,6 +1,4 @@
-from typing import Any
-import re
-import scrapy
+import re,scrapy
 from datetime import datetime, timedelta
 from dateutil import parser
 from scrapy.selector.unified import Selector
@@ -43,8 +41,8 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
-            self.logger.info(
-                '=== sitemap_filter : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
+            # self.logger.info(
+            #     '=== sitemap_filter : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
 
         # 前回からの続きの指定がある場合
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
@@ -99,31 +97,5 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
                 _crwal_flg = False
 
         if _crwal_flg:
-            #yield scrapy.Request(response.urljoin(loc), callback=self.parse_news)
-            pass
-
-        # sys.exit('とりあえず止める')
-
-# <url xmlns="http://www.google.com/schemas/sitemap/0.84" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
-# <loc>https://www.asahi.com/articles/ASP5G4VWRP56UTIL00P.html</loc>
-# <news:news>
-# <news:publication>
-# <news:name>朝日新聞</news:name>
-# <news:language>ja</news:language>
-# </news:publication>
-# <news:publication_date>2021-05-29T23:08:05+09:00</news:publication_date>
-# <news:title>数学は将来役に立たない？　教科書の意外な工夫とは</news:title>
-# <news:keywords>社会</news:keywords>
-# </news:news>
-# </url>
-
-
-# item = NewsCrawlItem()
-# item['url'] = 'http://test.jp'
-# item['response_time'] = datetime.now().astimezone(
-#     self.settings['TIMEZONE']),
-# item['response_headers'] = ''
-# item['response_body'] = ''
-# item['spider_version_info'] = ''
-# return item
-# yield scrapy.Request(response.urljoin(loc), callback=self.parse_news)
+            yield scrapy.Request(response.urljoin(loc), callback=self.parse_news)
+            self._xml_extract_count += 1
