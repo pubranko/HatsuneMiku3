@@ -1,12 +1,9 @@
-from typing import Any, Generator, Iterable
-import re
+from typing import Any
 import os
+import pickle
 from scrapy.spiders import XMLFeedSpider
-import scrapy
 from scrapy.http import Response
-from datetime import datetime,timedelta
-from dateutil import parser
-from scrapy.selector.unified import Selector
+from datetime import datetime, timedelta
 from scrapy.http import Response
 from scrapy.http.response.xml import XmlResponse
 from news_crawl.models.mongo_model import MongoModel
@@ -14,11 +11,13 @@ from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.spiders.function.argument_check import argument_check
 from news_crawl.settings import TIMEZONE
 from scrapy.utils.spider import iterate_spider_output
+from news_crawl.items import NewsCrawlItem
+
 
 class ExtensionsXmlFeedSpider(XMLFeedSpider):
     name: str = 'sample_com_xml_feed'                           # 継承先で上書き要。
     allowed_domains: list = ['sample.com']                      # 継承先で上書き要。
-    start_urls: list = ['https://www.sample.com/sitemap.xml',]  # 継承先で上書き要。
+    start_urls: list = ['https://www.sample.com/sitemap.xml', ]  # 継承先で上書き要。
     custom_settings: dict = {
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True
@@ -36,14 +35,15 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     _entities: list = []
-    _request_list:list = []
+    _request_list: list = []
     _xml_next_crawl_info: dict = {name: {}, }
     # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
-    _custom_url_flg:bool = False
+    _custom_url_flg: bool = False
 
     # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
     _max_lstmod: str = ''
     _max_url: str = ''
+    _xml_extract_count :int = 0
 
     iterator: str = 'iternodes'
     itertag: str = 'url'
@@ -62,7 +62,10 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
         # 前回のクロール情報を次回向けの初期値とする。
-        self._crawl_next_info = self._crawler_controller_recode
+        self._xml_next_crawl_info: dict = {self.name: {}, }
+        if not self._crawler_controller_recode == None :
+            if self.name in self._crawler_controller_recode:
+                self._xml_next_crawl_info[self.name] = self._crawler_controller_recode[self.name]
 
         # 引数保存・チェック
         self.kwargs_save: dict = kwargs
@@ -78,18 +81,16 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        print('parse_news動いた')
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_xml_version)
 
-        # yield NewsCrawlItem(
-        #     url=response.url,
-        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-        #     response_headers=pickle.dumps(response.headers),
-        #     response_body=pickle.dumps(response.body),
-        #     spider_version_info=_info
-        # )
-
+        yield NewsCrawlItem(
+            url=response.url,
+            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+            response_headers=pickle.dumps(response.headers),
+            response_body=pickle.dumps(response.body),
+            spider_version_info=_info
+        )
 
     def closed(self, spider):
         '''
@@ -99,18 +100,18 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
 
         self.xml_node_debug_file_generate(self._entities)
 
-        # crawler_controller = CrawlerControllerModel(self.mongo)
-        # crawler_controller.update(
-        #     {'domain': self._domain_name},
-        #     {'domain': self._domain_name,
-        #      self.name: self._xmp_next_crawl_info[self.name],
-        #      },
-        # )
+        crawler_controller = CrawlerControllerModel(self.mongo)
+        crawler_controller.update(
+            {'domain': self._domain_name},
+            {'domain': self._domain_name,
+             self.name: self._xml_next_crawl_info[self.name],
+             },
+        )
 
-        # _ = crawler_controller.find_one(
-        #     {'domain': self._domain_name})
-        # self.logger.info(
-        #     '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
+        _ = crawler_controller.find_one(
+            {'domain': self._domain_name})
+        self.logger.info(
+            '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
 
         self.mongo.close()
 
@@ -134,39 +135,30 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         '''
         return [(crawl_start_time - timedelta(days=i)).strftime(date_pattern) for i in range(term_days)]
 
-    def adapt_response(self, response):
-        """You can override this function in order to make any changes you want
-        to into the feed before parsing it. This function must return a
-        response.
-        """
-        print('=== adapt_response 1 動くタイミング調査')
-        return response
-
-    def parse_nodes(self, response:XmlResponse, nodes):
+    def parse_nodes(self, response: XmlResponse, nodes):
         """(オーバーライド)
         各xmlファイルの初期処理、主処理、終了処理を記述可能
         """
-        ### 初期処理
-        #print('=== parse_nodes 2 動くタイミング調査')
-        ### 主処理
+        # 初期処理
+        self._xml_extract_count = 0 #xmlごとに何件対象となったか確認するためのカウンター初期化
+        # 主処理
         for selector in nodes:
-            ret:Any = iterate_spider_output(self.parse_node(response, selector))
+            ret: Any = iterate_spider_output(
+                self.parse_node(response, selector))
             for result_item in self.process_results(response, ret):
                 yield result_item
-        ### 終了処理
+        # 終了処理
         self.logger.info(
-            '=== parse_nodes : XMLの解析完了 : %s', response.url)
-        #サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
+            '=== parse_nodes : XMLの解析完了 : 件数 = %s ,url = %s ', self._xml_extract_count,response.url)
+        # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
         self._xml_next_crawl_info[self.name][response.url] = {
             'latest_lastmod': self._max_lstmod,
             'latest_url': self._max_url,
             'crawl_start_time': self._crawl_start_time_iso,
         }
 
-
-    def _custom_url(self,url:str) -> str:
+    def _custom_url(self, url: str) -> str:
         ''' (拡張メソッド)
         sitemapのurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
         '''
         return url
-
