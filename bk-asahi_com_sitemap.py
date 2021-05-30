@@ -3,7 +3,7 @@ from news_crawl.spiders.extensions_sitemap_filter_type1 import ExtensionsSitemap
 
 
 class AsahiComSitemapSpider(ExtensionsSitemapFilterTyep1Spider):
-    name = 'asahi_com_sitemap'
+    name = 'temp_asahi_com_sitemap'
     allowed_domains = ['asahi.com']
     start_urls = ['http://asahi.com/']
 

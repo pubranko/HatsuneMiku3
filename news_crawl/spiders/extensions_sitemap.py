@@ -105,7 +105,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 '=== sitemap_filter : url_term_daysより計算した日付 %s', ', '.join(_url_term_days_list))
 
         # 前回からの続きの指定がある場合
-        _last_time: datetime = datetime.now()
+        _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
                 self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_lastmod'])
