@@ -12,10 +12,3 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
     _sitemap_urls_count: int = 0
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
     _sitemap_next_crawl_info: dict = {name: {}, }
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     print('=== ',__class__,' の__init__終了')
-
-    # def sitemap_filter(self, entries):
-    #     print('=== SankeiComSitemapSpider のsaitemap_filter start')

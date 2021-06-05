@@ -1,5 +1,6 @@
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
 from datetime import timedelta
+from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 
 
 class AnalysysSitemapSpider(ExtensionsSitemapSpider):
@@ -26,9 +27,8 @@ class AnalysysSitemapSpider(ExtensionsSitemapSpider):
         extensions_sitemapのsitemap_filterで各サイトをクロールしないようにオーバーライド。
         ただしサイトマップ本体の保存機能は使用する。
         '''
-        print('=== sitemap_filter ===')
-        self.sitemap_entries_debug_file_generate(
-            entries, self.sitemap_urls[self._sitemap_urls_count])
+        start_request_debug_file_generate(
+            self.name, self.sitemap_urls[self._sitemap_urls_count], entries, self.kwargs_save)
 
         for _entry in entries:
             '''

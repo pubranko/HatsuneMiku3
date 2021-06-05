@@ -1,6 +1,6 @@
 import sys
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
-
+from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
 
 class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     name: str = 'yomiuri_co_jp_sitemap'
@@ -29,7 +29,7 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
         #     'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-04.xml',
         #     'https://www.yomiuri.co.jp/sitemap-pt-post-2021-05-03.xml',
 
-        _sitemap_term_days_list = self.term_days_Calculation(
+        _sitemap_term_days_list = term_days_Calculation(
             self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y-%m-%d')
         self.sitemap_urls = [
             'https://www.yomiuri.co.jp/sitemap-pt-post-%s.xml' % (i) for i in _sitemap_term_days_list]

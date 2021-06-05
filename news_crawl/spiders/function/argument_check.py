@@ -1,5 +1,4 @@
 import sys
-import os
 import re
 from typing import Any
 from scrapy.spiders import Spider
@@ -11,14 +10,7 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
     '''
     # 単項目チェック
     def __debug_check() -> None:
-        if kwargs['debug'] == 'Yes':
-            spider.logger.info('=== debugモード ON: %s', spider.name)
-            # デバック用のファイルを初期化
-            path = os.path.join(
-                'debug', 'start_urls(' + str(spider.name) + ').txt')
-            with open(path, 'w') as _:
-                pass
-        else:
+        if not kwargs['debug'] == 'Yes':
             sys.exit('引数エラー：debugに指定できるのは"Yes"のみです。')
 
     def __url_term_days_check() -> None:
@@ -43,6 +35,9 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
         if kwargs['continued'] == 'Yes':
             if crawler_controller_recode == None:
                 sys.exit('引数エラー：domain = ' + domain_name +
+                         ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
+            elif not spider.name in crawler_controller_recode:
+                sys.exit('引数エラー：spider.name = ' + str(spider.name) +
                          ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
         else:
             sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')

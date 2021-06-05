@@ -29,20 +29,15 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        # あとで
-
     def parse_node(self, response: XmlResponse, node: Selector):
         '''
         itertagに指定したタグ単位に順次処理を実施
         '''
-        #print('=== parse_node 3 動くタイミング調査')
         # 直近の数分間の指定がある場合
         until_this_time: datetime = self._crawl_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
-            # self.logger.info(
-            #     '=== sitemap_filter : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
 
         # 前回からの続きの指定がある場合
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
@@ -72,7 +67,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         lastmod = parser.parse(lastmod_str).astimezone(
             self.settings['TIMEZONE'])
 
-        self._entities.append([response.url, loc, lastmod_str])
+        self._entries.append({'loc':loc, 'lastmod':lastmod_str})
         self._request_list.append(loc)
 
         if self._max_lstmod < lastmod_str:

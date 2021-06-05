@@ -6,7 +6,7 @@ import re
 import sys
 import scrapy
 from bs4 import BeautifulSoup as bs4
-import copy
+from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 
 
 class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
@@ -25,9 +25,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _crawl_next_info: dict = {}
-    # 各カテゴリー別に前回取得済みのurls情報を保存
-    _last_time_urls: dict = {}
+    _next_crawl_info: dict = {}
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -39,9 +37,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         if not 'category_urls' in kwargs:
             sys.exit('引数エラー：当スパイダー(' + self.name +
                      ')の場合、category_urlsは必須です。')
-
-        # 前回のクロール情報を次回向けへ引き継ぎ
-        self._crawl_next_info = self._crawler_controller_recode
 
     def start_requests(self):
         '''
@@ -64,6 +59,9 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
+        # 各カテゴリー別に前回取得済みのurls情報を保存
+        last_time_urls: list = []
+
         # ループ条件
         # 無制限にクロールしないよう、標準設定を3ページ目までとする。
         pages: dict = self.pages_setting(1, 3)
@@ -89,8 +87,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # 各カテゴリーの最初のページ、and、前回からの続きの指定がある場合
         # 前回のまでのクロール情報からurlsを各カテゴリー別に保存する。
         if response.url in self.start_urls and 'continued' in self.kwargs_save:
-            self._last_time_urls[url_header] = copy.deepcopy(
-                self._crawl_next_info[self.name][url_header]['urls'])
+            last_time_urls: list = [
+                _['loc'] for _ in self._next_crawl_info[self.name][url_header]['urls']]
 
         end_flg = False
 
@@ -100,15 +98,15 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         anchors: ResultSet = soup.select(
             '.category-left > a,table.table.table-hover tr > td[style] > a')
         for anchor in anchors:
-            url: str = 'https://www.epochtimes.jp/p' + anchor.get('href')
-            urls_list.append(url)
+            full_path: str = 'https://www.epochtimes.jp/p' + anchor.get('href')
+            urls_list.append({'loc': full_path, 'lastmod': ''})
             # 前回からの続きの指定がある場合
             if 'continued' in self.kwargs_save:
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
-                if url in self._last_time_urls[url_header]:
-                    self._last_time_urls[url_header].remove(url)
+                if full_path in last_time_urls:
+                    last_time_urls.remove(full_path)
                 # 前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-                if len(self._last_time_urls[url_header]) == 0:
+                if len(last_time_urls) == 0:
                     self.logger.info(
                         '=== parse_start_response 前回の続きまで再取得完了 (%s)', response.url)
                     end_flg = True
@@ -117,7 +115,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         self.logger.info(
             '=== parse_start_response リンク件数 = %s', len(urls_list))
 
-        self.common_prosses(response.url, urls_list)
+        start_request_debug_file_generate(
+            self.name, response.url, urls_list, self.kwargs_save)
 
         # 終了ページを超えたら終了する。
         if now_page + 1 > end_page:
@@ -127,7 +126,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # ・1ページ目の10件をcrawler_controllerへ保存
         # ・Keyとなるurlには、http〜各カテゴリー(url_header)までの一部とする。
         if response.url in self.start_urls:
-            self._crawl_next_info[self.name][url_header] = {
+            self._next_crawl_info[self.name][url_header] = {
                 'urls': urls_list[0:10],
                 'crawl_start_time': self._crawl_start_time_iso,
             }
@@ -142,4 +141,4 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         # リストに溜めたurlをリクエストへ登録する。
         for url in urls_list:
-            yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
+            yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news)

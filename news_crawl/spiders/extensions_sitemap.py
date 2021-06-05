@@ -1,24 +1,24 @@
-from typing import Any
-from scrapy.spiders import SitemapSpider
-from datetime import datetime
 import pickle
-import sys
 import re
-import os
+from typing import Any
+from datetime import datetime, timedelta
+from dateutil import parser
+from scrapy.spiders import SitemapSpider
+from scrapy.http import Response
+from scrapy.utils.sitemap import Sitemap
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
-from datetime import datetime, timedelta
-from dateutil import parser
 from news_crawl.settings import TIMEZONE
 from news_crawl.spiders.function.argument_check import argument_check
-from scrapy.utils.sitemap import Sitemap
+from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
+from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
     '''
     SitemapSpiderの機能を拡張したクラス。
-    Override → __init__(),parse(),closed()
     (前提)
     name, allowed_domains, sitemap_urls, _domain_name, spider_versionの値は当クラスを継承するクラスで設定すること。
     sitemap_filter()メソッドのオーバーライドも継承先のクラスで行うこと。
@@ -34,6 +34,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _extensions_sitemap_version: float = 1.0         # 当クラスのバージョン
 
     # 引数の値保存
+    kwargs_save: dict
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     _crawler_controller_recode: Any     # crawler_controllerコレクションから取得した対象ドメインのレコード
@@ -42,15 +43,13 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _crawl_start_time_iso: str          # Scrapy起動時点の基準となる時間(ISOフォーマットの文字列)
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
+    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
+    _next_crawl_info: dict = {name: {}, }
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _sitemap_next_crawl_info: dict = {name: {}, }
     # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
     # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
-    _custom_url_flg:bool = False
-    # 取得した引数を保存
-    kwargs_save: dict
+    _custom_url_flg: bool = False
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -65,11 +64,18 @@ class ExtensionsSitemapSpider(SitemapSpider):
             {'domain': self._domain_name})
         self.logger.info(
             '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
+        # 前回のクロール情報を次回向けの初期値とする。
+        self._next_crawl_info: dict = {self.name: {}, }
+        if not self._crawler_controller_recode == None:
+            if self.name in self._crawler_controller_recode:
+                self._next_crawl_info[self.name] = self._crawler_controller_recode[self.name]
 
         # 引数保存・チェック
         self.kwargs_save: dict = kwargs
         argument_check(
             self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
+
+        start_request_debug_file_init(self, self.kwargs_save)
 
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
@@ -84,9 +90,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         サイトマップから取得したurlへrequestを行う前に条件で除外することができる。
         対象のurlの場合、”yield entry”で返すと親クラス側でrequestされる。
         '''
+        sitemap_url = self.sitemap_urls[self._sitemap_urls_count]
+
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
-        self.sitemap_entries_debug_file_generate(
-            entries, self.sitemap_urls[self._sitemap_urls_count])
+        start_request_debug_file_generate(
+            self.name, sitemap_url, entries, self.kwargs_save)
 
         # 直近の数分間の指定がある場合
         until_this_time: datetime = self._crawl_start_time
@@ -99,7 +107,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         # urlに含まれる日付に指定がある場合
         _url_term_days_list: list = []
         if 'url_term_days' in self.kwargs_save:   #
-            _url_term_days_list = self.term_days_Calculation(
+            _url_term_days_list = term_days_Calculation(
                 self._crawl_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
             self.logger.info(
                 '=== sitemap_filter : url_term_daysより計算した日付 %s', ', '.join(_url_term_days_list))
@@ -108,7 +116,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
-                self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_lastmod'])
+                self._crawler_controller_recode[self.name][sitemap_url]['latest_lastmod'])
 
         # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
         _max_lstmod: str = ''
@@ -118,7 +126,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             '''
             引数に絞り込み指定がある場合、その条件を満たす場合のみ対象とする。
             '''
-            _entry:dict
+            _entry: dict
 
             if _max_lstmod < _entry['lastmod']:
                 _max_lstmod = _entry['lastmod']
@@ -143,7 +151,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if _date_lastmod < _last_time:
                     _crwal_flg = False
                 elif _date_lastmod == _last_time \
-                        and self._crawler_controller_recode[self.name][self.sitemap_urls[self._sitemap_urls_count]]['latest_url']:
+                        and self._crawler_controller_recode[self.name][sitemap_url]['latest_url']:
                     _crwal_flg = False
 
             if _crwal_flg:
@@ -153,40 +161,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 yield _entry
 
         # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
-        self._sitemap_next_crawl_info[self.name][self.sitemap_urls[self._sitemap_urls_count]] = {
+        self._next_crawl_info[self.name][sitemap_url] = {
             'latest_lastmod': _max_lstmod,
             'latest_url': _max_url,
             'crawl_start_time': self._crawl_start_time_iso,
         }
-
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 
-    def sitemap_entries_debug_file_generate(self, entries, sitemap_url: str):
-        ''' (拡張メソッド)
-        デバックモードが指定された場合、entriesと元となったsitemapのurlをdebug_entries.txtへ出力する。
-        '''
-        if 'debug' in self.kwargs_save:         # sitemap調査用。debugモードの場合のみ。
-            path: str = os.path.join(
-                'debug', 'start_urls(' + self.name + ').txt')
-            with open(path, 'a') as _:
-                for _entry in entries:
-                    _.write(sitemap_url + ',' +
-                            _entry['lastmod'] + ',' + _entry['loc'] + '\n')
-
-    def term_days_Calculation(self, crawl_start_time: datetime, term_days: int, date_pattern: str) -> list:
-        ''' (拡張メソッド)
-        クロール開始時刻(crawl_start_time)を起点に、期間(term_days)分の日付リスト(文字列)を返す。
-        日付の形式(date_pattern)には、datetime.strftimeのパターンを指定する。
-        '''
-        return [(crawl_start_time - timedelta(days=i)).strftime(date_pattern) for i in range(term_days)]
-
-    def _custom_url(self,_entry:dict) -> str:
-        ''' (拡張メソッド)
-        sitemapのurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
-        '''
-        return _entry['url']
-
-    def parse(self, response):
+    def parse(self, response: Response):
         '''
         取得したレスポンスよりDBへ書き込み
         '''
@@ -205,18 +187,31 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         spider終了時、次回クロール向けの情報をcrawler_controllerへ記録する。
         '''
-        self.logger.info('=== Spider closed: %s', self.name)
         crawler_controller = CrawlerControllerModel(self.mongo)
+        self._crawler_controller_recode = crawler_controller.find_one(
+            {'domain': self._domain_name})
+
+        if self._crawler_controller_recode == None:  # ドメインに対して初クロールの場合
+            self._crawler_controller_recode = {
+                'domain': self._domain_name,
+                self.name: self._next_crawl_info[self.name]
+            }
+        else:
+            self._crawler_controller_recode[self.name] = self._next_crawl_info[self.name]
+
         crawler_controller.update(
             {'domain': self._domain_name},
-            {'domain': self._domain_name,
-             self.name: self._sitemap_next_crawl_info[self.name],
-             },
+            self._crawler_controller_recode,
         )
 
-        _ = crawler_controller.find_one(
-            {'domain': self._domain_name})
         self.logger.info(
-            '=== closed : crawler_controllerに次回情報を保存 \n %s', _)
+            '=== closed : crawler_controllerに次回情報を保存 \n %s', self._crawler_controller_recode)
 
         self.mongo.close()
+        self.logger.info('=== Spider closed: %s', self.name)
+
+    def _custom_url(self, url: dict) -> str:
+        ''' (拡張メソッド)
+        requestしたいurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
+        '''
+        return url['url']
