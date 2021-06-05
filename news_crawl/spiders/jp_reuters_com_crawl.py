@@ -10,9 +10,11 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 
-class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
-    name: str = 'jp_reuters_com_crawl_type2'
+
+class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
+    name: str = 'jp_reuters_com_crawl'
     allowed_domains: list = ['jp.reuters.com']
     start_urls: list = [
         # 'https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10'  # 最新ニュース
@@ -20,11 +22,6 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
     ]
     _domain_name: str = 'jp_reuters_com'        # 各種処理で使用するドメイン名の一元管理
     _spider_version: float = 1.0
-
-    # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
-    _crawl_urls_count: int = 0
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _crawl_next_info: dict = {name: {}, }
 
     rules = (
         Rule(LinkExtractor(
@@ -36,9 +33,10 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         start_urlsを使わずに直接リクエストを送る。
         '''
         # 開始ページからURLを生成
-        pages:dict = self.pages_setting(1,5)
+        pages: dict = self.pages_setting(1, 5)
         start_page: int = pages['start_page']
-        url='https://jp.reuters.com/news/archive?view=page&page=' + str(start_page) + '&pageSize=10'
+        url = 'https://jp.reuters.com/news/archive?view=page&page=' + \
+            str(start_page) + '&pageSize=10'
 
         self.start_urls.append(url)
 
@@ -54,25 +52,27 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
         # ループ条件
         # 1.現在のページ数は、5ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
-
-        pages:dict = self.pages_setting(1,5)
+        pages: dict = self.pages_setting(1, 5)
         start_page: int = pages['start_page']
         end_page: int = pages['end_page']
 
         driver: WebDriver = response.request.meta['driver']
         urls_list: list = []
 
+        url_header = str(response.url).split('?')[0]
+
         # 前回からの続きの指定がある場合、前回の１ページ目の１０件のURLを取得する。
-        last_time_urls:list = []
+        last_time_urls: list = []
         if 'continued' in self.kwargs_save:
-            last_time_urls:list = self._crawler_controller_recode[self.name][self.start_urls[self._crawl_urls_count]]['urls']
+            last_time_urls = [
+                _['loc'] for _ in self._next_crawl_info[self.name][url_header]['urls']]
 
         while start_page <= end_page:
             self.logger.info(
                 '=== parse_start_response 現在処理中のURL = %s', driver.current_url)
 
             # クリック対象が読み込み完了していることを確認   例）href="?view=page&amp;page=2&amp;pageSize=10"
-            start_page += 1    #次のページ数
+            start_page += 1  # 次のページ数
             next_page_selecter: str = '.control-nav-next[href$="view=page&page=' + \
                 str(start_page) + '&pageSize=10"]'
             WebDriverWait(driver, 10).until(
@@ -86,7 +86,8 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
             for link in links:
                 link: WebElement
                 url: str = urllib.parse.unquote(link.get_attribute("href"))
-                urls_list.append(url)
+
+                urls_list.append({'loc': url, 'lastmod': ''})
 
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
                 if url in last_time_urls:
@@ -100,18 +101,18 @@ class JpReutersComCrawlType2Spider(ExtensionsCrawlSpider):
                     break
 
             # 次のページを読み込む
-            elem:WebElement = driver.find_element_by_css_selector('.control-nav-next')
+            elem: WebElement = driver.find_element_by_css_selector(
+                '.control-nav-next')
             elem.click()
 
         # リストに溜めたurlをリクエストへ登録する。
-        for url in urls_list:
-            yield scrapy.Request(response.urljoin(url), callback=self.parse_news)
+        for _ in urls_list:
+            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news)
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        self._crawl_next_info[self.name][self.start_urls[self._crawl_urls_count]] = {
+        self._next_crawl_info[self.name][url_header] = {
             'urls': urls_list[0:10],
             'crawl_start_time': self._crawl_start_time_iso,
         }
 
-        self.common_prosses(self.start_urls[self._crawl_urls_count], urls_list)
-
-        self._crawl_urls_count += 1
+        start_request_debug_file_generate(
+            self.name, response.url, urls_list, self.kwargs_save)

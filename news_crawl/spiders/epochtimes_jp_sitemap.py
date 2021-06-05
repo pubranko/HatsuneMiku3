@@ -23,8 +23,6 @@ class EpochtimesJpSpider(ExtensionsSitemapSpider):
 
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _sitemap_next_crawl_info: dict = {name: {}, }
     # 大紀元のsitemapに記載されているurlは、リダイレクト前のurl。
     # リダイレクト後のurlへ変換してクロールするようカスタマイズ。
     _custom_url_flg:bool = True

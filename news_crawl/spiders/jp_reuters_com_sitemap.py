@@ -1,10 +1,11 @@
 import sys
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
 from datetime import timedelta
+from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
 
 
 class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
-    name:str = 'jp_reuters_com_sitemap'
+    name: str = 'jp_reuters_com_sitemap'
     allowed_domains = ['jp.reuters.com']
     sitemap_urls: list = []
     _domain_name: str = 'jp_reuters_com'        # 各種処理で使用するドメイン名の一元管理
@@ -29,14 +30,12 @@ class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
         # 以下のようなurlを生成する。
         #     https://jp.reuters.com/sitemap_20210505-20210506.xml,
         #     https://jp.reuters.com/sitemap_20210504-20210505.xml
-
-        _sitemap_term_days_list_start = self.term_days_Calculation(
+        _sitemap_term_days_list_start = term_days_Calculation(
             self._crawl_start_time - timedelta(days=1), int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
-        _sitemap_term_days_list_end = self.term_days_Calculation(
+        _sitemap_term_days_list_end = term_days_Calculation(
             self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
 
         self.sitemap_urls = [
-            #'https://jp.reuters.com/sitemap_index.xml']
             'https://jp.reuters.com/sitemap_%s-%s.xml' % (s, e) for s, e in zip(_sitemap_term_days_list_start, _sitemap_term_days_list_end)]
 
         self.logger.info('=== __init__ sitemap_urls 生成完了: %s',

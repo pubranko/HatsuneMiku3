@@ -1,5 +1,6 @@
 import sys
 from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
+from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
 
 
 class KyodoCoJpSitemapSpider(ExtensionsSitemapSpider):
@@ -13,7 +14,7 @@ class KyodoCoJpSitemapSpider(ExtensionsSitemapSpider):
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _sitemap_next_crawl_info: dict = {name: {}, }
+    _next_crawl_info: dict = {name: {}, }
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -30,8 +31,9 @@ class KyodoCoJpSitemapSpider(ExtensionsSitemapSpider):
         #     'https://www.kyodo.co.jp/sitemap-pt-post-2021-05.xml',
         #     'https://www.kyodo.co.jp/sitemap-pt-post-2021-04.xml',
 
-        _sitemap_term_days_list = self.term_days_Calculation(
+        _sitemap_term_days_list = term_days_Calculation(
             self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y-%m')
+
         self.sitemap_urls = [
             'https://www.kyodo.co.jp/sitemap-pt-post-%s.xml' % (i) for i in _sitemap_term_days_list]
         # ※重複した同月のURLは自動的にScrapyによって除去される。
