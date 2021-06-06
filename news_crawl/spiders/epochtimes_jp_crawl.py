@@ -72,7 +72,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         soup = bs4(response.text, 'html.parser')
 
         self.logger.info(
-            '=== parse_start_response 現在処理中のURL = %s', response.url)
+            '=== parse_start_response 現在解析中のURL = %s', response.url)
         # 現在の処理中のurlを３分割。（ヘッダー、ページ、フッター）
         pattern: Pattern = re.compile(
             r'https://www.epochtimes.jp/category/[0-9]{3}/')
@@ -128,7 +128,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         if response.url in self.start_urls:
             self._next_crawl_info[self.name][url_header] = {
                 'urls': urls_list[0:10],
-                'crawl_start_time': self._crawl_start_time_iso,
+                'crawl_start_time': self._crawl_start_time.isoformat()
             }
 
         # 続きがある場合、次のページを読み込む

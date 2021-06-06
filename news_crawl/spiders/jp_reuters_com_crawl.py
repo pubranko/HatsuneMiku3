@@ -69,7 +69,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
         while start_page <= end_page:
             self.logger.info(
-                '=== parse_start_response 現在処理中のURL = %s', driver.current_url)
+                '=== parse_start_response 現在解析中のURL = %s', driver.current_url)
 
             # クリック対象が読み込み完了していることを確認   例）href="?view=page&amp;page=2&amp;pageSize=10"
             start_page += 1  # 次のページ数
@@ -83,10 +83,12 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             # 現在のページ内の記事のリンクをリストへ保存
             links: list = driver.find_elements_by_css_selector(
                 '.story-content a')
+            self.logger.info(
+                '=== parse_start_response リンク件数 = %s', len(links))
+
             for link in links:
                 link: WebElement
                 url: str = urllib.parse.unquote(link.get_attribute("href"))
-
                 urls_list.append({'loc': url, 'lastmod': ''})
 
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
@@ -111,7 +113,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
         self._next_crawl_info[self.name][url_header] = {
             'urls': urls_list[0:10],
-            'crawl_start_time': self._crawl_start_time_iso,
+            'crawl_start_time': self._crawl_start_time.isoformat()
         }
 
         start_request_debug_file_generate(
