@@ -1,5 +1,6 @@
 import pickle
 import re
+import scrapy
 from typing import Any
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -14,7 +15,14 @@ from news_crawl.spiders.function.argument_check import argument_check
 from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
+from twisted.internet.error import TimeoutError, TCPTimedOutError
+from twisted.python.failure import Failure
 
+import smtplib
+from email.mime.text import MIMEText
+import ssl
 
 class ExtensionsSitemapSpider(SitemapSpider):
     '''
@@ -40,7 +48,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _crawler_controller_recode: Any     # crawler_controllerコレクションから取得した対象ドメインのレコード
     # スパイダーの挙動制御関連、固有の情報など
     _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
-    _crawl_start_time_iso: str          # Scrapy起動時点の基準となる時間(ISOフォーマットの文字列)
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
@@ -80,7 +87,52 @@ class ExtensionsSitemapSpider(SitemapSpider):
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
-        self._crawl_start_time_iso = self._crawl_start_time.isoformat()
+
+    def start_requests(self):
+        for url in self.sitemap_urls:
+            yield scrapy.Request(
+                url, callback=self._parse_sitemap, errback=self.errback_handle, dont_filter=True
+            )
+
+    def errback_handle(self, failure):
+        self.logger.error(
+            '=== start_requestでエラー発生 ', )
+
+        if failure.check(HttpError):
+            response = failure.value.response
+            self.logger.error('ErrorType : %s', failure.type)
+            self.logger.error('HttpError on %s', response.url)
+            self.logger.error('HttpError on %s', response.status)
+
+            # s = smtplib.SMTP('localhost')
+            # s.sendmail('test@test.com',['メールアドレス'],'test!')
+            # s.close()
+            # SMTP サーバー名: smtp-mail.outlook.com
+            # SMTP ポート: 587
+            # SMTP 暗号化方法 STARTTLS
+
+            # server = smtplib.SMTP('smtp-mail.outlook.com',587)
+            # server.login('メールアドレス','password')
+            # server.set_debuglevel(True)
+            # if server.has_extn('STARTTLS'):
+            #     server.starttls()
+
+            # server = smtplib.SMTP_SSL('smtp-mail.outlook.com',587, context=ssl.create_default_context())
+            # # server.sendmail('smtp-mail.outlook.com',587,['メールアドレス'],'test!')
+            # server.close()
+
+        elif failure.check(DNSLookupError):
+            request = failure.request
+            self.logger.error('ErrorType : %s', failure.type)
+            self.logger.error('DNSLookupError on %s', request.url)
+        elif failure.check(TimeoutError, TCPTimedOutError):
+            request = failure.request
+            self.logger.error('ErrorType : %s', failure.type)
+            self.logger.error('TimeoutError on %s', request.url)
+        else:
+            request = failure.request
+            self.logger.error('ErrorType : %s', failure.type)
+            self.logger.error(request.url)
 
     def sitemap_filter(self, entries: Sitemap):
         '''
@@ -164,7 +216,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         self._next_crawl_info[self.name][sitemap_url] = {
             'latest_lastmod': _max_lstmod,
             'latest_url': _max_url,
-            'crawl_start_time': self._crawl_start_time_iso,
+            'crawl_start_time': self._crawl_start_time.isoformat(),
         }
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 

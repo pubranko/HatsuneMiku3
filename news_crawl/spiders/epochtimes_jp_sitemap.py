@@ -35,18 +35,3 @@ class EpochtimesJpSpider(ExtensionsSitemapSpider):
         '''
         pattern:Pattern = re.compile('https://www.epochtimes.jp/')
         return pattern.sub('https://www.epochtimes.jp/p/',_entry['loc'])
-
-    def parse(self, response: HtmlResponse):
-        '''
-        取得したレスポンスよりDBへ書き込み
-        '''
-        _info = self.name + ':' + str(self.spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
-
-        yield NewsCrawlItem(
-            url=response.url,
-            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-            response_headers=pickle.dumps(response.headers),
-            response_body=pickle.dumps(response.body),
-            spider_version_info=_info
-        )

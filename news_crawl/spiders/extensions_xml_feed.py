@@ -37,7 +37,6 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
     _crawler_controller_recode: Any     # crawler_controllerコレクションから取得した対象ドメインのレコード
     # スパイダーの挙動制御関連、固有の情報など
     _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
-    _crawl_start_time_iso: str          # Scrapy起動時点の基準となる時間(ISOフォーマットの文字列)
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
@@ -84,7 +83,6 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
-        self._crawl_start_time_iso = self._crawl_start_time.isoformat()
 
     def parse_nodes(self, response: XmlResponse, nodes):
         """(オーバーライド)
@@ -109,7 +107,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         self._next_crawl_info[self.name][response.url] = {
             'latest_lastmod': self._max_lstmod,
             'latest_url': self._max_url,
-            'crawl_start_time': self._crawl_start_time_iso,
+            'crawl_start_time': self._crawl_start_time.isoformat()
         }
 
     def parse_news(self, response: Response):
