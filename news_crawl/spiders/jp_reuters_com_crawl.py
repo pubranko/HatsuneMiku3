@@ -43,6 +43,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         yield SeleniumRequest(
             url=url,
             callback=self.parse_start_response,
+            errback=self.errback_handle,
         )
 
     def parse_start_response(self, response: HtmlResponse):
