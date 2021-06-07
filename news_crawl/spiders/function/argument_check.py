@@ -59,6 +59,12 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
             sys.exit(
                 '引数エラー：category_urlsは配列形式[Any,,,]で指定してください。（例）[100,108] （値 = ' + kwargs['category_urls'] +')')
 
+    def __error_notice() -> None:
+        if kwargs['error_notice'] == 'Off':
+            pass
+        else:
+            sys.exit('引数エラー：error_noticeに使用できるのは、"Off"のみです。')
+
     # 項目関連チェック
     def __lastmod_recent_time_and_continued() -> None:
         sys.exit('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
@@ -78,6 +84,8 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
         __pages_check()
     if 'category_urls' in kwargs:
         __category_urls()
+    if 'error_notice' in kwargs:
+        __error_notice()
 
     ### 項目関連チェック ###
     if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:

@@ -13,6 +13,7 @@ from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.settings import TIMEZONE
 from news_crawl.spiders.function.environ_check import environ_check
 from news_crawl.spiders.function.argument_check import argument_check
+from news_crawl.spiders.function.layout_change_notice import layout_change_notice
 from news_crawl.spiders.function.mail_send import mail_send
 from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
@@ -126,7 +127,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         else:
             pass
 
-        mail_send(title, msg)
+        mail_send(self, title, msg, self.kwargs_save)
 
     def sitemap_filter(self, entries: Sitemap):
         '''
@@ -261,3 +262,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
         requestしたいurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
         '''
         return url['url']
+
+    def layout_change_notice(self,response:Response) -> None:
+        layout_change_notice(self,response)
