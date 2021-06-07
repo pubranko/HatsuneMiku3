@@ -1,4 +1,5 @@
 import pickle
+import scrapy
 from typing import Any
 from datetime import datetime
 from scrapy.spiders import CrawlSpider
@@ -7,8 +8,13 @@ from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.settings import TIMEZONE
+from news_crawl.spiders.function.environ_check import environ_check
 from news_crawl.spiders.function.argument_check import argument_check
+from news_crawl.spiders.function.mail_send import mail_send
 from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
+from twisted.internet.error import TimeoutError, TCPTimedOutError
 
 
 class ExtensionsCrawlSpider(CrawlSpider):
@@ -44,6 +50,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         親クラスの__init__処理後に追加で初期処理を行う。
         '''
         super().__init__(*args, **kwargs)
+        # 必要な環境変数チェック
+        environ_check()
         # MongoDBオープン
         self.mongo = MongoModel()
         # 前回のドメイン別のクロール結果を取得
@@ -68,6 +76,46 @@ class ExtensionsCrawlSpider(CrawlSpider):
         # クロール開始時間
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
+
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url, callback=self._parse, errback=self.errback_handle, #dont_filter=True
+            )
+
+    def errback_handle(self, failure):
+        self.logger.error(
+            '=== start_requestでエラー発生 ', )
+        request = failure.request
+        response = failure.value.response
+        self.logger.error('ErrorType : %s', failure.type)
+        self.logger.error('request_url : %s', request.url)
+
+        title: str = '(error)スパイダー('+self.name+')'
+        msg: str = '\n'.join([
+            'スパイダー名 : ' + self.name,
+            'type : ' + str(failure.type),
+            'request_url : ' + str(request.url),
+        ])
+
+        if failure.check(HttpError):
+            self.logger.error('response_url : %s', response.url)
+            self.logger.error('response_status : %s', response.status)
+
+            msg: str = '\n'.join([
+                msg,
+                'response_url : ' + str(response.url),
+                'response_status : ' + str(response.status),
+            ])
+
+        elif failure.check(DNSLookupError):
+            pass
+        elif failure.check(TimeoutError, TCPTimedOutError):
+            pass
+        else:
+            pass
+
+        mail_send(title, msg)
 
     def parse_news(self, response: Response):
         ''' (拡張メソッド)

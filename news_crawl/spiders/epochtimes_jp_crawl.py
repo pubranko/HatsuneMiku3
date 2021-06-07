@@ -53,7 +53,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         for url in urls:
             self.start_urls.append(url)
-            yield scrapy.Request(url, self.parse_start_response)
+            yield scrapy.Request(url, self.parse_start_response,errback=self.errback_handle,)
 
     def parse_start_response(self, response: HtmlResponse):
         ''' (拡張メソッド)

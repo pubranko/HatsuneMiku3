@@ -11,18 +11,16 @@ from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.settings import TIMEZONE
+from news_crawl.spiders.function.environ_check import environ_check
 from news_crawl.spiders.function.argument_check import argument_check
+from news_crawl.spiders.function.mail_send import mail_send
 from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
-from twisted.python.failure import Failure
 
-import smtplib
-from email.mime.text import MIMEText
-import ssl
 
 class ExtensionsSitemapSpider(SitemapSpider):
     '''
@@ -63,6 +61,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         親クラスの__init__処理後に追加で初期処理を行う。
         '''
         super().__init__(*args, **kwargs)
+        # 必要な環境変数チェック
+        environ_check()
         # MongoDBオープン
         self.mongo = MongoModel()
         # 前回のドメイン別のクロール結果を取得
@@ -91,48 +91,42 @@ class ExtensionsSitemapSpider(SitemapSpider):
     def start_requests(self):
         for url in self.sitemap_urls:
             yield scrapy.Request(
-                url, callback=self._parse_sitemap, errback=self.errback_handle, dont_filter=True
+                url, callback=self._parse_sitemap, errback=self.errback_handle,  # dont_filter=True
             )
 
     def errback_handle(self, failure):
         self.logger.error(
             '=== start_requestでエラー発生 ', )
+        request = failure.request
+        response = failure.value.response
+        self.logger.error('ErrorType : %s', failure.type)
+        self.logger.error('request_url : %s', request.url)
+
+        title: str = '(error)スパイダー('+self.name+')'
+        msg: str = '\n'.join([
+            'スパイダー名 : ' + self.name,
+            'type : ' + str(failure.type),
+            'request_url : ' + str(request.url),
+        ])
 
         if failure.check(HttpError):
-            response = failure.value.response
-            self.logger.error('ErrorType : %s', failure.type)
-            self.logger.error('HttpError on %s', response.url)
-            self.logger.error('HttpError on %s', response.status)
+            self.logger.error('response_url : %s', response.url)
+            self.logger.error('response_status : %s', response.status)
 
-            # s = smtplib.SMTP('localhost')
-            # s.sendmail('test@test.com',['メールアドレス'],'test!')
-            # s.close()
-            # SMTP サーバー名: smtp-mail.outlook.com
-            # SMTP ポート: 587
-            # SMTP 暗号化方法 STARTTLS
-
-            # server = smtplib.SMTP('smtp-mail.outlook.com',587)
-            # server.login('メールアドレス','password')
-            # server.set_debuglevel(True)
-            # if server.has_extn('STARTTLS'):
-            #     server.starttls()
-
-            # server = smtplib.SMTP_SSL('smtp-mail.outlook.com',587, context=ssl.create_default_context())
-            # # server.sendmail('smtp-mail.outlook.com',587,['メールアドレス'],'test!')
-            # server.close()
+            msg: str = '\n'.join([
+                msg,
+                'response_url : ' + str(response.url),
+                'response_status : ' + str(response.status),
+            ])
 
         elif failure.check(DNSLookupError):
-            request = failure.request
-            self.logger.error('ErrorType : %s', failure.type)
-            self.logger.error('DNSLookupError on %s', request.url)
+            pass
         elif failure.check(TimeoutError, TCPTimedOutError):
-            request = failure.request
-            self.logger.error('ErrorType : %s', failure.type)
-            self.logger.error('TimeoutError on %s', request.url)
+            pass
         else:
-            request = failure.request
-            self.logger.error('ErrorType : %s', failure.type)
-            self.logger.error(request.url)
+            pass
+
+        mail_send(title, msg)
 
     def sitemap_filter(self, entries: Sitemap):
         '''
