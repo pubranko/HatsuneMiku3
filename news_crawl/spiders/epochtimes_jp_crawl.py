@@ -53,7 +53,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         for url in urls:
             self.start_urls.append(url)
-            yield scrapy.Request(url, self.parse_start_response, errback=self.errback_handle,)
+            yield scrapy.Request(url, self.parse_start_response, errback=self.errback_handle)
 
     def parse_start_response(self, response: Response):
         ''' (拡張メソッド)
@@ -96,17 +96,14 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # １件目のアンカーと２件目以降のアンカーを取得。（１ページ目だけ１件目が<table>内に無い）
         # 絶対パスに変換する。その際、リダイレクト先のURLへ直接リンクするよう、ドメイン/pを付与する。
         anchors: ResultSet = soup.select(
-            '.category-left > a,table.table.table-hover tr > td[style] > a')
+            '.category-left > a[href],table.table.table-hover tr > td[style] > a[href]')
         # ページ内リンクは通常30件。それ以外の場合はワーニングメール通知
         if not len(anchors) == 30:
             self.layout_change_notice(response)
             self.logger.warning(
                 '=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( %s 件)', len(anchors))
 
-        warning_flg :bool = False
         for anchor in anchors:
-            if anchor.get('href') == '':    #href属性が取れなかったらワーニング
-                warning_flg = True
             full_path: str = 'https://www.epochtimes.jp/p' + anchor.get('href')
             urls_list.append({'loc': full_path, 'lastmod': ''})
             # 前回からの続きの指定がある場合
@@ -120,11 +117,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                         '=== parse_start_response 前回の続きまで再取得完了 (%s)', response.url)
                     end_flg = True
                     break
-
-        if warning_flg:
-            self.layout_change_notice(response)
-            self.logger.warning(
-                '=== parse_start_response  href属性の取得ができませんでした。確認要。')
 
         self.logger.info(
             '=== parse_start_response リンク件数 = %s', len(urls_list))
@@ -151,8 +143,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             self.logger.info(
                 '=== parse_start_response 次のページのURL = %s', url_next)
 
-            yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response)
+            yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response, errback=self.errback_handle)
 
         # リストに溜めたurlをリクエストへ登録する。
         for url in urls_list:
-            yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news)
+            yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news, errback=self.errback_handle)

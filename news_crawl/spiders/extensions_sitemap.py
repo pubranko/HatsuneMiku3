@@ -5,8 +5,10 @@ from typing import Any
 from datetime import datetime, timedelta
 from dateutil import parser
 from scrapy.spiders import SitemapSpider
+from scrapy.http import Request
 from scrapy.http import Response
-from scrapy.utils.sitemap import Sitemap
+from scrapy.utils.sitemap import Sitemap, sitemap_urls_from_robots
+from scrapy.spiders.sitemap import iterloc
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
@@ -95,11 +97,39 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 url, callback=self._parse_sitemap, errback=self.errback_handle,  # dont_filter=True
             )
 
+    def _parse_sitemap(self, response):
+        '''（仕方なくオーラーライド）
+        Requestにエラーハンドルを追加。
+        '''
+        if response.url.endswith('/robots.txt'):
+            for url in sitemap_urls_from_robots(response.text, base_url=response.url):
+                yield Request(url, callback=self._parse_sitemap, errback=self.errback_handle)
+        else:
+            body = self._get_sitemap_body(response)
+            if body is None:
+                self.logger.warning("Ignoring invalid sitemap: %(response)s",
+                               {'response': response}, extra={'spider': self})
+                return
+
+            s = Sitemap(body)
+            it = self.sitemap_filter(s)
+
+            if s.type == 'sitemapindex':
+                for loc in iterloc(it, self.sitemap_alternate_links):
+                    if any(x.search(loc) for x in self._follow):
+                        yield Request(loc, callback=self._parse_sitemap, errback=self.errback_handle)
+            elif s.type == 'urlset':
+                for loc in iterloc(it, self.sitemap_alternate_links):
+                    for r, c in self._cbs:
+                        if r.search(loc):
+                            yield Request(loc, callback=c, errback=self.errback_handle)
+                            break
+
     def errback_handle(self, failure):
         self.logger.error(
             '=== start_requestでエラー発生 ', )
-        request = failure.request
-        response = failure.value.response
+        request: Request = failure.request
+        response: Response = failure.value.response
         self.logger.error('ErrorType : %s', failure.type)
         self.logger.error('request_url : %s', request.url)
 
@@ -119,7 +149,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 'response_url : ' + str(response.url),
                 'response_status : ' + str(response.status),
             ])
-
         elif failure.check(DNSLookupError):
             pass
         elif failure.check(TimeoutError, TCPTimedOutError):
@@ -263,5 +292,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         return url['url']
 
-    def layout_change_notice(self,response:Response) -> None:
-        layout_change_notice(self,response)
+    def layout_change_notice(self, response: Response) -> None:
+        '''
+        レイアウトの変更が発生した可能性がある場合、メールにて通知する。
+        '''
+        layout_change_notice(self, response)

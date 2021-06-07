@@ -3,6 +3,7 @@ import scrapy
 from typing import Any
 from datetime import datetime
 from scrapy.spiders import CrawlSpider
+from scrapy.http import Request
 from scrapy.http import Response
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
@@ -87,8 +88,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
     def errback_handle(self, failure):
         self.logger.error(
             '=== start_requestでエラー発生 ', )
-        request = failure.request
-        response = failure.value.response
+        request: Request = failure.request
+        response: Response = failure.value.response
         self.logger.error('ErrorType : %s', failure.type)
         self.logger.error('request_url : %s', request.url)
 
@@ -108,7 +109,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
                 'response_url : ' + str(response.url),
                 'response_status : ' + str(response.status),
             ])
-
         elif failure.check(DNSLookupError):
             pass
         elif failure.check(TimeoutError, TCPTimedOutError):
@@ -177,5 +177,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         else:
             return{'start_page': start_page, 'end_page': end_page}
 
-    def layout_change_notice(self,response:Response) -> None:
-        layout_change_notice(self,response)
+    def layout_change_notice(self, response: Response) -> None:
+        '''
+        レイアウトの変更が発生した可能性がある場合、メールにて通知する。
+        '''
+        layout_change_notice(self, response)

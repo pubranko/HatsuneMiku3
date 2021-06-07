@@ -83,7 +83,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
             # 現在のページ内の記事のリンクをリストへ保存
             links: list = driver.find_elements_by_css_selector(
-                '.story-content a')
+                '.story-content a[href]')
             self.logger.info(
                 '=== parse_start_response リンク件数 = %s', len(links))
             # ページ内リンクは通常10件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
@@ -92,23 +92,14 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                 self.logger.warning(
                     '=== parse_start_response 1ページ内で取得できた件数が想定の10件と異なる。確認要。 ( %s 件)', len(links))
 
-            warning_flg :bool = False
             for link in links:
                 link: WebElement
                 url: str = urllib.parse.unquote(link.get_attribute("href"))
-                if url == '':
-                    warning_flg = True
-
                 urls_list.append({'loc': url, 'lastmod': ''})
 
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
                 if url in last_time_urls:
                     last_time_urls.remove(url)
-
-            if warning_flg:
-                self.layout_change_notice(response)
-                self.logger.warning(
-                    '=== parse_start_response  href属性の取得ができませんでした。確認要。')
 
             # 前回からの続きの指定がある場合、前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if 'continued' in self.kwargs_save:
@@ -124,7 +115,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
         # リストに溜めたurlをリクエストへ登録する。
         for _ in urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news)
+            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
         self._next_crawl_info[self.name][url_header] = {
             'urls': urls_list[0:10],
