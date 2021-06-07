@@ -10,6 +10,7 @@ from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.settings import TIMEZONE
 from news_crawl.spiders.function.environ_check import environ_check
 from news_crawl.spiders.function.argument_check import argument_check
+from news_crawl.spiders.function.layout_change_notice import layout_change_notice
 from news_crawl.spiders.function.mail_send import mail_send
 from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -80,7 +81,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(
-                url, callback=self._parse, errback=self.errback_handle, #dont_filter=True
+                url, callback=self._parse, errback=self.errback_handle,  # dont_filter=True
             )
 
     def errback_handle(self, failure):
@@ -115,7 +116,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         else:
             pass
 
-        mail_send(title, msg)
+        mail_send(self, title, msg, self.kwargs_save)
 
     def parse_news(self, response: Response):
         ''' (拡張メソッド)
@@ -175,3 +176,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
             return{'start_page': pages[0], 'end_page': pages[1]}
         else:
             return{'start_page': start_page, 'end_page': end_page}
+
+    def layout_change_notice(self,response:Response) -> None:
+        layout_change_notice(self,response)
