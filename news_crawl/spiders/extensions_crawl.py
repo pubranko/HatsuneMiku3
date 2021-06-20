@@ -17,7 +17,8 @@ from news_crawl.spiders.function.start_request_debug_file_init import start_requ
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
-
+from bs4 import BeautifulSoup as bs4
+from bs4.element import ResultSet
 
 class ExtensionsCrawlSpider(CrawlSpider):
     '''
@@ -86,6 +87,9 @@ class ExtensionsCrawlSpider(CrawlSpider):
             )
 
     def errback_handle(self, failure):
+        '''
+        リクエストでエラーがあった場合、エラー情報をログに出力、メールによる通知を行う。
+        '''
         self.logger.error(
             '=== start_requestでエラー発生 ', )
         request: Request = failure.request
@@ -122,6 +126,12 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
+        pagination: ResultSet = self.pagination_check(response)
+        if len(pagination) > 0:
+            self.logger.info(
+                '=== parse_news 次のページあり → リクエストに追加 : %s', pagination[0].get('href'))
+            yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news, errback=self.errback_handle)
+
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
 
@@ -132,6 +142,13 @@ class ExtensionsCrawlSpider(CrawlSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info
         )
+
+    def pagination_check(self, response: Response) -> ResultSet:
+        '''(拡張メソッド)
+        次ページがあれば、BeautifulSoupのResultSetで返す。
+        このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
+        '''
+        return ResultSet('','')
 
     def closed(self, spider):
         '''

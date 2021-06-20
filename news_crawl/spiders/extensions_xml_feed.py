@@ -101,6 +101,9 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             )
 
     def errback_handle(self, failure):
+        '''
+        リクエストでエラーがあった場合、エラー情報をログに出力、メールによる通知を行う。
+        '''
         self.logger.error(
             '=== start_requestでエラー発生 ', )
         request: Request = failure.request
