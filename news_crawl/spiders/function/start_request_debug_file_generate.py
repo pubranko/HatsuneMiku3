@@ -12,5 +12,5 @@ def start_request_debug_file_generate(spider_name: str, start_url: str, entries:
         with open(path, 'a') as file:
             for entry in entries:
                 entry: dict
-                file.write(start_url + ',' + entry['loc'] +
-                           ',' + entry['lastmod'] + '\n')
+                file.write(start_url + ',' + str(entry['loc']) +
+                           ',' + str(entry['lastmod']) + '\n')

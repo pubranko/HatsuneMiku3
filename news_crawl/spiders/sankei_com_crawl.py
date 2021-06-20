@@ -1,24 +1,22 @@
+from datetime import datetime, timedelta
+import time
 from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import Rule
 from scrapy.http import Response
 from scrapy_selenium import SeleniumRequest
 from dateutil import parser
-import urllib.parse
 import scrapy
 import sys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
+from bs4 import BeautifulSoup as bs4
+from bs4.element import ResultSet
 
 
 class SankeiComCrawlSpider(ExtensionsCrawlSpider):
-    name = 'sankei_com_crawl'
-    allowed_domains = ['sankei.com']
-    start_urls = [
+    name: str = 'sankei_com_crawl'
+    allowed_domains: list = ['sankei.com']
+    start_urls: list = [
         # 'http://sankei.com/',
         # 'https://www.sankei.com/flash/',  # 速報
         # 'https://www.sankei.com/affairs/',  # 社会
@@ -80,71 +78,125 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         # ループ条件
         # 1.現在のページ数は、3ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
-        # ※続きボタン押下してajaxで追加される20件を次のページのデータとして取り扱う。
-        pages: dict = self.pages_setting(1, 2)
+        # ※続きボタン押下してajaxでデータを取得した状態を次のページとして取り扱う。
+        pages: dict = self.pages_setting(1, 3)
         start_page: int = pages['start_page']
         end_page: int = pages['end_page']
 
         driver: WebDriver = response.request.meta['driver']
-        links: list = []  # 最終的にリクエストを行いたいURLのリスト
         urls_list: list = []
 
-        # 前回からの続きの指定がある場合、前回の１０件のURLを取得する。
-        last_time_urls: list = []
+        # 直近の数分間の指定がある場合
+        until_this_time: datetime = self._crawl_start_time
+        if 'lastmod_recent_time' in self.kwargs_save:
+            until_this_time = until_this_time - \
+                timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
+            self.logger.info(
+                '=== parse_start_response : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
+
+        last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
-            last_time_urls = [
-                _['loc'] for _ in self._next_crawl_info[self.name][response.url]['urls']]
+            last_time = parser.parse(
+                self._crawler_controller_recode[self.name][response.url]['latest_lastmod'])
+        # 処理中のページ内で、最大のlastmodとurlを記録するエリア。とりあえず初期値には約10年前を指定。
+        max_lstmod: datetime = datetime.now().astimezone(
+            self.settings['TIMEZONE']) - timedelta(days=3650)
+        max_url: str = ''
 
         page = start_page
+        next_page_flg = False
+        debug_urls_list = []
         self.logger.info(
             '=== parse_start_response 現在解析中のpage=%s と URL = %s', page, driver.current_url)
         while page <= end_page:  # 条件はあとで考える
 
-            page += 1  # 次のページ数
+            # Javascript実行が終了するまで最大30秒間待つように指定
+            driver.set_script_timeout(30)
 
             elements = driver.find_elements_by_css_selector(
                 '#fusion-app > div > div > section > .story-card-feed .storycard .story-card-flex')
-            print('=== elementsの件数 = ', len(elements))
+            self.logger.info(
+                '=== parse_start_response ページ内リンク件数 = %s', len(elements))
+
+            urls_list = []
+            element: WebElement
             for element in elements:
-                element: WebElement
-                url:str = element.find_element_by_css_selector('h4 a[href]').get_attribute('href')
-                #url_list.append(url.get_attribute('href'))
+                # 要素から、url,title,最終更新時間を取得
+                url: str = element.find_element_by_css_selector(
+                    'h4 a[href]').get_attribute('href')
                 title = element.find_element_by_css_selector('h4 a').text
                 _ = element.find_element_by_css_selector(
                     '.under-headline time')
-                lastmod = _.get_attribute('datetime')
-                lastmod_parse = parser.parse(lastmod).astimezone(
+                lastmod_str: str = _.get_attribute('datetime')
+                lastmod_parse: datetime = parser.parse(lastmod_str).astimezone(
                     self.settings['TIMEZONE'])
-                # ページ内のURLと更新日時をリストに保存する。
-                urls_list.append({'loc': url, 'lastmod': lastmod_parse.isoformat})
-                print('=== ', lastmod_parse, '  ', url, '  ', title)
-                # 前回取得したurlが確認できたら確認済み（削除）にする。
-                if url in last_time_urls:
-                    last_time_urls.remove(url)
+
+                # 最新の記事の時間とurlを記録
+                if max_lstmod < lastmod_parse:
+                    max_lstmod = lastmod_parse
+                    max_url = url
+
+                crwal_flg: bool = True
+
+                if 'lastmod_recent_time' in self.kwargs_save:             # lastmod絞り込み指定あり
+                    if lastmod_parse < until_this_time:
+                        crwal_flg = False
+                        next_page_flg = True
+                if 'continued' in self.kwargs_save:
+                    if lastmod_parse < last_time:
+                        crwal_flg = False
+                        next_page_flg = True
+                    elif lastmod_parse == last_time \
+                            and self._crawler_controller_recode[self.name][response.url]['latest_url']:
+                        crwal_flg = False
+                        next_page_flg = True
+
+                debug_urls_list.append(
+                    {'loc': url, 'lastmod': lastmod_parse.isoformat()})
+                if crwal_flg:
+                    # ページ内のURLと更新日時をリストに保存する。
+                    urls_list.append(
+                        {'loc': url, 'lastmod': lastmod_parse.isoformat()})
+
+                print('=== ', crwal_flg, lastmod_parse, '  ', url, '  ', title,)
 
             self.logger.info(
-                '=== parse_start_response リンク件数 = %s', len(urls_list))
+                '=== parse_start_response クロール対象リンク件数 = %s', len(urls_list))
 
-            # 前回からの続きの指定がある場合、前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-            if 'continued' in self.kwargs_save:
-                if len(last_time_urls) == 0:
-                    self.logger.info(
-                        '=== parse_start_response 前回の続きまで再取得完了 (%s)', driver.current_url)
-                    break
+            # 次のページを読み込む必要がなくなった場合
+            if next_page_flg:
+                self.logger.info(
+                    '=== parse_start_response 指定範囲のリンク取得完了 (%s)', driver.current_url)
+                break
 
             # 次のページを読み込む
             elem: WebElement = driver.find_element_by_css_selector(
                 '.feedPagination')
             elem.click()
+            time.sleep(2)  # クリック後、最低2秒の空きを設ける。
 
-        # # リストに溜めたurlをリクエストへ登録する。
-        # for _ in urls_list:
-        #     yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
-        # # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        # self._next_crawl_info[self.name][response.url] = {
-        #     'urls': urls_list[0:10],
-        #     'crawl_start_time': self._crawl_start_time.isoformat()
-        # }
+            page += 1  # 次のページ数
 
-        # start_request_debug_file_generate(
-        #     self.name, response.url, urls_list, self.kwargs_save)
+        # リストに溜めたurlをリクエストへ登録する。
+        for _ in urls_list:
+            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
+
+        # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
+        self._next_crawl_info[self.name][response.url] = {
+            'latest_lastmod': max_lstmod.isoformat(),
+            'latest_url': max_url,
+            'crawl_start_time': self._crawl_start_time.isoformat()
+        }
+
+        start_request_debug_file_generate(
+            self.name, response.url, debug_urls_list, self.kwargs_save)
+
+    def pagination_check(self, response: Response) -> ResultSet:
+        '''(オーバーライド)
+        次ページがあれば、BeautifulSoupのResultSetで返す。
+        '''
+        soup = bs4(response.text, 'html.parser')
+        pagination: ResultSet = soup.select(
+            '.pagination > .page-list > li:last-child > a[href]')
+
+        return pagination
