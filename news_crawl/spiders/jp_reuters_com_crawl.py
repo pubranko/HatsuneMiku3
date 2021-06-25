@@ -68,14 +68,15 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             last_time_urls = [
                 _['loc'] for _ in self._next_crawl_info[self.name][url_header]['urls']]
 
-        while start_page <= end_page:
+        page:int = start_page
+        while page <= end_page:
             self.logger.info(
                 '=== parse_start_response 現在解析中のURL = %s', driver.current_url)
 
             # クリック対象が読み込み完了していることを確認   例）href="?view=page&amp;page=2&amp;pageSize=10"
-            start_page += 1  # 次のページ数
+            page += 1  # 次のページ数
             next_page_selecter: str = '.control-nav-next[href$="view=page&page=' + \
-                str(start_page) + '&pageSize=10"]'
+                str(page) + '&pageSize=10"]'
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, next_page_selecter))
