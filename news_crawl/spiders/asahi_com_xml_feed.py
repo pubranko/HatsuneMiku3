@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil import parser
 from scrapy.selector.unified import Selector
 from scrapy.http.response.xml import XmlResponse
-from news_crawl.spiders.extensions_xml_feed import ExtensionsXmlFeedSpider
+from news_crawl.spiders.extensions_class.extensions_xml_feed import ExtensionsXmlFeedSpider
 
 
 class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
@@ -43,7 +43,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
-                self._crawler_controller_recode[self.name][response.url]['latest_lastmod'])
+                self._next_crawl_point[response.url]['latest_lastmod'])
 
         # itertagに指定したタグの中身を取得
         node_text: str = node.getall()[0]
@@ -88,7 +88,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
             if _date_lastmod < _last_time:
                 _crwal_flg = False
             elif _date_lastmod == _last_time \
-                    and self._crawler_controller_recode[self.name][response.url]['latest_url']:
+                    and self._next_crawl_point[response.url]['latest_url']:
                 _crwal_flg = False
 
         if _crwal_flg:

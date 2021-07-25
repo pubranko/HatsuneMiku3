@@ -1,5 +1,6 @@
 import pickle
 import re
+import sys
 import scrapy
 from typing import Any
 from datetime import datetime, timedelta
@@ -13,13 +14,14 @@ from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.settings import TIMEZONE
-from news_crawl.spiders.function.environ_check import environ_check
-from news_crawl.spiders.function.argument_check import argument_check
-from news_crawl.spiders.function.layout_change_notice import layout_change_notice
-from news_crawl.spiders.function.mail_send import mail_send
-from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
-from news_crawl.spiders.function.term_days_Calculation import term_days_Calculation
-from news_crawl.spiders.function.start_request_debug_file_init import start_request_debug_file_init
+from news_crawl.spiders.common.environ_check import environ_check
+from news_crawl.spiders.common.argument_check import argument_check
+from news_crawl.spiders.common.layout_change_notice import layout_change_notice
+from news_crawl.spiders.common.mail_send import mail_send
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
+from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
+from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
@@ -46,13 +48,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
     kwargs_save: dict
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
-    _crawler_controller_recode: Any     # crawler_controllerコレクションから取得した対象ドメインのレコード
     # スパイダーの挙動制御関連、固有の情報など
     _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _next_crawl_info: dict = {name: {}, }
+    # 次回クロールポイント情報
+    _next_crawl_point: dict = {}
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
     # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
@@ -64,32 +65,35 @@ class ExtensionsSitemapSpider(SitemapSpider):
         親クラスの__init__処理後に追加で初期処理を行う。
         '''
         super().__init__(*args, **kwargs)
+        # クロール開始時間
+        self._crawl_start_time = datetime.now().astimezone(
+            TIMEZONE)
+
         # 必要な環境変数チェック
         environ_check()
         # MongoDBオープン
         self.mongo = MongoModel()
         # 前回のドメイン別のクロール結果を取得
         _crawler_controller = CrawlerControllerModel(self.mongo)
-        self._crawler_controller_recode = _crawler_controller.find_one(
-            {'domain': self._domain_name})
+        self._next_crawl_point = _crawler_controller.next_crawl_point_get(
+            self._domain_name, self.name)
+
         self.logger.info(
-            '=== __init__ : crawler_controllerにある前回情報 \n %s', self._crawler_controller_recode)
-        # 前回のクロール情報を次回向けの初期値とする。
-        self._next_crawl_info: dict = {self.name: {}, }
-        if not self._crawler_controller_recode == None:
-            if self.name in self._crawler_controller_recode:
-                self._next_crawl_info[self.name] = self._crawler_controller_recode[self.name]
+            '=== __init__ : 今回向けクロールポイント情報 \n %s', self._next_crawl_point)
 
         # 引数保存・チェック
         self.kwargs_save: dict = kwargs
         argument_check(
-            self, self._domain_name, self._crawler_controller_recode, *args, **kwargs)
+            self, self._domain_name, self._next_crawl_point, *args, **kwargs)
+
+        # 同一ドメインへの多重クローリングを防止
+        self.crawling_domain_control = CrawlingDomainDuplicatePrevention()
+        duplicate_check = self.crawling_domain_control.execution(
+            self._domain_name)
+        if not duplicate_check:
+            sys.exit('同一ドメインにクロール中のため中止')
 
         start_request_debug_file_init(self, self.kwargs_save)
-
-        # クロール開始時間
-        self._crawl_start_time = datetime.now().astimezone(
-            TIMEZONE)
 
     def start_requests(self):
         for url in self.sitemap_urls:
@@ -108,7 +112,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             body = self._get_sitemap_body(response)
             if body is None:
                 self.logger.warning("Ignoring invalid sitemap: %(response)s",
-                               {'response': response}, extra={'spider': self})
+                                    {'response': response}, extra={'spider': self})
                 return
 
             s = Sitemap(body)
@@ -195,7 +199,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
-                self._crawler_controller_recode[self.name][sitemap_url]['latest_lastmod'])
+                self._next_crawl_point[sitemap_url]['latest_lastmod'])
 
         # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
         _max_lstmod: str = ''
@@ -230,7 +234,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if _date_lastmod < _last_time:
                     _crwal_flg = False
                 elif _date_lastmod == _last_time \
-                        and self._crawler_controller_recode[self.name][sitemap_url]['latest_url']:
+                        and self._next_crawl_point[sitemap_url]['latest_url']:
                     _crwal_flg = False
 
             if _crwal_flg:
@@ -240,7 +244,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 yield _entry
 
         # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
-        self._next_crawl_info[self.name][sitemap_url] = {
+        self._next_crawl_point[sitemap_url] = {
             'latest_lastmod': _max_lstmod,
             'latest_url': _max_url,
             'crawl_start_time': self._crawl_start_time.isoformat(),
@@ -266,25 +270,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         spider終了時、次回クロール向けの情報をcrawler_controllerへ記録する。
         '''
-        crawler_controller = CrawlerControllerModel(self.mongo)
-        self._crawler_controller_recode = crawler_controller.find_one(
-            {'domain': self._domain_name})
-
-        if self._crawler_controller_recode == None:  # ドメインに対して初クロールの場合
-            self._crawler_controller_recode = {
-                'domain': self._domain_name,
-                self.name: self._next_crawl_info[self.name]
-            }
-        else:
-            self._crawler_controller_recode[self.name] = self._next_crawl_info[self.name]
-
-        crawler_controller.update(
-            {'domain': self._domain_name},
-            self._crawler_controller_recode,
-        )
+        _crawler_controller = CrawlerControllerModel(self.mongo)
+        _crawler_controller.next_crawl_point_update(
+            self._domain_name, self.name, self._next_crawl_point)
 
         self.logger.info(
-            '=== closed : crawler_controllerに次回情報を保存 \n %s', self._crawler_controller_recode)
+            '=== closed : crawler_controllerに次回クロールポイント情報を保存 \n %s', self._next_crawl_point)
 
         self.mongo.close()
         self.logger.info('=== Spider closed: %s', self.name)
