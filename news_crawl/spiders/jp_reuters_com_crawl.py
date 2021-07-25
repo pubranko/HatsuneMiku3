@@ -1,4 +1,4 @@
-from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
+from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
 from scrapy.http import Response
@@ -10,7 +10,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 
 
 class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
@@ -66,7 +66,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         last_time_urls: list = []
         if 'continued' in self.kwargs_save:
             last_time_urls = [
-                _['loc'] for _ in self._next_crawl_info[self.name][url_header]['urls']]
+                _['loc'] for _ in self._next_crawl_point[url_header]['urls']]
 
         page:int = start_page
         while page <= end_page:
@@ -118,7 +118,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         for _ in urls_list:
             yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        self._next_crawl_info[self.name][url_header] = {
+        self._next_crawl_point[url_header] = {
             'urls': urls_list[0:10],
             'crawl_start_time': self._crawl_start_time.isoformat()
         }

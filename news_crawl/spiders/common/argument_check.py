@@ -4,7 +4,7 @@ from typing import Any
 from scrapy.spiders import Spider
 
 
-def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: Any, *args, **kwargs) -> None:
+def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: dict, *args, **kwargs) -> None:
     '''
     各引数が存在したらチェックを行う。
     '''
@@ -33,11 +33,8 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
 
     def __continued_check() -> None:
         if kwargs['continued'] == 'Yes':
-            if crawler_controller_recode == None:
+            if crawler_controller_recode == {}:
                 sys.exit('引数エラー：domain = ' + domain_name +
-                         ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
-            elif not spider.name in crawler_controller_recode:
-                sys.exit('引数エラー：spider.name = ' + str(spider.name) +
                          ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
         else:
             sys.exit('引数エラー：continuedに使用できるのは、"Yes"のみです。')

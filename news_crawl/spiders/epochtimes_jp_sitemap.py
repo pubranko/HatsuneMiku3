@@ -1,5 +1,5 @@
 from typing import Pattern
-from news_crawl.spiders.extensions_sitemap import ExtensionsSitemapSpider
+from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
 from news_crawl.items import NewsCrawlItem
 from datetime import datetime
 import pickle
@@ -7,7 +7,7 @@ from scrapy.http.response.html import HtmlResponse
 import re
 
 
-class EpochtimesJpSpider(ExtensionsSitemapSpider):
+class EpochtimesJpSitemapSpider(ExtensionsSitemapSpider):
     name = 'epochtimes_jp_sitemap'
     allowed_domains = ['epochtimes.jp']
     #start_urls = ['http://epochtimes.jp/']
@@ -21,8 +21,6 @@ class EpochtimesJpSpider(ExtensionsSitemapSpider):
         'DEPTH_STATS_VERBOSE': True,
     }
 
-    # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
-    _sitemap_urls_count: int = 0
     # 大紀元のsitemapに記載されているurlは、リダイレクト前のurl。
     # リダイレクト後のurlへ変換してクロールするようカスタマイズ。
     _custom_url_flg:bool = True

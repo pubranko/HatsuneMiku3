@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import time
-from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
+from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.http import Response
 from scrapy_selenium import SeleniumRequest
 from dateutil import parser
@@ -8,7 +8,7 @@ import scrapy
 import sys
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
 
@@ -38,8 +38,6 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
 
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _next_crawl_info: dict = {}
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -97,7 +95,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             last_time = parser.parse(
-                self._crawler_controller_recode[self.name][response.url]['latest_lastmod'])
+                self._next_crawl_point[response.url]['latest_lastmod'])
         # 処理中のページ内で、最大のlastmodとurlを記録するエリア。とりあえず初期値には約10年前を指定。
         max_lstmod: datetime = datetime.now().astimezone(
             self.settings['TIMEZONE']) - timedelta(days=3650)
@@ -147,7 +145,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
                         crwal_flg = False
                         next_page_flg = True
                     elif lastmod_parse == last_time \
-                            and self._crawler_controller_recode[self.name][response.url]['latest_url']:
+                            and self._next_crawl_point[response.url]['latest_url']:
                         crwal_flg = False
                         next_page_flg = True
 
@@ -173,7 +171,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             elem: WebElement = driver.find_element_by_css_selector(
                 '.feedPagination')
             elem.click()
-            time.sleep(2)  # クリック後、最低2秒の空きを設ける。
+            time.sleep(3)  # クリック後、最低2秒の空きを設ける。
 
             page += 1  # 次のページ数
 
@@ -182,7 +180,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
 
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        self._next_crawl_info[self.name][response.url] = {
+        self._next_crawl_point[response.url] = {
             'latest_lastmod': max_lstmod.isoformat(),
             'latest_url': max_url,
             'crawl_start_time': self._crawl_start_time.isoformat()

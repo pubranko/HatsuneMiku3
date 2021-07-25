@@ -1,4 +1,4 @@
-from news_crawl.spiders.function.mail_send import mail_send
+from news_crawl.spiders.common.mail_send import mail_send
 from scrapy.spiders import Spider
 from scrapy.http import Response
 

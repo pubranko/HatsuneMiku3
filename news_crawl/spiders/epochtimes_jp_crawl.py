@@ -1,12 +1,12 @@
 from typing import Pattern
 from bs4.element import ResultSet
-from news_crawl.spiders.extensions_crawl import ExtensionsCrawlSpider
+from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.http import Response
 import re
 import sys
 import scrapy
 from bs4 import BeautifulSoup as bs4
-from news_crawl.spiders.function.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 
 
 class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
@@ -24,8 +24,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0
-    # crawler_controllerコレクションへ書き込むレコードのdomain以降のレイアウト雛形。※最上位のKeyのdomainはサイトの特性にかかわらず固定とするため。
-    _next_crawl_info: dict = {}
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -55,7 +53,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             self.start_urls.append(url)
             yield scrapy.Request(url, self.parse_start_response, errback=self.errback_handle)
 
-    def parse_start_response(self, response: Response):
+    def parse_start_response(self, response:Response):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
@@ -88,7 +86,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # 前回のまでのクロール情報からurlsを各カテゴリー別に保存する。
         if response.url in self.start_urls and 'continued' in self.kwargs_save:
             last_time_urls: list = [
-                _['loc'] for _ in self._next_crawl_info[self.name][url_header]['urls']]
+                _['loc'] for _ in self._next_crawl_point[url_header]['urls']]
 
         end_flg = False
 
@@ -132,7 +130,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # ・1ページ目の10件をcrawler_controllerへ保存
         # ・Keyとなるurlには、http〜各カテゴリー(url_header)までの一部とする。
         if response.url in self.start_urls:
-            self._next_crawl_info[self.name][url_header] = {
+            self._next_crawl_point[url_header] = {
                 'urls': urls_list[0:10],
                 'crawl_start_time': self._crawl_start_time.isoformat()
             }
