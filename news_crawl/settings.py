@@ -7,6 +7,8 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+from datetime import timedelta, timezone
+from shutil import which
 BOT_NAME = 'news_crawl'
 
 SPIDER_MODULES = ['news_crawl.spiders']
@@ -19,6 +21,7 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
+#ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 # 同時平行処理するリクエストの最大値
@@ -28,7 +31,7 @@ ROBOTSTXT_OBEY = True
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
-DOWNLOAD_DELAY = 4
+DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 # webサイトのドメインごとに、同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
@@ -44,17 +47,17 @@ DOWNLOAD_DELAY = 4
 
 # Override the default request headers:
 # リクエストにデフォルトで含めるヘッダーをdictで指定する。
-#DEFAULT_REQUEST_HEADERS = {
+# DEFAULT_REQUEST_HEADERS = {
 #   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 #   'Accept-Language': 'en',
-#}
+# }
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # スパイダーのミドルウェアを作る場合に使用する。
-#SPIDER_MIDDLEWARES = {
+# SPIDER_MIDDLEWARES = {
 #    'news_crawl.middlewares.NewsCrawlSpiderMiddleware': 543,
-#}
+# }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -66,17 +69,17 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#'<プロジェクト名><ファイル名><クラス名>:優先度
-#EXTENSIONS = {
+# '<プロジェクト名><ファイル名><クラス名>:優先度
+# EXTENSIONS = {
 #    'scrapy.extensions.telnet.TelnetConsole': None,
-#}
+# }
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#アイテムのパイプラインの設定
-#ITEM_PIPELINES = {
+# アイテムのパイプラインの設定
+# ITEM_PIPELINES = {
 #    'news_crawl.pipelines.NewsCrawlPipeline': 300,
-#}
+# }
 ITEM_PIPELINES = {
     'news_crawl.pipelines.MongoPipeline': 300,
 }
@@ -101,7 +104,7 @@ ITEM_PIPELINES = {
 HTTPCACHE_ENABLED = True
 #HTTPCACHE_ENABLED = False
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 300 #3600
+HTTPCACHE_EXPIRATION_SECS = 900  # 3600
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
@@ -117,20 +120,35 @@ HTTPCACHE_DIR = 'httpcache'
 #DEPTH_LIMIT = 2
 #DEPTH_STATS_VERBOSE = True
 
-#何かしら時間による処理を行いたい場合、使用するタイムゾーンを定義する。
+# 何かしら時間による処理を行いたい場合、使用するタイムゾーンを定義する。
 #  例：spider内のsitemap_fillterで、lastmodの時間を絞り込みしたい。引数に与える時間のタイムゾーンには、settingsのTIME_ZONEを使用する。
-from datetime  import timedelta,timezone
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
 #LOGのレベル(CRITICAL > ERROR > WARNING > INFO > DEBUG)
 #LOG_LEVEL = 'INFO'
 LOG_LEVEL = 'DEBUG'
+#LOG_FILE = 'logs/test.log'
+# ロギングを有効にするかどうか。
+LOG_ENABLED = True
+LOG_ENCODING = 'utf-8'
+# ログ・メッセージをフォーマットするための文字列。 利用可能なプレース・ホルダーの全リストについては、 Python logging documentation を参照してください。
+#LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+# 日付/時刻をフォーマットするための文字列、 LOG_FORMAT の %(asctime)s プレース・ホルダーの展開。
+# 利用可能なディレクティブのリストについては、 Python datetime documentation を参照してください。
+#LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
+#LOG_FORMATTER
+# True の場合、処理のすべての標準出力(およびエラー)がログにリダイレクトされます。 たとえば、 print('hello') の場合、Scrapyログに表示されます。
+#LOG_STDOUT = False
+# True の場合、ログにはルート・パスのみが含まれます。 False に設定されている場合、ログ出力を担当するコンポーネントが表示されます
+#LOG_SHORT_NAMES = False
+# LogStats による統計の各ログ出力間の間隔(秒単位)。
+#LOGSTATS_INTERVAL = 60.0
 
-#Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
-from shutil import which
+
+# Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-SELENIUM_DRIVER_ARGUMENTS=['-headless']
+SELENIUM_DRIVER_ARGUMENTS = ['-headless']
 
 
 '''公式よりミドルウェアの優先順
@@ -152,4 +170,3 @@ SELENIUM_DRIVER_ARGUMENTS=['-headless']
     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
 }
 '''
-

@@ -1,6 +1,6 @@
 import pickle
 import re
-import sys
+import os
 import scrapy
 from typing import Any
 from datetime import datetime, timedelta
@@ -10,9 +10,12 @@ from scrapy.http import Request
 from scrapy.http import Response
 from scrapy.utils.sitemap import Sitemap, sitemap_urls_from_robots
 from scrapy.spiders.sitemap import iterloc
+from scrapy.exceptions import CloseSpider
+from scrapy.statscollectors import MemoryStatsCollector
 from news_crawl.items import NewsCrawlItem
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
+from news_crawl.models.crawler_logs_model import CrawlerLogsModel
 from news_crawl.settings import TIMEZONE
 from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
@@ -25,6 +28,8 @@ from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDo
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError, TCPTimedOutError
+
+import logging
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -39,7 +44,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     sitemap_urls: list = ['https://www.sample.com/sitemap.xml', ]   # 継承先で上書き要。
     custom_settings: dict = {
         'DEPTH_LIMIT': 2,
-        'DEPTH_STATS_VERBOSE': True
+        'DEPTH_STATS_VERBOSE': True,
     }
     _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_sitemap_version: float = 1.0         # 当クラスのバージョン
@@ -69,6 +74,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         self._crawl_start_time = datetime.now().astimezone(
             TIMEZONE)
 
+        self.logger.info(
+            '=== __init__ : 開始時間(%s) / プロセスid(%s)' % (self._crawl_start_time.isoformat(), str(os.getpid())))
+        self.logger.info(
+            '=== __init__ : 引数(%s)' % (kwargs))
+
         # 必要な環境変数チェック
         environ_check()
         # MongoDBオープン
@@ -91,7 +101,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         duplicate_check = self.crawling_domain_control.execution(
             self._domain_name)
         if not duplicate_check:
-            sys.exit('同一ドメインにクロール中のため中止')
+            raise CloseSpider('同一ドメインへの多重クローリングとなるため中止')
 
         start_request_debug_file_init(self, self.kwargs_save)
 
@@ -276,6 +286,30 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         self.logger.info(
             '=== closed : crawler_controllerに次回クロールポイント情報を保存 \n %s', self._next_crawl_point)
+
+        #####################
+        # from twisted.python import log
+        # import logging
+        # LOG_FILE = "logs/spider.log"
+        # ERR_FILE = "logs/spider_error.log"
+        # logging.basicConfig(level=logging.INFO, filemode="w+", filename=LOG_FILE)
+        # logging.basicConfig(level=logging.ERROR, filemode="w+", filename=ERR_FILE)
+        # observer = log.PythonLoggingObserver()
+        # observer.start()
+
+        from logging import getLogger
+        logger = getLogger('test-desu')
+        logger.debug('===========================================hello')
+
+
+        stats: MemoryStatsCollector = self.crawler.stats
+        crawler_logs = CrawlerLogsModel(self.mongo)
+        crawler_logs.insert_one({
+            'domain_name': self._domain_name,
+            'spider_name': self.name,
+            'crawl_start_time': self._crawl_start_time,
+            'stats': stats.get_stats(),
+        })
 
         self.mongo.close()
         self.logger.info('=== Spider closed: %s', self.name)
