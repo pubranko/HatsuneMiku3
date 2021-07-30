@@ -3,6 +3,7 @@ import time
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.http import Response
 from scrapy_selenium import SeleniumRequest
+from scrapy.exceptions import CloseSpider
 from dateutil import parser
 import scrapy
 import sys
@@ -47,7 +48,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
 
         # 単項目チェック（追加）
         if not 'category_urls' in kwargs:
-            sys.exit('引数エラー：当スパイダー(' + self.name +
+            raise CloseSpider('引数エラー：当スパイダー(' + self.name +
                      ')の場合、category_urlsは必須です。')
 
     def start_requests(self):
@@ -155,8 +156,6 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
                     # ページ内のURLと更新日時をリストに保存する。
                     urls_list.append(
                         {'loc': url, 'lastmod': lastmod_parse.isoformat()})
-
-                print('=== ', crwal_flg, lastmod_parse, '  ', url, '  ', title,)
 
             self.logger.info(
                 '=== parse_start_response クロール対象リンク件数 = %s', len(urls_list))

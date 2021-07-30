@@ -19,6 +19,7 @@ class EpochtimesJpSitemapSpider(ExtensionsSitemapSpider):
     custom_settings: dict = {
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True,
+        #'LOG_FILE' : 'logs/test_log('+ name +').txt',
     }
 
     # 大紀元のsitemapに記載されているurlは、リダイレクト前のurl。

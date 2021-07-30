@@ -2,6 +2,7 @@ from typing import Pattern
 from bs4.element import ResultSet
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.http import Response
+from scrapy.exceptions import CloseSpider
 import re
 import sys
 import scrapy
@@ -33,7 +34,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         # 単項目チェック（追加）
         if not 'category_urls' in kwargs:
-            sys.exit('引数エラー：当スパイダー(' + self.name +
+            raise CloseSpider('引数エラー：当スパイダー(' + self.name +
                      ')の場合、category_urlsは必須です。')
 
     def start_requests(self):
