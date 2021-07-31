@@ -101,44 +101,45 @@ class ExtensionsCrawlSpider(CrawlSpider):
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(
-                url, callback=self._parse, errback=self.errback_handle,  # dont_filter=True
+                #url, callback=self._parse, errback=self.errback_handle,  # dont_filter=True
+                url, callback=self._parse,  # dont_filter=True
             )
 
-    def errback_handle(self, failure):
-        '''
-        リクエストでエラーがあった場合、エラー情報をログに出力、メールによる通知を行う。
-        '''
-        self.logger.error(
-            '=== start_requestでエラー発生 ', )
-        request: Request = failure.request
-        response: Response = failure.value.response
-        self.logger.error('ErrorType : %s', failure.type)
-        self.logger.error('request_url : %s', request.url)
+    # def errback_handle(self, failure):
+    #     '''
+    #     リクエストでエラーがあった場合、エラー情報をログに出力、メールによる通知を行う。
+    #     '''
+    #     self.logger.error(
+    #         '=== start_requestでエラー発生 ', )
+    #     request: Request = failure.request
+    #     response: Response = failure.value.response
+    #     self.logger.error('ErrorType : %s', failure.type)
+    #     self.logger.error('request_url : %s', request.url)
 
-        title: str = '(error)スパイダー('+self.name+')'
-        msg: str = '\n'.join([
-            'スパイダー名 : ' + self.name,
-            'type : ' + str(failure.type),
-            'request_url : ' + str(request.url),
-        ])
+    #     title: str = '(error)スパイダー('+self.name+')'
+    #     msg: str = '\n'.join([
+    #         'スパイダー名 : ' + self.name,
+    #         'type : ' + str(failure.type),
+    #         'request_url : ' + str(request.url),
+    #     ])
 
-        if failure.check(HttpError):
-            self.logger.error('response_url : %s', response.url)
-            self.logger.error('response_status : %s', response.status)
+    #     if failure.check(HttpError):
+    #         self.logger.error('response_url : %s', response.url)
+    #         self.logger.error('response_status : %s', response.status)
 
-            msg: str = '\n'.join([
-                msg,
-                'response_url : ' + str(response.url),
-                'response_status : ' + str(response.status),
-            ])
-        elif failure.check(DNSLookupError):
-            pass
-        elif failure.check(TimeoutError, TCPTimedOutError):
-            pass
-        else:
-            pass
+    #         msg: str = '\n'.join([
+    #             msg,
+    #             'response_url : ' + str(response.url),
+    #             'response_status : ' + str(response.status),
+    #         ])
+    #     elif failure.check(DNSLookupError):
+    #         pass
+    #     elif failure.check(TimeoutError, TCPTimedOutError):
+    #         pass
+    #     else:
+    #         pass
 
-        mail_send(self, title, msg, self.kwargs_save)
+    #     mail_send(self, title, msg, self.kwargs_save)
 
     def parse_news(self, response: Response):
         ''' (拡張メソッド)
@@ -148,7 +149,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         if len(pagination) > 0:
             self.logger.info(
                 '=== parse_news 次のページあり → リクエストに追加 : %s', pagination[0].get('href'))
-            yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news)
 
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
@@ -209,8 +211,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         else:
             return{'start_page': start_page, 'end_page': end_page}
 
-    def layout_change_notice(self, response: Response) -> None:
-        '''
-        レイアウトの変更が発生した可能性がある場合、メールにて通知する。
-        '''
-        layout_change_notice(self, response)
+    # def layout_change_notice(self, response: Response) -> None:
+    #     '''
+    #     レイアウトの変更が発生した可能性がある場合、メールにて通知する。
+    #     '''
+    #     layout_change_notice(self, response)

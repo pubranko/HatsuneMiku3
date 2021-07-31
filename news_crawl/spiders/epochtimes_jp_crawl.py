@@ -52,7 +52,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         for url in urls:
             self.start_urls.append(url)
-            yield scrapy.Request(url, self.parse_start_response, errback=self.errback_handle)
+            #yield scrapy.Request(url, self.parse_start_response, errback=self.errback_handle)
+            yield scrapy.Request(url, self.parse_start_response,)
 
     def parse_start_response(self, response:Response):
         ''' (拡張メソッド)
@@ -98,7 +99,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             '.category-left > a[href],table.table.table-hover tr > td[style] > a[href]')
         # ページ内リンクは通常30件。それ以外の場合はワーニングメール通知
         if not len(anchors) == 30:
-            self.layout_change_notice(response)
+            #self.layout_change_notice(response)
             self.logger.warning(
                 '=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( %s 件)', len(anchors))
 
@@ -142,8 +143,10 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             self.logger.info(
                 '=== parse_start_response 次のページのURL = %s', url_next)
 
-            yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response,)
 
         # リストに溜めたurlをリクエストへ登録する。
         for url in urls_list:
-            yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(url['loc']), callback=self.parse_news,)
