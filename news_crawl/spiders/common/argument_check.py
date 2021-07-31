@@ -3,12 +3,18 @@ import re
 from typing import Any
 from scrapy.spiders import Spider
 from scrapy.exceptions import CloseSpider
+from datetime import datetime
+
 
 def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: dict, *args, **kwargs) -> None:
     '''
     各引数が存在したらチェックを行う。
     '''
     # 単項目チェック
+    def __crawl_start_time() -> None:
+        if not isinstance(kwargs['crawl_start_time'],datetime):
+            raise CloseSpider('引数エラー：crawl_start_timeにはdatetimeオブジェクトのみ設定可能。')
+
     def __debug_check() -> None:
         if not kwargs['debug'] == 'Yes':
             raise CloseSpider('引数エラー：debugに指定できるのは"Yes"のみです。')
@@ -67,6 +73,8 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
         raise CloseSpider('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
 
     ### 単項目チェック ###
+    if 'crawl_start_time' in kwargs:
+        __crawl_start_time()
     if 'debug' in kwargs:
         __debug_check()
     if 'url_term_days' in kwargs:
