@@ -92,5 +92,6 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
                 _crwal_flg = False
 
         if _crwal_flg:
-            yield scrapy.Request(response.urljoin(loc), callback=self.parse_news, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(loc), callback=self.parse_news, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(loc), callback=self.parse_news,)
             self._xml_extract_count += 1

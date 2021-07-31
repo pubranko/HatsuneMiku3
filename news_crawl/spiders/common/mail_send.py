@@ -1,10 +1,10 @@
 import os
 import smtplib
 from email import message
-from scrapy.spiders import Spider
+import logging
 
 
-def mail_send(spider: Spider, title: str, msg: str, kwargs_save: dict) -> None:
+def mail_send(title: str, msg: str, ) -> None:
     '''
     メール送信。件名(title)と本文(msg)を引数で渡す。
     環境変数（EMAIL_FROM、EMAIL_TO、EMAIL_PASS）があることを前提とします。
@@ -15,9 +15,9 @@ def mail_send(spider: Spider, title: str, msg: str, kwargs_save: dict) -> None:
 
     # エラー通知＝Offの指定がある場合、何もせず終了する。
 
-    if 'error_notice' in kwargs_save:
-        spider.logger.info('=== メール通知 Off')
-        return
+    # if 'error_notice' in kwargs_save:
+    #     logging.info('=== メール通知 Off')
+    #     return
 
     # 接続設定情報
     smtp_host = 'smtp.live.com'
@@ -49,7 +49,7 @@ def mail_send(spider: Spider, title: str, msg: str, kwargs_save: dict) -> None:
     server.starttls()
     server.ehlo()
     server.login(username, password)
-    server.send_message(mail)
+    server.send_message(maiel)
     server.quit()
 
-    spider.logger.info('=== メール通知完了')
+    logging.info('=== メール通知完了')

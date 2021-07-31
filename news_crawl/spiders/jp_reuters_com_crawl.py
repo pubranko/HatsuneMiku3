@@ -43,7 +43,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         yield SeleniumRequest(
             url=url,
             callback=self.parse_start_response,
-            errback=self.errback_handle,
+            #errback=self.errback_handle,
         )
 
     def parse_start_response(self, response: Response):
@@ -89,7 +89,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                 '=== parse_start_response リンク件数 = %s', len(links))
             # ページ内リンクは通常10件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
             if not len(links) == 10:
-                self.layout_change_notice(response)
+                #self.layout_change_notice(response)
                 self.logger.warning(
                     '=== parse_start_response 1ページ内で取得できた件数が想定の10件と異なる。確認要。 ( %s 件)', len(links))
 
@@ -116,7 +116,8 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
         # リストに溜めたurlをリクエストへ登録する。
         for _ in urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
         self._next_crawl_point[url_header] = {
             'urls': urls_list[0:10],

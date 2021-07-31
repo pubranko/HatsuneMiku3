@@ -67,7 +67,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             yield SeleniumRequest(
                 url=url,
                 callback=self.parse_start_response,
-                errback=self.errback_handle,
+                #errback=self.errback_handle,
             )
 
     def parse_start_response(self, response: Response):
@@ -176,7 +176,8 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
 
         # リストに溜めたurlをリクエストへ登録する。
         for _ in urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
+            #yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
+            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
 
         # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
         self._next_crawl_point[response.url] = {
