@@ -49,7 +49,7 @@ def mail_send(title: str, msg: str, ) -> None:
     server.starttls()
     server.ehlo()
     server.login(username, password)
-    server.send_message(maiel)
+    server.send_message(mail)
     server.quit()
 
     logging.info('=== メール通知完了')

@@ -1,15 +1,16 @@
 from datetime import datetime
-from typing import Union
+from logging import LoggerAdapter
 from scrapy.statscollectors import MemoryStatsCollector
-from scrapy.spiders import Spider
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
 from news_crawl.models.crawler_logs_model import CrawlerLogsModel
-from logging import LoggerAdapter
+from common.resource_check import resource_check
 
 
 def spider_closed(spider):
     '''spider共通の終了処理'''
+
+
     mongo: MongoModel = spider.mongo
     domain_name: str = spider._domain_name
     name: str = spider.name
@@ -21,6 +22,8 @@ def spider_closed(spider):
     crawler_controller = CrawlerControllerModel(mongo)
     crawler_controller.next_crawl_point_update(
         domain_name, name, next_crawl_point)
+
+    resource_check()
 
     logger.info(
         '=== closed : crawler_controllerに次回クロールポイント情報を保存 \n %s', next_crawl_point)
