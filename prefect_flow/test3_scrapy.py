@@ -27,7 +27,7 @@ def regular_observation():
     from news_crawl.models.mongo_model import MongoModel
     from news_crawl.models.crawler_logs_model import CrawlerLogsModel
     from news_crawl.settings import TIMEZONE
-    from news_crawl.spiders.common.mail_send import mail_send
+    from common.mail_send import mail_send
 
     # MongoDBオープン
     mongo = MongoModel()

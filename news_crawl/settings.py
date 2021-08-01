@@ -43,7 +43,12 @@ DOWNLOAD_DELAY = 3
 #COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
+#telnet関係の設定は以下のとおり
+#TELNETCONSOLE_HOST = localhost
+#TELNETCONSOLE_PORT = [6023, 6073]
+#TELNETCONSOLE_USERNAME = 'scrapy'
+#TELNETCONSOLE_PASSWORD = scrapy実行時に動的に割当られる。
 
 # Override the default request headers:
 # リクエストにデフォルトで含めるヘッダーをdictで指定する。

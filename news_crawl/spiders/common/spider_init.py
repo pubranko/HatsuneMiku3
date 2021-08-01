@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import LoggerAdapter
 from scrapy.exceptions import CloseSpider
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
@@ -7,7 +8,7 @@ from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
-from logging import LoggerAdapter
+from common.resource_check import resource_check
 
 
 def spider_init(spider, *args, **kwargs):
@@ -37,6 +38,21 @@ def spider_init(spider, *args, **kwargs):
         domain_name)
     if not duplicate_check:
         raise CloseSpider('同一ドメインへの多重クローリングとなるため中止')
+
+    resource:dict = resource_check()
+    # CPUチェック
+    if float(str(resource['cpu_percent'])) > 90:
+        logger.warn('=== ＣＰＵ使用率が90%を超えています。')
+    # メモリチェック
+    if float(str(resource['memory_percent'])) > 85:
+        logger.warn('=== メモリー使用率が85%を超えています。')
+    elif float(str(resource['memory_percent'])) > 95:
+        raise CloseSpider('=== メモリー使用率が95%を超えたためスパイダーを停止します。')
+    # スワップメモリチェック
+    if float(str(resource['swap_memory_percent'])) > 85:
+        logger.warn('=== スワップメモリー使用率が85%を超えています。')
+    elif float(str(resource['swap_memory_percent'])) > 95:
+        raise CloseSpider('=== スワップメモリー使用率が95%を超えたためスパイダーを停止します。')
 
     # クロール開始時間
     if 'crawl_start_time' in spider.kwargs_save:
