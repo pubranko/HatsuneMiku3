@@ -1,4 +1,3 @@
-# 単一プロセスでcrawlerprocessを使った例（クラスバージョン）
 import os
 import sys
 import logging
@@ -10,11 +9,10 @@ from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
-from task.regular_observation import RegularObservation
+from prefect_flow.task.regular_observation_task import RegularObservationTask
 from common.mail_send import mail_send
 from news_crawl.settings import TIMEZONE
 
-prefect_flow_name: str = 'RegularObservation'
 log_file_path = os.path.join(
     'logs', 'regular_observation_spider.log')
 logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
@@ -41,21 +39,19 @@ def status_change(obj: Flow, old_state, new_state):
 
 
 with Flow(
-    name=prefect_flow_name,
+    name='RegularObservation',
     state_handlers=[status_change],
 ) as flow:
-    task = RegularObservation(crawl_start_time=crawl_start_time)
+    task = RegularObservationTask(crawl_start_time=crawl_start_time)
     result = task()
 
 flow.run()
 
 '''
-【定時観測処理の流れ】
-完・クローラー実行(news_crawl)
-完・ログのMongoDBへの保存
-完・同時にエラーがあればメール通知
-完　　※ログのファイル名切り替え随時
-完・メモリリーク問題
+【残課題】
+
+
+【後続の作業】
 ・スクレイピング(名前未定)
 　　※ログのファイル名切り替え随時
 ・solrへ流し込み(名前未定)
