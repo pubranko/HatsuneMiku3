@@ -133,14 +133,13 @@ TIMEZONE = timezone(timedelta(hours=9), 'JST')
 #LOG_LEVEL = 'INFO'
 LOG_LEVEL = 'DEBUG'
 #LOG_FILE = 'logs/test.log'
-#LOG_FILE = ''
 # ロギングを有効にするかどうか。
 LOG_ENABLED = True
 #LOG_ENABLED = False
 LOG_ENCODING = 'utf-8'
 # ログ・メッセージをフォーマットするための文字列。 利用可能なプレース・ホルダーの全リストについては、 Python logging documentation を参照してください。
+#LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
 LOG_FORMAT = '%(asctime)s %(levelname)s [%(name)s] : %(message)s'
-#LOG_FORMAT = '[%(asctime)s] %(levelname)s - %(name)s | %(message)s'
 # 日付/時刻をフォーマットするための文字列、 LOG_FORMAT の %(asctime)s プレース・ホルダーの展開。
 # 利用可能なディレクティブのリストについては、 Python datetime documentation を参照してください。
 LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
@@ -154,6 +153,7 @@ LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 #LOGSTATS_INTERVAL = 60.0
 install_root_handler=False
 INSTALL_ROOT_HANDLER=False
+
 
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'

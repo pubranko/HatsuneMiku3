@@ -1,24 +1,28 @@
 import os
 import sys
-import logging
 from datetime import datetime
+import logging
+from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
+import prefect
 from prefect import Flow, task
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
 from prefect_flow.task.regular_observation_task import RegularObservationTask
+from prefect.utilities.context import Context
 from common.mail_send import mail_send
-from news_crawl.settings import TIMEZONE
+from prefect_flow.common_module.timezone import TIMEZONE
 
-log_file_path = os.path.join(
-    'logs', 'regular_observation_spider.log')
-logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
-                    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
 crawl_start_time = datetime.now().astimezone(
     TIMEZONE)
+log_file_path = os.path.join(
+    'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
+logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
+           format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def status_change(obj: Flow, old_state, new_state):
@@ -42,7 +46,12 @@ with Flow(
     name='RegularObservation',
     state_handlers=[status_change],
 ) as flow:
-    task = RegularObservationTask(crawl_start_time=crawl_start_time)
+
+    prefect_context:Context = prefect.context
+    task = RegularObservationTask(
+        log_file_path=log_file_path, crawl_start_time=crawl_start_time, notice_level='CRITICAL')
+        #log_file_path=log_file_path, crawl_start_time=crawl_start_time, notice_level='ERROR')
+        #log_file_path=log_file_path, crawl_start_time=crawl_start_time, notice_level='WARNING')
     result = task()
 
 flow.run()
