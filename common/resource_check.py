@@ -1,6 +1,6 @@
+import sys
 import psutil
 import logging
-
 
 def resource_check() -> dict:
     '''
@@ -22,14 +22,17 @@ def resource_check() -> dict:
         'swap_memory_percent': swap_memory.percent,
     }
 
-    logging.info('=== ＣＰＵ使用率 : ' + str(psutil.cpu_percent()) + '%')
-    logging.info('=== メモリー使用状況')
-    logging.info('=== used       / total      / available  / percent')
-    logging.info('=== %s / %s / %s / %s' % (str(memory.used),
+    function_name:str = sys._getframe().f_code.co_name
+    logger = logging.getLogger(function_name)
+
+    logger.info('=== ＣＰＵ使用率 : ' + str(psutil.cpu_percent()) + '%')
+    logger.info('=== メモリー使用状況')
+    logger.info('=== used       / total      / available  / percent')
+    logger.info('=== %s / %s / %s / %s' % (str(memory.used),
                  str(memory.total), str(memory.available), str(memory.percent)))
-    logging.info('=== スワップメモリー使用状況')
-    logging.info('=== used       / total      / percent')
-    logging.info('=== %s   / %s / %s ' % (str(swap_memory.used),
+    logger.info('=== スワップメモリー使用状況')
+    logger.info('=== used       / total      / percent')
+    logger.info('=== %s   / %s / %s' % (str(swap_memory.used),
                  str(swap_memory.total), str(swap_memory.percent)))
 
     return resource

@@ -1,5 +1,5 @@
 from datetime import datetime
-from logging import LoggerAdapter
+from logging import Logger
 from scrapy.statscollectors import MemoryStatsCollector
 from news_crawl.models.mongo_model import MongoModel
 from news_crawl.models.crawler_controller_model import CrawlerControllerModel
@@ -15,7 +15,7 @@ def spider_closed(spider):
     domain_name: str = spider._domain_name
     name: str = spider.name
     next_crawl_point: dict = spider._next_crawl_point
-    logger: LoggerAdapter = spider.logger
+    logger: Logger = spider.logger
     stats: MemoryStatsCollector = spider.crawler.stats
     crawl_start_time: datetime = spider._crawl_start_time
 

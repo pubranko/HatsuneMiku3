@@ -1,4 +1,5 @@
 import os
+import sys
 import smtplib
 from email import message
 import logging
@@ -12,12 +13,6 @@ def mail_send(title: str, msg: str, ) -> None:
     # (参考情報)
     # https://qiita.com/aj2727/items/81e5d67cbcbf7396e392
     # Pythonでメールを送信（Outlook）
-
-    # エラー通知＝Offの指定がある場合、何もせず終了する。
-
-    # if 'error_notice' in kwargs_save:
-    #     logging.info('=== メール通知 Off')
-    #     return
 
     # 接続設定情報
     smtp_host = 'smtp.live.com'
@@ -52,4 +47,6 @@ def mail_send(title: str, msg: str, ) -> None:
     server.send_message(mail)
     server.quit()
 
-    logging.info('=== メール通知完了')
+    function_name:str = sys._getframe().f_code.co_name
+    logger = logging.getLogger(function_name)
+    logger.info('=== メール通知完了 title = ',title)
