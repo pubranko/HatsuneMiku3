@@ -1,18 +1,13 @@
 import os
 import sys
-import re
-import inspect
 import logging
-import time
 from logging import Logger, StreamHandler
-
-path = os.getcwd()
-sys.path.append(path)
-#sys.path.append(path + '/news_crawl')
-
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrapy.utils.log import configure_logging
+
+path = os.getcwd()
+sys.path.append(path)
 from news_crawl.spiders.epochtimes_jp_sitemap import EpochtimesJpSitemapSpider
 from news_crawl.spiders.sankei_com_sitemap import SankeiComSitemapSpider
 from news_crawl.spiders.asahi_com_xml_feed import AsahiComXmlFeedSpider
@@ -30,18 +25,17 @@ def regular_crawler_run(crawl_start_time):
     process.crawl(EpochtimesJpSitemapSpider,
                   crawl_start_time=crawl_start_time,
                   debug='Yes',
-                  lastmod_recent_time='30',)
+                  lastmod_recent_time='1',)
     process.crawl(SankeiComSitemapSpider,
                   crawl_start_time=crawl_start_time,
                   debug='Yes',
-                  lastmod_recent_time='30',
+                  lastmod_recent_time='1',
                   url_term_days='1',)
     process.start()
 
     # Scrapy実行後に、rootロガーに追加されているストリームハンドラを削除(これをやらないとログが二重化する)
     root_logger = logging.getLogger()
     handlers = root_logger.handlers
-
     for handler in root_logger.handlers:
         if type(handler) == StreamHandler:
             root_logger.removeHandler(handler)

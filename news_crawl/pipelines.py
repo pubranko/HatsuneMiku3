@@ -6,8 +6,8 @@
 # useful for handling different item types with a single interface
 
 from itemadapter import ItemAdapter
-from news_crawl.models.mongo_model import MongoModel
-from news_crawl.models.crawler_response_model import CrawlerResponseModel
+from models.mongo_model import MongoModel
+from models.crawler_response_model import CrawlerResponseModel
 
 
 class MongoPipeline(object):

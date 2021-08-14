@@ -132,3 +132,4 @@ dmypy.json
 .vscode/*
 debug/*
 logs/*
+news_crawl/exclusive_work/*

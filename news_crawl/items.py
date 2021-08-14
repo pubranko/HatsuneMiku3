@@ -8,8 +8,9 @@ import scrapy
 
 class NewsCrawlItem(scrapy.Item):
     _id = scrapy.Field()
-    response_time = scrapy.Field()
+    domain = scrapy.Field()
     url = scrapy.Field()
+    response_time = scrapy.Field()
     response_headers = scrapy.Field()
     response_body = scrapy.Field()
     spider_version_info = scrapy.Field()
@@ -18,6 +19,7 @@ class NewsCrawlItem(scrapy.Item):
         # 当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
         # ログからresponse_headers,response_bodyを削除するために細工
         p: NewsCrawlItem = NewsCrawlItem(self)
+        del p['domain']
         del p['url']
         del p['response_time']
         del p['response_headers']

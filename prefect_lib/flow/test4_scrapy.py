@@ -6,9 +6,9 @@ from scrapy.utils.project import get_project_settings
 from scrapy.utils import log
 import prefect
 from prefect import Flow, task
-#from news_crawl.models.mongo_model import MongoModel
-#from news_crawl.models.mongo_model import MongoModel
-#from news_crawl.models.crawler_logs_model import CrawlerLogsModel
+#from models.mongo_model import MongoModel
+#from models.mongo_model import MongoModel
+#from models.crawler_logs_model import CrawlerLogsModel
 #import logging
 
 # logging.basicConfig(level=logging.DEBUG, filemode="w+", filename="logs/prefect.log",

@@ -9,7 +9,7 @@ from prefect import Flow, task
 import logging
 from datetime import datetime
 
-prefect_flow_name: str = 'RegularObservation'
+prefect_lib_name: str = 'RegularObservation'
 log_file_path = os.path.join(
     'logs', 'regular_observation_spider.log')
 logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
@@ -24,8 +24,8 @@ def regular_observation():
     sys.path.append(path)
     from news_crawl.spiders.epochtimes_jp_sitemap import EpochtimesJpSitemapSpider
     from news_crawl.spiders.sankei_com_sitemap import SankeiComSitemapSpider
-    from news_crawl.models.mongo_model import MongoModel
-    from news_crawl.models.crawler_logs_model import CrawlerLogsModel
+    from models.mongo_model import MongoModel
+    from models.crawler_logs_model import CrawlerLogsModel
     from news_crawl.settings import TIMEZONE
     from common.mail_send import mail_send
 
@@ -90,7 +90,7 @@ def regular_observation():
     mongo.close()
 
 
-with Flow(prefect_flow_name) as flow:
+with Flow(prefect_lib_name) as flow:
     regular_observation()
 
 flow.run()
