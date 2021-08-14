@@ -1,9 +1,5 @@
 from typing import Pattern
 from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
-from news_crawl.items import NewsCrawlItem
-from datetime import datetime
-import pickle
-from scrapy.http.response.html import HtmlResponse
 import re
 
 

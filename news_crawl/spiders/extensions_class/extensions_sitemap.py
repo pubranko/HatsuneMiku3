@@ -8,7 +8,7 @@ from scrapy.spiders import SitemapSpider
 from scrapy.http import Response
 from scrapy.utils.sitemap import Sitemap
 from news_crawl.items import NewsCrawlItem
-from news_crawl.models.mongo_model import MongoModel
+from models.mongo_model import MongoModel
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.common.spider_init import spider_init
@@ -156,6 +156,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
         yield NewsCrawlItem(
+            domain=self.allowed_domains[0],
             url=response.url,
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),

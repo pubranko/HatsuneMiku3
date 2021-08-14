@@ -42,7 +42,7 @@
         key:実行対象(Executive_target):news_crawl   #news_crawlやtwitterなどの区別用
         key:クローラー名(crawler_name):xxxxxx,
         key:クロール先ドメイン名(crawl_domain):xxxxxx,
-        key:prefect関数名(prefect_flow_name):スパイダー名_type3、、、起動元の関数名取得できる？？？
+        key:prefect関数名(prefect_lib_name):スパイダー名_type3、、、起動元の関数名取得できる？？？
         key:スパイダー名(spider_name):スパイダー名
         ログレコード(log_record):[
             開始時間:
@@ -53,7 +53,7 @@
 
 ３．拡張スパイダークラスは別フォルダへ移動
 
-＜prefect_flow(patrol)でやるべきこと＞
+＜prefect_lib(patrol)でやるべきこと＞
 １．クローラー特性クラス(CrawlerCharacteristic)を呼び出して、patrol対象のスパイダー情報等を取得
 ２．スパイダーの存在チェック(news_crawl/spider内に存在するかチェック)
     ・なければWraningを発報
@@ -66,7 +66,7 @@
         https://qiita.com/melka-blue/items/03cc2d7c68b7cfdbd110
         基本的に、python同士なので、multiprocessing でやるのが普通のようだ。
 
-＜prefect_flow(at_any_time)でやるべきこと＞
+＜prefect_lib(at_any_time)でやるべきこと＞
 上記patrolと同じ。参照先のクラスがat_any_timeに変わるのみ。
 
 
@@ -116,7 +116,7 @@
         key:実行対象(Executive_target):news_crawl   #news_crawlやtwitterなどの区別用
         key:クローラー名(crawler_name):xxxxxx,
         key:クロール先ドメイン名(crawl_domain):xxxxxx,
-        key:prefect関数名(prefect_flow_name):スパイダー名_type3、、、起動元の関数名取得できる？？？
+        key:prefect関数名(prefect_lib_name):スパイダー名_type3、、、起動元の関数名取得できる？？？
         key:スパイダー名(spider_name):スパイダー名
         ログレコード(log_record):[
             開始時間:

@@ -4,7 +4,7 @@ from datetime import datetime
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Response
 from news_crawl.items import NewsCrawlItem
-from news_crawl.models.mongo_model import MongoModel
+from models.mongo_model import MongoModel
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from bs4.element import ResultSet
@@ -64,6 +64,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
 
         yield NewsCrawlItem(
+            domain=self.allowed_domains[0],
             url=response.url,
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),

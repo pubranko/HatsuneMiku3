@@ -1,4 +1,4 @@
-from news_crawl.models.mongo_model import MongoModel
+from models.mongo_model import MongoModel
 from typing import Any
 import sys,os,psutil
 from datetime import datetime

@@ -1,9 +1,9 @@
 from datetime import datetime
 from logging import Logger
 from scrapy.statscollectors import MemoryStatsCollector
-from news_crawl.models.mongo_model import MongoModel
-from news_crawl.models.crawler_controller_model import CrawlerControllerModel
-from news_crawl.models.crawler_logs_model import CrawlerLogsModel
+from models.mongo_model import MongoModel
+from models.crawler_controller_model import CrawlerControllerModel
+from models.crawler_logs_model import CrawlerLogsModel
 from common.resource_check import resource_check
 
 
