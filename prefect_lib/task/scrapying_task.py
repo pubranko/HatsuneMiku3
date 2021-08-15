@@ -7,6 +7,8 @@ from importlib import import_module
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.common_module.extentions_task import ExtensionsTask
+from models.mongo_model import MongoModel
+from models.crawler_response_model import CrawlerResponseModel
 
 
 class ScrapyingTask(ExtensionsTask):
@@ -20,19 +22,13 @@ class ScrapyingTask(ExtensionsTask):
         method = kwargs['method']
         kwargs['starting_time'] = self.starting_time
         kwargs['mongo'] = self.mongo
+        mongo: MongoModel = kwargs['mongo']
+        kwargs['crawler_response'] = CrawlerResponseModel(mongo)
 
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
         getattr(mod, method)(kwargs)
 
-        # 上記の結果をスクレイピング
-        '''
-        1. 自動スクレイピングモードを取得
-        2. 自動スクレイピングモードonの場合、
-           MongoDBより前回最後のレスポンスタイムを取得
-        3. 前回最後のレスポンスタイムよりあとに発生しているレスポンスを取得する。
-        4. a
-        '''
 
         # 終了処理
         self.closed()
