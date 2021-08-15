@@ -4,10 +4,10 @@ import logging
 from typing import Any, Union
 from logging import Logger, StreamHandler
 from datetime import datetime
+from importlib import import_module
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
-from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
 from prefect_lib.settings import TIMEZONE
 
@@ -18,12 +18,7 @@ def scrapying_deco(func):
     global logger
 
     def exec(kwargs):
-        logger.info('=== exec:', kwargs)
-        starting_time: datetime = kwargs['starting_time']
-        mongo: MongoModel = kwargs['mongo']
-        kwargs['crawler_response'] = CrawlerResponseModel(mongo)
         # 初期処理
-        pass
         # 主処理
         func(kwargs)
         # 終了処理
@@ -51,26 +46,42 @@ def test1(kwargs):
     filter: dict = {'$and':conditions }
     logger.info('=== crawler_responseへのfilter: ' + str(filter))
 
-    records: Cursor = crawler_response.find(
+    # スクレイピング対象件数を確認
+    record_count = crawler_response.find(
         projection=None,
         filter=filter,
-        #filter={"url": "https://www.sankei.com/article/20210808-LDAOZVXFTBJY3N2CR4CDMLGMM4/",},
-        #filter={'response_time': {'$gte':datetime(2021,7,1),}},
-        #filter={'response_time_from': {'$gte':response_time_from,}},
-        # filter={'$and':[
-        #             {'response_time': {'$gte': response_time_from, }},
-        #             {'response_time': {'$lte': response_time_to, }},
-        #         ],},
-        #filter={'$and': [{'domain': domain_name}, {'document_type': 'next_crawl_point'}]}
         sort=None
-    )
-    # record: Cursor = crawler_response.find(
-    #     {})
+    ).count()
+    logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
 
-    for record in records:
-        logger.info('=== record_info : '
-            + str(record['_id']) + '\n'
-            + str(record['url']) + '\n'
-            + str(record['response_time'])
-        )
-    logger.info('=== crawler_response取得件数: ' + str(records.count()))
+    # 100件単位でスクレイピング処理を実施
+    limit:int = 100
+    skip_list = list(range(0,record_count, limit))
+
+    for skip in skip_list:
+        records: Cursor = crawler_response.find(
+            projection=None,
+            filter=filter,
+            sort=None
+        ).skip(skip).limit(limit)
+
+        for record in records:
+            module_name = record['domain'].replace('.','_')
+            mod: Any = import_module('prefect_lib.scraper.' + module_name)
+            scraped:dict = getattr(mod, 'exec')(record)
+
+            scraped['domain':str] = record['domain']
+            scraped['url':str] = record['url']
+            rt:datetime = record['response_time']
+            scraped['response_time':datetime] = rt.astimezone(TIMEZONE)
+
+            print('=== 最後に戻り値:',scraped)
+
+
+    '''
+    1. ドメインごとのスクレイパーの呼び出し機能
+    2. ドメインのドットをアンスコに変換した名前をモジュール名にする。
+    3. メソッド名は、、、？
+    4. メソッドの戻り値は、スクレイピングした各項目とする。dict形式で戻す。
+    5. 最後に戻り値をmondoDBへ保存
+    '''
