@@ -3,6 +3,7 @@ from dateutil import parser
 import pysolr
 import os
 from typing import Union
+from collections  import ItemsView
 
 
 class SolrNewsClip(object):
@@ -20,32 +21,48 @@ class SolrNewsClip(object):
             timeout=10,
             verify='',
             # verify=SolrEnv.VERIFY,     #solrの公開鍵を指定する場合、ここにファイルパスを入れる。
-            auth=(os.environ['SOLR_READ_USER'], os.environ['SOLR_READ_PASS']),
+            auth=(os.environ['SOLR_WRITE_USER'],
+                  os.environ['SOLR_WRITE_PASS']),
         )
 
-    def search_query(self, search_query: str, page_num: int, page_max_lines: int) -> Union[pysolr.Results,None]:
+    def search_query(
+        self,
+        #search_query: str,
+        search_query: list,
+        skip: int,
+        limit: int,
+        sort: dict = {'response_time':'desc',},
+        field: list = [],
+        facet: str = 'on',
+        facet_field: list = [],
+    ) -> Union[pysolr.Results, None]:
         """
         引数で渡されたrequest内のsolrサーチ用の情報より、検索を実行しレスポンスを返す。
         """
         self.solr
 
-        # start_line は、0=1件目となる。
-        start_line = ((page_num - 1) * page_max_lines)
+        search_query_str = ''.join(search_query)
 
         print('=== solrへqueryを送信')
-        print(search_query)
+        print(search_query_str)
+
+        # sort用のdictをsolr用に変換
+        i:ItemsView = sort.items()
+        sort_list:list = []
+        for t in i:
+            sort_list.append(t[0] + ' ' + t[1] + ',')
 
         try:
-            results = self.solr.search([search_query], **{
-                'rows': page_max_lines,
-                'start': start_line,
-                # ソートのやり方。 desc降順 asc昇順。 %20は空白に置き換えること。
-                # 'sort': 'response_time desc,',
+            results = self.solr.search([search_query_str], **{
+                'rows': limit,
+                'start': skip,
+                # ソートのやり方。 desc降順 asc昇順。 %20は空白に置き換えること。'response_time desc,',
+                'sort': ''.join(sort_list),
                 # 取得したフィールドを限定したい場合
-                # 'fl':'url,title',
+                'fl': ','.join(field),
                 # ファセット、取得したいフィールド
-                # 'facet':'on',
-                # 'facet.field':'title',
+                'facet': facet,
+                'facet_field':','.join(facet_field),
             })
             return results
         except Exception as e:

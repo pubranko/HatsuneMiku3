@@ -1,21 +1,49 @@
 import os
 import sys
+from typing import Any
+import pysolr
+
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.test.SolrNewsClip import SolrNewsClip
+from models.solr_news_clip_model import SolrNewsClip
 
 #search_query = '*:*'
-search_query = 'title:中国 and article:安倍'
-#search_query = 'title:中国 or article:安倍'
-page_num = 1
-page_max_lines = 5
-
+#search_query = ['title:中国 AND article:安倍']
+#search_query = ['title:中国 OR article:安倍']
+#search_query = ['(title:中国 OR article:安倍)']
+search_query = ['title:中国',' AND ','article:安倍']
+skip = 0
+limit = 5
 solr_news_clip = SolrNewsClip()
-results = solr_news_clip.search_query(search_query, page_num, page_max_lines)
+results:Any = solr_news_clip.search_query(search_query, skip, limit)
+recodes_count = results.raw_response['response']['numFound']
 
-if results:
-    for result in results:
-        print(result)
+print('=== ステータス',results.raw_response['responseHeader']['status'])
+print('=== カウント:',recodes_count)
+
+for recode in results.docs:
+    print('=== url:',recode['url'])
+
+print('=== hits:',results.hits)
+print('=== debug:',results.debug)
+print('=== facets:',results.facets)
+print('=== stats:',results.stats)
+print('=== qtime:',results.qtime)
+print('=== nextCursorMark:',results.nextCursorMark)
+print('=== _next_page_query:',results._next_page_query)
+
+""" pysolr.Resultsの内部構造は以下の通り。
+('__class__', <class 'pysolr.Results'>)
+{'raw_response':
+    {'responseHeader': {'status': 0, 'QTime': 0, 'params': {'q': '*:*', 'start': '0', 'rows': '1', 'wt': 'json'}},
+    'response': {'numFound': 7427, 'start': 0,
+                'docs': [{'mongo_id': ['〜'], 'url': '〜', 'title': '〜', 'article': '〜', 'issuer': ['〜'], 'update_count': 0, 'id': '〜', '_version_': 1638412764864053248, 'response_time': '2019-01-20T19:24:59.014Z', 'publish_date': '2018-04-01T00:00:00Z'}]}
+    },
+'docs': [{'mongo_id': ['〜'], 'url': '〜', 'title': '〜', 'article': '〜', 'issuer': ['〜'], 'update_count': 0, 'id': '〜', '_version_': 1638412764864053248,'response_time': '2019-01-20T19:24:59.014Z', 'publish_date': '2018-04-01T00:00:00Z'}],
+'hits': 7427, 'debug': {}, 'highlighting': {}, 'facets': {}, 'spellcheck': {},
+'stats': {}, 'qtime': 0, 'grouped': {}, 'nextCursorMark': None, '_next_page_query': None
+}
+"""
 
 
 #results_check = solr_news_clip.results_check(results)
