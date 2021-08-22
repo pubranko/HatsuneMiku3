@@ -34,7 +34,7 @@ class ScrapedSaveTask(ExtensionsTask):
         kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
         kwargs['news_clip_master'] = NewsClipMaster(mongo)
 
-        logger.info('=== Scrapyed Save run kwargs : ' + str(kwargs))
+        logger.info('=== Scraped Save run kwargs : ' + str(kwargs))
         check_and_save(kwargs)
 
         # domain: str = kwargs['domain']
