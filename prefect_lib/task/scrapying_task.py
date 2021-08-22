@@ -6,9 +6,10 @@ from typing import Any
 from importlib import import_module
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.common_module.extentions_task import ExtensionsTask
+from prefect_lib.task.extentions_task import ExtensionsTask
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
+from models.scraped_from_response_model import ScrapedFromResponse
 
 
 class ScrapyingTask(ExtensionsTask):
@@ -24,6 +25,7 @@ class ScrapyingTask(ExtensionsTask):
         kwargs['mongo'] = self.mongo
         mongo: MongoModel = kwargs['mongo']
         kwargs['crawler_response'] = CrawlerResponseModel(mongo)
+        kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
 
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))

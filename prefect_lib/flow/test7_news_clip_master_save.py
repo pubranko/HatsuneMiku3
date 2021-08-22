@@ -7,11 +7,12 @@ path = os.getcwd()
 sys.path.append(path)
 import prefect
 from prefect import Flow, task, Parameter
+from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
-from prefect_lib.task.regular_observation_task import RegularObservationTask
+from prefect_lib.task.scraped_save import ScrapedSaveTask
 from prefect.utilities.context import Context
 from common.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
@@ -43,51 +44,31 @@ def status_change(obj: Flow, old_state, new_state):
 
 
 with Flow(
-    name='RegularObservation',
+    name='News Clip Master Save Test Flow',
     state_handlers=[status_change],
 ) as flow:
 
-    module = Parameter(
-        'module', default='prefect_lib.run.regular_crawler_run')()
-    method = Parameter('method', default='regular_crawler_run')()
-    task = RegularObservationTask(
+    domain = Parameter('domain', required=False)()
+    scraped_starting_time_from = DateTimeParameter(
+        'scraped_starting_time_from', required=False,)
+    scraped_starting_time_to = DateTimeParameter(
+        'scraped_starting_time_to', required=False)
+
+    task = ScrapedSaveTask(
         log_file_path=log_file_path, starting_time=starting_time)
-    result = task(module=module, method=method)
+    result = task(domain=domain, scraped_starting_time_from=scraped_starting_time_from,
+                  scraped_starting_time_to=scraped_starting_time_to)
 
 # flow.run()
-# flow.run(parameters=dict(module='prefect_lib.run.test_crawling',method='test1'))
-#flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test2'))
-flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test3'))   #直近60分
-#flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test4'))
+# domain、scraped_starting_time_*による絞り込みは任意
+flow.run(parameters=dict(
+    #domain='',
+    #scraped_starting_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
+    #scraped_starting_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+    #scraped_starting_time_from=datetime(2021, 8, 21, 10, 18, 12, 161000).astimezone(TIMEZONE),
+    #scraped_starting_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+))
 
-'''
-【残課題】
-
-
-【後続の作業】
-・スクレイピング(名前未定)
-　　※ログのファイル名切り替え随時
-・solrへ流し込み(名前未定)
-　　※ログのファイル名切り替え随時
-
-【日次レポート機能】
-【週次レポート機能】
-【月次レポート機能】
-【年次レポート機能】
-・各サイト別、全サイト単位件数
-・クロール、件数バイト数
-・正常、件数
-・エラー、件数
-・平均時間
-・最長時間
-・最大件数
-・最大バイト数
-
-
-【別プロジェクトとして管理するべき。別途検討】
-・API郡(twitter、FBなど)クロール（起動しっぱなし？）
-※ログのファイル名切り替え随時
-・solrへ流し込み
-※ログのファイル名切り替え随時
-
-'''
+#2021-08-21T01:18:12.160Z
+#2021-08-21T05:12:46.400Z
+#2021-08-21T05:13:11.809Z

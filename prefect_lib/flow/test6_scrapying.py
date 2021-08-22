@@ -54,7 +54,8 @@ with Flow(
     domain = Parameter('domain', required=False)()
     response_time_from = DateTimeParameter(
         'response_time_from', required=False,)
-    response_time_to = DateTimeParameter('response_time_to', required=False)
+    response_time_to = DateTimeParameter(
+        'response_time_to', required=False)
 
     task = ScrapyingTask(
         log_file_path=log_file_path, starting_time=starting_time)
@@ -62,12 +63,13 @@ with Flow(
                   response_time_from=response_time_from, response_time_to=response_time_to)
 
 # flow.run()
+### domain、response_time_*による絞り込みは任意
 flow.run(parameters=dict(
     module='prefect_lib.run.test_scrapying',
     method='test1',
-    domain='',
-    response_time_from=datetime(2021, 8, 14, 0, 0, 0).astimezone(TIMEZONE),
-    response_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
+    #domain='',
+    #response_time_from=datetime(2021, 8, 14, 0, 0, 0).astimezone(TIMEZONE),
+    #response_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
 ))
     #response_time_from='2021-08-01 00:00:00+09:00',
     #response_time_to='2021-08-10 00:00:00+09:00',

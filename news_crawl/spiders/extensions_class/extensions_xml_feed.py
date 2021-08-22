@@ -105,7 +105,8 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
-            spider_version_info=_info
+            spider_version_info=_info,
+            crawl_starting_time=self._crawl_start_time,
         )
 
     def closed(self, spider):
