@@ -4,7 +4,7 @@ from typing import Any
 from importlib import import_module
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.common_module.extentions_task import ExtensionsTask
+from prefect_lib.task.extentions_task import ExtensionsTask
 
 class RegularObservationTask(ExtensionsTask):
     '''

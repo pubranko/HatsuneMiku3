@@ -9,10 +9,10 @@ from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
 from models.crawler_response_model import CrawlerResponseModel
+from models.scraped_from_response_model import ScrapedFromResponse
 from prefect_lib.settings import TIMEZONE
 
-logger:Logger = logging.getLogger('prefect.' +
-                        sys._getframe().f_code.co_name)
+logger:Logger = logging.getLogger('prefect.run.scrapying_deco')
 
 def scrapying_deco(func):
     global logger
@@ -32,6 +32,7 @@ def test1(kwargs):
     global logger
     starting_time: datetime = kwargs['starting_time']
     crawler_response: CrawlerResponseModel = kwargs['crawler_response']
+    scraped_from_response: ScrapedFromResponse = kwargs['scraped_from_response']
     domain: str = kwargs['domain']
     response_time_from: datetime = kwargs['response_time_from']
     response_time_to: datetime = kwargs['response_time_to']
@@ -43,7 +44,11 @@ def test1(kwargs):
         conditions.append({'response_time':{'$gte':response_time_from}})
     if response_time_to:
         conditions.append({'response_time':{'$lte':response_time_to}})
-    filter: dict = {'$and':conditions }
+
+    if conditions:
+        filter: Any = {'$and': conditions}
+    else:
+        filter = None
     logger.info('=== crawler_responseへのfilter: ' + str(filter))
 
     # スクレイピング対象件数を確認
@@ -66,22 +71,16 @@ def test1(kwargs):
         ).skip(skip).limit(limit)
 
         for record in records:
+            # 各サイト共通の項目を設定
+            scraped:dict = {}
+            scraped['domain'] = record['domain']
+            scraped['url'] = record['url']
+            scraped['response_time'] = record['response_time']
+            scraped['scraped_starting_time'] = starting_time
+
+            # 各サイトのスクレイピングした項目を結合
             module_name = record['domain'].replace('.','_')
             mod: Any = import_module('prefect_lib.scraper.' + module_name)
-            scraped:dict = getattr(mod, 'exec')(record)
+            scraped.update(getattr(mod, 'exec')(record))
 
-            scraped['domain':str] = record['domain']
-            scraped['url':str] = record['url']
-            rt:datetime = record['response_time']
-            scraped['response_time':datetime] = rt.astimezone(TIMEZONE)
-
-            print('=== 最後に戻り値:',scraped)
-
-
-    '''
-    1. ドメインごとのスクレイパーの呼び出し機能
-    2. ドメインのドットをアンスコに変換した名前をモジュール名にする。
-    3. メソッド名は、、、？
-    4. メソッドの戻り値は、スクレイピングした各項目とする。dict形式で戻す。
-    5. 最後に戻り値をmondoDBへ保存
-    '''
+            scraped_from_response.insert_one(scraped)

@@ -30,8 +30,7 @@ def crawling_deco(func):
                 root_logger.removeHandler(handler)
 
         root_logger = logging.getLogger()
-        logger = logging.getLogger('prefect.run.scrapy_deco.' +
-                                   sys._getframe().f_code.co_name)
+        logger = logging.getLogger('prefect.run.crawling_deco')
         logger.info('=== 不要なのroot logger handlers 削除後の確認:' +
                     str(root_logger.handlers))
     return exec
@@ -72,13 +71,13 @@ def test2(starting_time: datetime, mongo: MongoModel):
 
 @crawling_deco
 def test3(starting_time: datetime, mongo: MongoModel):
-    '''正常：データほぼ無し（直近1分）'''
+    '''正常：データ（直近60分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
                   crawl_start_time=starting_time,
                   debug='Yes',
-                  lastmod_recent_time='60',)
+                  lastmod_recent_time='300',)
     process.crawl(SankeiComSitemapSpider,
                   crawl_start_time=starting_time,
                   debug='Yes',
