@@ -2,10 +2,14 @@ import os
 import sys
 from typing import Any
 import pysolr
+import logging
+from logging import Logger
 
 path = os.getcwd()
 sys.path.append(path)
 from models.solr_news_clip_model import SolrNewsClip
+
+logger: Logger = logging.getLogger()
 
 #search_query = '*:*'
 #search_query = ['title:中国 AND article:安倍']
@@ -14,7 +18,7 @@ from models.solr_news_clip_model import SolrNewsClip
 search_query = ['title:中国',' AND ','article:安倍']
 skip = 0
 limit = 5
-solr_news_clip = SolrNewsClip()
+solr_news_clip = SolrNewsClip(logger)
 results:Any = solr_news_clip.search_query(search_query, skip, limit)
 recodes_count = results.raw_response['response']['numFound']
 
@@ -22,7 +26,8 @@ print('=== ステータス',results.raw_response['responseHeader']['status'])
 print('=== カウント:',recodes_count)
 
 for recode in results.docs:
-    print('=== url:',recode['url'])
+    print('=== docs:',results.docs)
+    #print('=== url:',recode['url'])
 
 print('=== hits:',results.hits)
 print('=== debug:',results.debug)

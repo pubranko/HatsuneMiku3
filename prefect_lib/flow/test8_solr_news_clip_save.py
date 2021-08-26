@@ -12,7 +12,7 @@ from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
-from prefect_lib.task.scraped_save import ScrapedSaveTask
+from prefect_lib.task.solr_news_clip_save import SolrNewsClipSaveTask
 from prefect.utilities.context import Context
 from common.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
@@ -49,15 +49,15 @@ with Flow(
 ) as flow:
 
     domain = Parameter('domain', required=False)()
-    scraped_starting_time_from = DateTimeParameter(
-        'scraped_starting_time_from', required=False,)
-    scraped_starting_time_to = DateTimeParameter(
-        'scraped_starting_time_to', required=False)
+    scraped_save_starting_time_from = DateTimeParameter(
+        'scraped_save_starting_time_from', required=False,)
+    scraped_save_starting_time_to = DateTimeParameter(
+        'scraped_save_starting_time_to', required=False)
 
-    task = ScrapedSaveTask(
+    task = SolrNewsClipSaveTask(
         log_file_path=log_file_path, starting_time=starting_time)
-    result = task(domain=domain, scraped_starting_time_from=scraped_starting_time_from,
-                  scraped_starting_time_to=scraped_starting_time_to)
+    result = task(domain=domain, scraped_save_starting_time_from=scraped_save_starting_time_from,
+                  scraped_save_starting_time_to=scraped_save_starting_time_to)
 
 # flow.run()
 # domain、scraped_starting_time_*による絞り込みは任意

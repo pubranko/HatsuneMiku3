@@ -3,35 +3,45 @@ from dateutil import parser
 import pysolr
 import os
 from typing import Union
-from collections  import ItemsView
+from collections import ItemsView
+import logging
+from logging import Logger
+
+# solrの特殊文字
+#   + - && || ! ( ) { } [ ] ^ " ~ * ? : \
 
 
 class SolrNewsClip(object):
     """
     solr用のモデル。solrからのデータの取得を行う。
     """
+    solr: pysolr.Solr
+    logger: Logger
 
-    def __init__(self) -> None:
+    def __init__(self,logger) -> None:
         """
         solrへ接続したインスタンスを返す。
         """
         # 環境変数からsolrの情報を取得するように変更
         self.solr = pysolr.Solr(
             os.environ['SOLR_URL'] + os.environ['SOLR_CORE'],
-            timeout=10,
+            timeout=30,
             verify='',
             # verify=SolrEnv.VERIFY,     #solrの公開鍵を指定する場合、ここにファイルパスを入れる。
             auth=(os.environ['SOLR_WRITE_USER'],
                   os.environ['SOLR_WRITE_PASS']),
+            always_commit=True,
         )
+
+        self.logger = logger
 
     def search_query(
         self,
-        #search_query: str,
+        # search_query: str,
         search_query: list,
-        skip: int,
-        limit: int,
-        sort: dict = {'response_time':'desc',},
+        skip: int = 0,
+        limit: int = 100,
+        sort: dict = {'response_time': 'desc', },
         field: list = [],
         facet: str = 'on',
         facet_field: list = [],
@@ -39,16 +49,12 @@ class SolrNewsClip(object):
         """
         引数で渡されたrequest内のsolrサーチ用の情報より、検索を実行しレスポンスを返す。
         """
-        self.solr
-
         search_query_str = ''.join(search_query)
-
-        print('=== solrへqueryを送信')
-        print(search_query_str)
+        self.logger.info('=== solrへqueryを送信:' + str(search_query_str))
 
         # sort用のdictをsolr用に変換
-        i:ItemsView = sort.items()
-        sort_list:list = []
+        i: ItemsView = sort.items()
+        sort_list: list = []
         for t in i:
             sort_list.append(t[0] + ' ' + t[1] + ',')
 
@@ -62,16 +68,13 @@ class SolrNewsClip(object):
                 'fl': ','.join(field),
                 # ファセット、取得したいフィールド
                 'facet': facet,
-                'facet_field':','.join(facet_field),
+                'facet_field': ','.join(facet_field),
             })
             return results
-        except Exception as e:
-            print('=== solrとの通信でエラーが発生 ===')
-            print(e)
-            return None
-        # return results:pysolr.Results
 
-        #print (vars(results))
+        except Exception as e:
+            self.logger.critical('=== solrとの通信でエラーが発生 ===' + str(e))
+            return None
 
         """ pysolr.Resultsの内部構造は以下の通り。
         ('__class__', <class 'pysolr.Results'>)
@@ -85,6 +88,31 @@ class SolrNewsClip(object):
         'stats': {}, 'qtime': 0, 'grouped': {}, 'nextCursorMark': None, '_next_page_query': None
         }
         """
+
+    def escape_convert(self, word: str) -> str:
+        # solrの特殊文字
+        #   + - ! ( ) { } [ ] ^ " ~ * ? : \ && ||
+        table = str.maketrans({
+            '+': r'\+',
+            '-': r'\-',
+            '!': r'\!',
+            '(': r'\(',
+            ')': r'\)',
+            '[': r'\[',
+            ']': r'\]',
+            '{': r'\{',
+            '}': r'\}',
+            '^': r'\^',
+            '"': r'\"',
+            '~': r'\~',
+            '*': r'\*',
+            '?': r'\?',
+            ':': r'\:',
+            # '&&': r'\&&',
+            # '||': r'\||',
+            # '\\': r'\\',
+        })
+        return word.translate(table)
 
     def results_check(self, results: pysolr.Results):
         """
@@ -140,3 +168,24 @@ class SolrNewsClip(object):
 
         results_check["recodes"] = recodes
         return results_check
+
+    def add(self, record: dict):
+
+        self.solr.add([{
+            "url": record['url'],
+            "title": record['title'],
+            "article": record['article'],
+            "response_time": record['response_time'].isoformat(),
+            "publish_date": record['publish_date'].isoformat(),
+            "issuer": record['issuer'],
+            "update_count": 0,
+        }, ])
+
+    def delete_id(self, delete_id_list: list):
+        self.solr.delete(id=delete_id_list)
+
+    def delete_query(self, delete_query):
+        self.solr.delete(q=delete_query)
+
+    def commit(self):
+        self.solr.commit()
