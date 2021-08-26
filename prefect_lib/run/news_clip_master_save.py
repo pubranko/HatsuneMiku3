@@ -2,13 +2,12 @@ import os
 import sys
 import logging
 from typing import Any, Union
-from logging import Logger, StreamHandler
+from logging import Logger
 from datetime import datetime
 from importlib import import_module
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
-from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponse
 from models.news_clip_master_model import NewsClipMaster
 from prefect_lib.settings import TIMEZONE
@@ -72,7 +71,7 @@ def check_and_save(kwargs):
                 ]},
             ).count()
 
-            # 取得したレコードのscraped_starting_timeのタイムゾーンを修正(MongoDB? PyMongo?のバグのらしい)
+            # 取得したレコードのscraped_starting_timeのタイムゾーンを修正(MongoDB?のバグのらしい)
             UTC = tz.gettz("UTC")
             dt: datetime = record['scraped_starting_time']
             dt = dt.replace(tzinfo=UTC)

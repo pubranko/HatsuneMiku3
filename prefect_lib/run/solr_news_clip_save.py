@@ -5,7 +5,9 @@ from typing import Any, Union
 from logging import Logger
 from datetime import datetime
 from dateutil import tz
+from dateutil.parser import parse
 from pymongo.cursor import Cursor
+import pysolr
 path = os.getcwd()
 sys.path.append(path)
 from models.news_clip_master_model import NewsClipMaster
@@ -18,6 +20,7 @@ logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 def check_and_save(kwargs):
     '''あとで'''
     global logger
+    print('=== check_and_saveで確認',kwargs)
     starting_time: datetime = kwargs['starting_time']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
 
@@ -48,6 +51,7 @@ def check_and_save(kwargs):
     ).count()
     logger.info('=== solr の news_clip への登録チェック対象件数 : ' + str(record_count))
 
+    solr_news_clip = SolrNewsClip(logger)
     # 100件単位で処理を実施
     limit: int = 100
     skip_list = list(range(0, record_count, limit))
@@ -59,44 +63,42 @@ def check_and_save(kwargs):
 
         for master_record in master_records:
 
-            solr_news_clip = SolrNewsClip()
-            query:list = ['url:' + master_record['url']]
-            solr_results: Any = solr_news_clip.search_query(
-                query, skip=0, limit=0)
+            _ = 'url:' + solr_news_clip.escape_convert(master_record['url'])
+            query:list = [_]
+            solr_results: Any = solr_news_clip.search_query(query)
 
             solr_recodes_count = solr_results.raw_response['response']['numFound']
 
+            new_record:dict = {
+                "url": master_record['url'],
+                "title": master_record['title'],
+                "article": master_record['article'],
+                "response_time": master_record['response_time'],
+                "publish_date": master_record['publish_date'],
+                "issuer": master_record['issuer'],
+            }
             if solr_recodes_count:
-                pass
-                #url登録なし。solrへ追加する
-            else:
                 for solr_recode in solr_results.docs:
+                    # 取得したレコードのpublish_dateのタイムゾーンを修正(MongoDB?のバグのらしい)
+                    UTC = tz.gettz("UTC")
+                    master_publish_date: datetime = master_record['publish_date']
+                    master_publish_date = master_publish_date.replace(tzinfo=UTC)
+                    master_publish_date = master_publish_date.astimezone(TIMEZONE)
+
+                    solr_publish_date:datetime = parse(solr_recode['publish_date']).astimezone(TIMEZONE)
+
                     # 重複チェック
                     if master_record['title'] == solr_recode['title']  and \
                         master_record['article'] == solr_recode['article'] and \
-                        master_record['publish_date'] == solr_recode['publish_date']:
-                        pass
-                        #既登録。追加不要。
+                        master_publish_date == solr_publish_date:
+
+                        logger.info('=== solrに登録済みのためスキップ: ' + str(new_record['url']))
                     else:
-                        pass
-                        #登録内容の更新あり。solrへ追加する。
-
-
-'''
-            # 取得したレコードのscraped_save_starting_timeのタイムゾーンを修正(MongoDB? PyMongo?のバグのらしい)
-            UTC = tz.gettz("UTC")
-            dt: datetime = master_record['scraped_save_starting_time']
-            dt = dt.replace(tzinfo=UTC)
-            dt = dt.astimezone(TIMEZONE)
-
-            # 重複するレコードがなければ保存する。
-            st: str = dt.isoformat()
-            if news_clip_duplicate_count == 0:
-                master_record['scraped_save_starting_time'] = starting_time
-                news_clip_master.insert_one(master_record)
-                logger.info('=== news_clip_master への登録 : ' +
-                            st + ' : ' + master_record['url'])
+                        solr_news_clip.add(new_record)
+                        logger.warning('=== solrの登録情報と差異あり（追加）: ' + str(new_record['url']))
             else:
-                logger.info('=== news_clip_master への登録スキップ : ' +
-                            st + ' : ' + master_record['url'])
-'''
+                pass
+                solr_news_clip.add(new_record)
+                logger.info('=== solrへ新規追加: ' + str(new_record['url']))
+
+        solr_news_clip.commit()
