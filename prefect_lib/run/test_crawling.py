@@ -15,13 +15,12 @@ from news_crawl.spiders.asahi_com_xml_feed import AsahiComXmlFeedSpider
 from news_crawl.spiders.jp_reuters_com_sitemap import JpReutersComSitemapSpider
 from news_crawl.spiders.kyodo_co_jp_sitemap import KyodoCoJpSitemapSpider
 from news_crawl.spiders.yomiuri_co_jp_sitemap import YomiuriCoJpSitemapSpider
-from models.mongo_model import MongoModel
 
 
 def crawling_deco(func):
-    def exec(starting_time: datetime, mongo: MongoModel):
+    def exec(starting_time: datetime):
         ### 主処理
-        func(starting_time, mongo)
+        func(starting_time)
         ### 終了処理
         # Scrapy実行後に、rootロガーに追加されているストリームハンドラを削除(これをやらないとログが二重化する)
         root_logger = logging.getLogger()
@@ -37,7 +36,7 @@ def crawling_deco(func):
 
 
 @crawling_deco
-def test1(starting_time: datetime, mongo: MongoModel):
+def test1(starting_time: datetime):
     '''正常：データほぼ無し（直近1分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
@@ -54,7 +53,7 @@ def test1(starting_time: datetime, mongo: MongoModel):
 
 
 @crawling_deco
-def test2(starting_time: datetime, mongo: MongoModel):
+def test2(starting_time: datetime):
     '''エラーケース'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
@@ -70,14 +69,14 @@ def test2(starting_time: datetime, mongo: MongoModel):
     process.start()
 
 @crawling_deco
-def test3(starting_time: datetime, mongo: MongoModel):
+def test3(starting_time: datetime):
     '''正常：データ（直近60分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
                   crawl_start_time=starting_time,
                   debug='Yes',
-                  lastmod_recent_time='300',)
+                  lastmod_recent_time='120',)
     process.crawl(SankeiComSitemapSpider,
                   crawl_start_time=starting_time,
                   debug='Yes',
@@ -90,7 +89,7 @@ def test3(starting_time: datetime, mongo: MongoModel):
     process.start()
 
 @crawling_deco
-def test4(starting_time: datetime, mongo: MongoModel):
+def test4(starting_time: datetime):
     '''正常：データほぼ無し（直近1分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
