@@ -14,7 +14,7 @@ from prefect.engine import signals
 from prefect.engine.state import Running, Success, Failed
 from prefect_lib.task.solr_news_clip_save import SolrNewsClipSaveTask
 from prefect.utilities.context import Context
-from common.mail_send import mail_send
+from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
 
 

@@ -4,7 +4,7 @@ from scrapy.statscollectors import MemoryStatsCollector
 from models.mongo_model import MongoModel
 from models.crawler_controller_model import CrawlerControllerModel
 from models.crawler_logs_model import CrawlerLogsModel
-from common.resource_check import resource_check
+from common_lib.resource_check import resource_check
 
 
 def spider_closed(spider):

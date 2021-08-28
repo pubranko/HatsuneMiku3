@@ -14,7 +14,7 @@ from prefect.engine import signals
 from prefect.engine.state import Running, Success, Failed
 from prefect_lib.task.scrapying_task import ScrapyingTask
 from prefect.utilities.context import Context
-from common.mail_send import mail_send
+from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
 
 
@@ -67,7 +67,8 @@ with Flow(
 flow.run(parameters=dict(
     module='prefect_lib.run.test_scrapying',
     method='test1',
-    #domain='',
+    domain='',
+    #domain='epochtimes.jp',
     #response_time_from=datetime(2021, 8, 14, 0, 0, 0).astimezone(TIMEZONE),
     #response_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
 ))

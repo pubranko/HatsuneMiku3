@@ -13,6 +13,7 @@ sys.path.append(path)
 from models.news_clip_master_model import NewsClipMaster
 from models.solr_news_clip_model import SolrNewsClip
 from prefect_lib.settings import TIMEZONE
+from common_lib.timezone_recovery import timezone_recovery
 
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 
@@ -20,7 +21,7 @@ logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 def check_and_save(kwargs):
     '''あとで'''
     global logger
-    print('=== check_and_saveで確認',kwargs)
+    print('=== check_and_saveで確認', kwargs)
     starting_time: datetime = kwargs['starting_time']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
 
@@ -64,40 +65,38 @@ def check_and_save(kwargs):
         for master_record in master_records:
 
             _ = 'url:' + solr_news_clip.escape_convert(master_record['url'])
-            query:list = [_]
+            query: list = [_]
             solr_results: Any = solr_news_clip.search_query(query)
 
             solr_recodes_count = solr_results.raw_response['response']['numFound']
 
-            new_record:dict = {
+            new_record: dict = {
                 "url": master_record['url'],
                 "title": master_record['title'],
                 "article": master_record['article'],
-                "response_time": master_record['response_time'],
-                "publish_date": master_record['publish_date'],
+                "response_time": timezone_recovery(master_record['response_time']),
+                "publish_date": timezone_recovery(master_record['publish_date']),
                 "issuer": master_record['issuer'],
             }
             if solr_recodes_count:
                 for solr_recode in solr_results.docs:
-                    # 取得したレコードのpublish_dateのタイムゾーンを修正(MongoDB?のバグのらしい)
-                    UTC = tz.gettz("UTC")
-                    master_publish_date: datetime = master_record['publish_date']
-                    master_publish_date = master_publish_date.replace(tzinfo=UTC)
-                    master_publish_date = master_publish_date.astimezone(TIMEZONE)
-
-                    solr_publish_date:datetime = parse(solr_recode['publish_date']).astimezone(TIMEZONE)
+                    master_publish_date = timezone_recovery(
+                        master_record['publish_date'])
+                    solr_publish_date: datetime = parse(
+                        solr_recode['publish_date']).astimezone(TIMEZONE)
 
                     # 重複チェック
-                    if master_record['title'] == solr_recode['title']  and \
-                        master_record['article'] == solr_recode['article'] and \
-                        master_publish_date == solr_publish_date:
+                    if master_record['title'] == solr_recode['title'] and \
+                            master_record['article'] == solr_recode['article'] and \
+                            master_publish_date == solr_publish_date:
 
-                        logger.info('=== solrに登録済みのためスキップ: ' + str(new_record['url']))
+                        logger.info('=== solrに登録済みのためスキップ: ' +
+                                    str(new_record['url']))
                     else:
                         solr_news_clip.add(new_record)
-                        logger.warning('=== solrの登録情報と差異あり（追加）: ' + str(new_record['url']))
+                        logger.warning(
+                            '=== solrの登録情報と差異あり（追加）: ' + str(new_record['url']))
             else:
-                pass
                 solr_news_clip.add(new_record)
                 logger.info('=== solrへ新規追加: ' + str(new_record['url']))
 

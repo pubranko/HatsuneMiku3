@@ -4,6 +4,7 @@ import logging
 from typing import Any, Union
 from logging import Logger
 from datetime import datetime
+from dateutil import tz
 from importlib import import_module
 from pymongo.cursor import Cursor
 path = os.getcwd()
@@ -11,7 +12,8 @@ sys.path.append(path)
 from models.scraped_from_response_model import ScrapedFromResponse
 from models.news_clip_master_model import NewsClipMaster
 from prefect_lib.settings import TIMEZONE
-from dateutil import tz
+from common_lib.timezone_recovery import timezone_recovery
+
 
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 
@@ -67,18 +69,12 @@ def check_and_save(kwargs):
                     {'url': record['url']},
                     {'title': record['title']},
                     {'article': record['article']},
-                    {'publish_date': record['publish_date']},
+                    {'publish_date': timezone_recovery(record['publish_date'])},
                 ]},
             ).count()
 
-            # 取得したレコードのscraped_starting_timeのタイムゾーンを修正(MongoDB?のバグのらしい)
-            UTC = tz.gettz("UTC")
-            dt: datetime = record['scraped_starting_time']
-            dt = dt.replace(tzinfo=UTC)
-            dt = dt.astimezone(TIMEZONE)
-
             # 重複するレコードがなければ保存する。
-            st: str = dt.isoformat()
+            st: str = timezone_recovery(record['scraped_starting_time']).isoformat()
             if news_clip_duplicate_count == 0:
                 record['scraped_save_starting_time'] = starting_time
                 news_clip_master.insert_one(record)
