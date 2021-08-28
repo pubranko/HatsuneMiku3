@@ -1,10 +1,12 @@
 import os
 import sys
+import logging
 from logging import Logger
+from typing import Any
+from importlib import import_module
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
-from prefect_lib.run import scrapying_run
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponse
@@ -17,6 +19,8 @@ class ScrapyingTask(ExtensionsTask):
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
 
+        mod: Any = import_module(kwargs['module'])
+        method = kwargs['method']
         kwargs['starting_time'] = self.starting_time
         kwargs['mongo'] = self.mongo
         mongo: MongoModel = kwargs['mongo']
@@ -25,7 +29,8 @@ class ScrapyingTask(ExtensionsTask):
 
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
-        scrapying_run.exec(kwargs)
+        getattr(mod, method)(kwargs)
+
 
         # 終了処理
         self.closed()
