@@ -14,7 +14,7 @@ from prefect.engine import signals
 from prefect.engine.state import Running, Success, Failed
 from prefect_lib.task.scraped_save import ScrapedSaveTask
 from prefect.utilities.context import Context
-from common.mail_send import mail_send
+from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
 
 
@@ -62,7 +62,8 @@ with Flow(
 # flow.run()
 # domain、scraped_starting_time_*による絞り込みは任意
 flow.run(parameters=dict(
-    #domain='',
+    domain='',
+    #domain='epochtimes.jp',
     #scraped_starting_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
     #scraped_starting_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
     #scraped_starting_time_from=datetime(2021, 8, 21, 10, 18, 12, 161000).astimezone(TIMEZONE),

@@ -4,6 +4,7 @@ import logging
 from typing import Any, Union
 from logging import Logger, StreamHandler
 from datetime import datetime
+from dateutil import tz
 from importlib import import_module
 from pymongo.cursor import Cursor
 path = os.getcwd()
@@ -11,8 +12,10 @@ sys.path.append(path)
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponse
 from prefect_lib.settings import TIMEZONE
+from common_lib.timezone_recovery import timezone_recovery
 
-logger:Logger = logging.getLogger('prefect.run.scrapying_deco')
+logger: Logger = logging.getLogger('prefect.run.scrapying_deco')
+
 
 def scrapying_deco(func):
     global logger
@@ -22,7 +25,6 @@ def scrapying_deco(func):
         # 主処理
         func(kwargs)
         # 終了処理
-        pass
     return exec
 
 
@@ -37,13 +39,13 @@ def test1(kwargs):
     response_time_from: datetime = kwargs['response_time_from']
     response_time_to: datetime = kwargs['response_time_to']
 
-    conditions :list = []
+    conditions: list = []
     if domain:
-        conditions.append({'domain':domain})
+        conditions.append({'domain': domain})
     if response_time_from:
-        conditions.append({'response_time':{'$gte':response_time_from}})
+        conditions.append({'response_time': {'$gte': response_time_from}})
     if response_time_to:
-        conditions.append({'response_time':{'$lte':response_time_to}})
+        conditions.append({'response_time': {'$lte': response_time_to}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -60,8 +62,8 @@ def test1(kwargs):
     logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
 
     # 100件単位でスクレイピング処理を実施
-    limit:int = 100
-    skip_list = list(range(0,record_count, limit))
+    limit: int = 100
+    skip_list = list(range(0, record_count, limit))
 
     for skip in skip_list:
         records: Cursor = crawler_response.find(
@@ -72,14 +74,15 @@ def test1(kwargs):
 
         for record in records:
             # 各サイト共通の項目を設定
-            scraped:dict = {}
+            scraped: dict = {}
             scraped['domain'] = record['domain']
             scraped['url'] = record['url']
-            scraped['response_time'] = record['response_time']
+
+            scraped['response_time'] = timezone_recovery(record['response_time'])
             scraped['scraped_starting_time'] = starting_time
 
             # 各サイトのスクレイピングした項目を結合
-            module_name = record['domain'].replace('.','_')
+            module_name = record['domain'].replace('.', '_')
             mod: Any = import_module('prefect_lib.scraper.' + module_name)
             scraped.update(getattr(mod, 'exec')(record))
 

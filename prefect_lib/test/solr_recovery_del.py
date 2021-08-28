@@ -21,7 +21,7 @@ def solr_del():
     #'2021-08-21T09:06:18+09:00 TO 2021-08-21T09:06:19+09:00'
     solr.delete_query(
         #'response_time:[2021-08-21T00:06:18Z TO 2021-08-21T00:06:19Z]',
-        'response_time:[2021-08-21T00:06:18Z TO *]',
+        'response_time:[2021-08-20T00:06:18Z TO *]',
     )
 
     # solr = pysolr.Solr(
