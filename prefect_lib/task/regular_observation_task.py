@@ -13,12 +13,8 @@ class RegularObservationTask(ExtensionsTask):
     '''
     def run(self,module,method):
         '''ここがprefectで起動するメイン処理'''
-
         mod:Any = import_module(module)
         getattr(mod,method)(self.starting_time,self.mongo)
-
-
-
         # 終了処理
         self.closed()
         #return ''

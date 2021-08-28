@@ -8,7 +8,7 @@ from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
-from common.resource_check import resource_check
+from common_lib.resource_check import resource_check
 
 def spider_init(spider, *args, **kwargs):
     '''spider共通の初期処理'''

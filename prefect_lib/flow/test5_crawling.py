@@ -13,7 +13,7 @@ from prefect.engine import signals
 from prefect.engine.state import Running, Success, Failed
 from prefect_lib.task.regular_observation_task import RegularObservationTask
 from prefect.utilities.context import Context
-from common.mail_send import mail_send
+from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
 
 

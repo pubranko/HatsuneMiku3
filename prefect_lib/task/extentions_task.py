@@ -10,9 +10,9 @@ import prefect
 from prefect import Task, Parameter
 from prefect.engine import signals
 from prefect.utilities.context import Context
-from common.mail_send import mail_send
-from common.resource_check import resource_check
-from common.environ_check import environ_check
+from common_lib.mail_send import mail_send
+from common_lib.resource_check import resource_check
+from common_lib.environ_check import environ_check
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
 from prefect_lib.settings import NOTICE_LEVEL
