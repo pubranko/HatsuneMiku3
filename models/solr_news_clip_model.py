@@ -50,7 +50,7 @@ class SolrNewsClip(object):
         引数で渡されたrequest内のsolrサーチ用の情報より、検索を実行しレスポンスを返す。
         """
         search_query_str = ''.join(search_query)
-        self.logger.info('=== solrへqueryを送信:' + str(search_query_str))
+        #self.logger.info('=== solrへqueryを送信:' + str(search_query_str))
 
         # sort用のdictをsolr用に変換
         i: ItemsView = sort.items()
