@@ -14,7 +14,6 @@ class MongoModel(object):
     __mongo_pass: str
     __mongo_client: MongoClient
     crawler_db: Database
-    #collection: dict
 
     def __init__(self):
         self.__mongo_uri = os.environ['MONGO_SERVER']
@@ -22,12 +21,6 @@ class MongoModel(object):
         self.__mongo_db = os.environ['MONGO_USE_DB']
         self.__mongo_user = os.environ['MONGO_USER']
         self.__mongo_pass = os.environ['MONGO_PASS']
-        # self.collection: dict = {
-        #     'crawler_response': os.environ['MONGO_CRAWLER_RESPONSE'],
-        #     'crawler_controller': os.environ['MONGO_CRAWLER_CONTROLLER'],
-        #     'crawler_logs': os.environ['MONGO_CRAWLER_LOGS'],
-        # }
-
         self.__mongo_client = MongoClient(
             self.__mongo_uri, int(self.__mongo_port),
         )

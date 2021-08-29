@@ -20,16 +20,16 @@ from prefect_lib.settings import NOTICE_LEVEL
 
 class ExtensionsTask(Task):
     '''
-    引数: log_file_path:str = 出力ログのファイルパス , crawl_start_time:datetime = 起点となる時間 ,
+    引数: log_file_path:str = 出力ログのファイルパス , start_time:datetime = 起点となる時間 ,
     notice_level = メール通知するログレベル[CRITICAL|ERROR|WARNING]
     '''
     mongo = MongoModel()
-    starting_time: datetime
+    start_time: datetime
     log_file: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
     prefect_context: Context = prefect.context
 
-    def __init__(self, log_file_path: str, starting_time: datetime, *args, **kwargs):
+    def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # ログファイルパス
@@ -39,10 +39,10 @@ class ExtensionsTask(Task):
             raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
 
         # 開始時間
-        if starting_time:
-            self.starting_time = starting_time
+        if start_time:
+            self.start_time = start_time
         else:
-            raise signals.FAIL(message="引数エラー:crawl_start_timeが指定されていません。")
+            raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
         # 環境変数チェック
         environ_check()
@@ -66,11 +66,11 @@ class ExtensionsTask(Task):
 
         title: str = ''
         if pattern_critical.search(self.log_file):
-            title = '【' + self.name + ':クリティカル発生】' + self.starting_time.isoformat()
+            title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
         elif pattern_error.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
-            title = '【' + self.name + ':エラー発生】' + self.starting_time.isoformat()
+            title = '【' + self.name + ':エラー発生】' + self.start_time.isoformat()
         elif pattern_warning.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
-            title = '【' + self.name + ':ワーニング発生】' + self.starting_time.isoformat()
+            title = '【' + self.name + ':ワーニング発生】' + self.start_time.isoformat()
 
         if not title == '':
             msg: str = '\n'.join([
@@ -82,7 +82,7 @@ class ExtensionsTask(Task):
         '''処理が終わったらログを保存'''
         crawler_logs = CrawlerLogsModel(self.mongo)
         crawler_logs.insert_one({
-            'crawl_start_time': self.starting_time.isoformat(),
+            'start_time': self.start_time.isoformat(),
             'record_type': 'regular_observation_task',
             'logs': self.log_file,
         })

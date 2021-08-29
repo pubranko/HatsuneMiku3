@@ -17,7 +17,7 @@ from prefect.utilities.context import Context
 from common_lib.mail_send import mail_send
 
 
-starting_time = datetime.now().astimezone(
+start_time = datetime.now().astimezone(
     TIMEZONE)
 log_file_path = os.path.join(
     'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
@@ -36,7 +36,7 @@ def status_change(obj: Flow, old_state, new_state):
         with open(log_file_path) as f:
             log_file = f.read()
         # mail_send('【prefectフローでエラー発生】' +
-        #           crawl_start_time.isoformat(), log_file,)
+        #           crawling_start_time.isoformat(), log_file,)
 
     if not isinstance(new_state, Running):
         pass  # 成否に関係なく終わったときに動く処理
@@ -48,19 +48,21 @@ with Flow(
 ) as flow:
 
     domain = Parameter('domain', required=False)()
-    response_time_from = DateTimeParameter(
-        'response_time_from', required=False,)
-    response_time_to = DateTimeParameter(
-        'response_time_to', required=False)
+    crawling_start_time_from = DateTimeParameter(
+        'crawling_start_time_from', required=False,)
+    crawling_start_time_to = DateTimeParameter(
+        'crawling_start_time_to', required=False)
 
     task = ScrapyingTask(
-        log_file_path=log_file_path, starting_time=starting_time)
-    result = task(domain=domain, response_time_from=response_time_from,
-                  response_time_to=response_time_to)
+        log_file_path=log_file_path, start_time=start_time)
+    result = task(domain=domain,
+                  crawling_start_time_from=crawling_start_time_from,
+                  crawling_start_time_to=crawling_start_time_to)
 
-# domain、response_time_*による絞り込みは任意
+# domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
     # domain='epochtimes.jp',
-    #response_time_from=datetime(2021, 8, 14, 0, 0, 0).astimezone(TIMEZONE),
-    #response_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
+    crawling_start_time_from=datetime(2021, 8, 29, 21, 33, 48).astimezone(TIMEZONE),
+    #crawling_start_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
 ))
+#2021-08-29T13:33:48.503Z

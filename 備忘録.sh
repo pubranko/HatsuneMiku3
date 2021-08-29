@@ -1,3 +1,15 @@
+2021/8/29
+コントロールの見直し
+・crawler_controller → controllerへリネーム
+・Prefect側でクロール可否を制御するコントロールを実装する。
+　1. ドメイン単位で制御
+  2. crawling、scrapyingごとに止める箇所を制御できるようにする。
+・scrapying,scraped,solr部分で前回実績の続きから抽出する機能を実装する。
+　前回情報がなければ全部。
+
+
+
+
 2021/7/24
 
 ＜spiderでやるべきこと＞
@@ -29,7 +41,7 @@
             サイトマップurl:{
                 lastmod:
                 url:
-                crawl_start_time:
+                crawling_start_time:
             },
             一覧ページurl:{
                 url:
@@ -93,7 +105,7 @@
         サイトマップurl:{
             lastmod:
             url:
-            crawl_start_time:
+            crawling_start_time:
         },
         一覧ページurl:{
             url:

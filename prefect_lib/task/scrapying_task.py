@@ -17,7 +17,7 @@ class ScrapyingTask(ExtensionsTask):
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
 
-        kwargs['starting_time'] = self.starting_time
+        kwargs['start_time'] = self.start_time
         kwargs['mongo'] = self.mongo
         mongo: MongoModel = kwargs['mongo']
         kwargs['crawler_response'] = CrawlerResponseModel(mongo)

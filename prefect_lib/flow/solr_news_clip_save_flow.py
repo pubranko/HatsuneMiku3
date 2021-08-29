@@ -17,7 +17,7 @@ from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
 
 
-starting_time = datetime.now().astimezone(
+start_time = datetime.now().astimezone(
     TIMEZONE)
 log_file_path = os.path.join(
     'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
@@ -36,7 +36,7 @@ def status_change(obj: Flow, old_state, new_state):
         with open(log_file_path) as f:
             log_file = f.read()
         # mail_send('【prefectフローでエラー発生】' +
-        #           crawl_start_time.isoformat(), log_file,)
+        #           crawling_start_time.isoformat(), log_file,)
 
     if not isinstance(new_state, Running):
         pass  # 成否に関係なく終わったときに動く処理
@@ -48,21 +48,21 @@ with Flow(
 ) as flow:
 
     domain = Parameter('domain', required=False)()
-    scraped_save_starting_time_from = DateTimeParameter(
-        'scraped_save_starting_time_from', required=False,)
-    scraped_save_starting_time_to = DateTimeParameter(
-        'scraped_save_starting_time_to', required=False)
+    scraped_save_start_time_from = DateTimeParameter(
+        'scraped_save_start_time_from', required=False,)
+    scraped_save_start_time_to = DateTimeParameter(
+        'scraped_save_start_time_to', required=False)
 
     task = SolrNewsClipSaveTask(
-        log_file_path=log_file_path, starting_time=starting_time)
-    result = task(domain=domain, scraped_save_starting_time_from=scraped_save_starting_time_from,
-                  scraped_save_starting_time_to=scraped_save_starting_time_to)
+        log_file_path=log_file_path, start_time=start_time)
+    result = task(domain=domain, scraped_save_start_time_from=scraped_save_start_time_from,
+                  scraped_save_start_time_to=scraped_save_start_time_to)
 
-# scraped_save_starting_time_*による絞り込みは任意
+# scraped_save_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
     #domain='',
-    #scrapying_starting_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
-    #scrapying_starting_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
-    #scrapying_starting_time_from=datetime(2021, 8, 21, 10, 18, 12, 161000).astimezone(TIMEZONE),
-    #scrapying_starting_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+    #scrapying_start_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
+    #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+    #scrapying_start_time_from=datetime(2021, 8, 21, 10, 18, 12, 161000).astimezone(TIMEZONE),
+    #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
 ))

@@ -20,7 +20,7 @@ class SolrNewsClipSaveTask(ExtensionsTask):
         logger: Logger = self.logger
         mongo: MongoModel = self.mongo
 
-        kwargs['starting_time'] = self.starting_time
+        kwargs['start_time'] = self.start_time
         kwargs['news_clip_master'] = NewsClipMaster(mongo)
 
         logger.info('=== Scrapyed Save run kwargs : ' + str(kwargs))

@@ -86,7 +86,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         urls_list: list = []
 
         # 直近の数分間の指定がある場合
-        until_this_time: datetime = self._crawl_start_time
+        until_this_time: datetime = self._crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
@@ -96,7 +96,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             last_time = parser.parse(
-                self._next_crawl_point[response.url]['latest_lastmod'])
+                self._crawl_point[response.url]['latest_lastmod'])
         # 処理中のページ内で、最大のlastmodとurlを記録するエリア。とりあえず初期値には約10年前を指定。
         max_lstmod: datetime = datetime.now().astimezone(
             self.settings['TIMEZONE']) - timedelta(days=3650)
@@ -146,7 +146,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
                         crwal_flg = False
                         next_page_flg = True
                     elif lastmod_parse == last_time \
-                            and self._next_crawl_point[response.url]['latest_url']:
+                            and self._crawl_point[response.url]['latest_url']:
                         crwal_flg = False
                         next_page_flg = True
 
@@ -179,11 +179,11 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             #yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
             yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
 
-        # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        self._next_crawl_point[response.url] = {
+        # 次回向けに1ページ目の10件をcontrollerへ保存する情報
+        self._crawl_point[response.url] = {
             'latest_lastmod': max_lstmod.isoformat(),
             'latest_url': max_url,
-            'crawl_start_time': self._crawl_start_time.isoformat()
+            'crawling_start_time': self._crawling_start_time.isoformat()
         }
 
         start_request_debug_file_generate(
