@@ -2,7 +2,7 @@ from datetime import datetime
 from logging import Logger
 from scrapy.statscollectors import MemoryStatsCollector
 from models.mongo_model import MongoModel
-from models.crawler_controller_model import CrawlerControllerModel
+from models.controller_model import ControllerModel
 from models.crawler_logs_model import CrawlerLogsModel
 from common_lib.resource_check import resource_check
 
@@ -14,23 +14,23 @@ def spider_closed(spider):
     mongo: MongoModel = spider.mongo
     domain_name: str = spider._domain_name
     name: str = spider.name
-    next_crawl_point: dict = spider._next_crawl_point
+    crawl_point: dict = spider._crawl_point
     logger: Logger = spider.logger
     stats: MemoryStatsCollector = spider.crawler.stats
-    crawl_start_time: datetime = spider._crawl_start_time
+    crawling_start_time: datetime = spider._crawling_start_time
 
-    crawler_controller = CrawlerControllerModel(mongo)
-    crawler_controller.next_crawl_point_update(
-        domain_name, name, next_crawl_point)
+    controller = ControllerModel(mongo)
+    controller.crawl_point_update(
+        domain_name, name, crawl_point)
 
     resource_check()
 
     logger.info(
-        '=== closed : crawler_controllerに次回クロールポイント情報を保存 \n %s', next_crawl_point)
+        '=== closed : controllerに次回クロールポイント情報を保存 \n %s', crawl_point)
 
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_logs.insert_one({
-        'crawl_start_time': crawl_start_time.isoformat(),
+        'crawling_start_time': crawling_start_time.isoformat(),
         'record_type': 'spider_stats',
         'domain_name': domain_name,
         'spider_name': name,

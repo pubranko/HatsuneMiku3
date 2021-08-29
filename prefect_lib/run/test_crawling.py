@@ -18,9 +18,9 @@ from news_crawl.spiders.yomiuri_co_jp_sitemap import YomiuriCoJpSitemapSpider
 
 
 def crawling_deco(func):
-    def exec(starting_time: datetime):
+    def exec(start_time: datetime):
         ### 主処理
-        func(starting_time)
+        func(start_time)
         ### 終了処理
         # Scrapy実行後に、rootロガーに追加されているストリームハンドラを削除(これをやらないとログが二重化する)
         root_logger = logging.getLogger()
@@ -36,16 +36,16 @@ def crawling_deco(func):
 
 
 @crawling_deco
-def test1(starting_time: datetime):
+def test1(start_time: datetime):
     '''正常：データほぼ無し（直近1分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='1',)
     process.crawl(SankeiComSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='1',
                   url_term_days='1',)
@@ -53,48 +53,48 @@ def test1(starting_time: datetime):
 
 
 @crawling_deco
-def test2(starting_time: datetime):
+def test2(start_time: datetime):
     '''エラーケース'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes!',
                   lastmod_recent_time='1',)
     process.crawl(SankeiComSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='1a',
                   url_term_days='1',)
     process.start()
 
 @crawling_deco
-def test3(starting_time: datetime):
+def test3(start_time: datetime):
     '''正常：データ（直近60分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='120',)
     process.crawl(SankeiComSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='60',
                   url_term_days='1',)
     process.crawl(AsahiComXmlFeedSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='60',)
     process.start()
 
 @crawling_deco
-def test4(starting_time: datetime):
+def test4(start_time: datetime):
     '''正常：データほぼ無し（直近1分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   debug='Yes',
                   lastmod_recent_time='180',)
     process.start()

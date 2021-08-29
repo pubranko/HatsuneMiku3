@@ -28,7 +28,7 @@ class KyodoCoJpSitemapSpider(ExtensionsSitemapSpider):
         #     'https://www.kyodo.co.jp/sitemap-pt-post-2021-04.xml',
 
         _sitemap_term_days_list = term_days_Calculation(
-            self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y-%m')
+            self._crawling_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y-%m')
 
         self.sitemap_urls = [
             'https://www.kyodo.co.jp/sitemap-pt-post-%s.xml' % (i) for i in _sitemap_term_days_list]

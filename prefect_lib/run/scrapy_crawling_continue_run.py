@@ -19,9 +19,9 @@ from models.mongo_model import MongoModel
 
 
 def crawling_deco(func):
-    def deco(starting_time: datetime):
+    def deco(start_time: datetime):
         ### 主処理
-        func(starting_time)
+        func(start_time)
         ### 終了処理
         # Scrapy実行後に、rootロガーに追加されているストリームハンドラを削除(これをやらないとログが二重化する)
         root_logger = logging.getLogger()
@@ -37,17 +37,17 @@ def crawling_deco(func):
 
 
 @crawling_deco
-def exec(starting_time: datetime):
+def exec(start_time: datetime):
     '''正常：データ（直近60分）'''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
     process.crawl(EpochtimesJpSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   continued='Yes')
     process.crawl(SankeiComSitemapSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   continued='Yes')
     process.crawl(AsahiComXmlFeedSpider,
-                  crawl_start_time=starting_time,
+                  crawling_start_time=start_time,
                   continued='Yes')
     process.start()

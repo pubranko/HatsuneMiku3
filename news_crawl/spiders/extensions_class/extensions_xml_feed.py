@@ -34,11 +34,11 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
-    _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
+    _crawling_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
-    _next_crawl_point: dict = {}
+    _crawl_point: dict = {}
 
     _request_list: list = []
     # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
@@ -85,11 +85,11 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
 
         self.logger.info(
             '=== parse_nodes : XMLの解析完了 : 件数 = %s ,url = %s ', self._xml_extract_count, response.url)
-        # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
-        self._next_crawl_point[response.url] = {
+        # サイトマップごとの最大更新時間を記録(controllerコレクションへ保存する内容)
+        self._crawl_point[response.url] = {
             'latest_lastmod': self._max_lstmod,
             'latest_url': self._max_url,
-            'crawl_start_time': self._crawl_start_time.isoformat()
+            'crawling_start_time': self._crawling_start_time.isoformat()
         }
 
     def parse_news(self, response: Response):
@@ -106,7 +106,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
-            crawl_starting_time=self._crawl_start_time,
+            crawling_start_time=self._crawling_start_time,
         )
 
     def closed(self, spider):

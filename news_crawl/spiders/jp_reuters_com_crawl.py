@@ -66,7 +66,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         last_time_urls: list = []
         if 'continued' in self.kwargs_save:
             last_time_urls = [
-                _['loc'] for _ in self._next_crawl_point[url_header]['urls']]
+                _['loc'] for _ in self._crawl_point[url_header]['urls']]
 
         page:int = start_page
         while page <= end_page:
@@ -118,10 +118,10 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         for _ in urls_list:
             #yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news, errback=self.errback_handle)
             yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
-        # 次回向けに1ページ目の10件をcrawler_controllerへ保存する情報
-        self._next_crawl_point[url_header] = {
+        # 次回向けに1ページ目の10件をcontrollerへ保存する情報
+        self._crawl_point[url_header] = {
             'urls': urls_list[0:10],
-            'crawl_start_time': self._crawl_start_time.isoformat()
+            'crawling_start_time': self._crawling_start_time.isoformat()
         }
 
         start_request_debug_file_generate(

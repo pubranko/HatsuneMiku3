@@ -2,7 +2,7 @@ from datetime import datetime
 from logging import Logger
 from scrapy.exceptions import CloseSpider
 from models.mongo_model import MongoModel
-from models.crawler_controller_model import CrawlerControllerModel
+from models.controller_model import ControllerModel
 from news_crawl.settings import TIMEZONE
 from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
@@ -15,21 +15,21 @@ def spider_init(spider, *args, **kwargs):
     domain_name: str = spider._domain_name
     name: str = spider.name
     logger: Logger = spider.logger
-    crawl_start_time: datetime
+    crawling_start_time: datetime
 
     # 必要な環境変数チェック
     environ_check()
     # MongoDBオープン
     spider.mongo = MongoModel()
     # 前回のドメイン別のクロール結果を取得
-    _crawler_controller = CrawlerControllerModel(spider.mongo)
-    spider._next_crawl_point = _crawler_controller.next_crawl_point_get(
+    _controller = ControllerModel(spider.mongo)
+    spider._crawl_point = _controller.crawl_point_get(
         domain_name, name)
 
     # 引数保存・チェック
     spider.kwargs_save = kwargs
     argument_check(
-        spider, domain_name, spider._next_crawl_point, *args, **kwargs)
+        spider, domain_name, spider._crawl_point, *args, **kwargs)
 
     # 同一ドメインへの多重クローリングを防止
     spider.crawling_domain_control = CrawlingDomainDuplicatePrevention()
@@ -54,18 +54,18 @@ def spider_init(spider, *args, **kwargs):
         raise CloseSpider('=== スワップメモリー使用率が95%を超えたためスパイダーを停止します。')
 
     # クロール開始時間
-    if 'crawl_start_time' in spider.kwargs_save:
-        crawl_start_time = spider.kwargs_save['crawl_start_time']
+    if 'crawling_start_time' in spider.kwargs_save:
+        crawling_start_time = spider.kwargs_save['crawling_start_time']
     else:
-        crawl_start_time = datetime.now().astimezone(
+        crawling_start_time = datetime.now().astimezone(
             TIMEZONE)
-    spider._crawl_start_time = crawl_start_time
+    spider._crawling_start_time = crawling_start_time
 
     logger.info(
-        '=== __init__ : 開始時間(%s)' % (crawl_start_time.isoformat()))
+        '=== __init__ : 開始時間(%s)' % (crawling_start_time.isoformat()))
     logger.info(
         '=== __init__ : 引数(%s)' % (kwargs))
     logger.info(
-        '=== __init__ : 今回向けクロールポイント情報 \n %s', spider._next_crawl_point)
+        '=== __init__ : 今回向けクロールポイント情報 \n %s', spider._crawl_point)
 
     start_request_debug_file_init(spider, spider.kwargs_save)

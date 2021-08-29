@@ -88,7 +88,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # 前回のまでのクロール情報からurlsを各カテゴリー別に保存する。
         if response.url in self.start_urls and 'continued' in self.kwargs_save:
             last_time_urls: list = [
-                _['loc'] for _ in self._next_crawl_point[url_header]['urls']]
+                _['loc'] for _ in self._crawl_point[url_header]['urls']]
 
         end_flg = False
 
@@ -129,12 +129,12 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             end_flg = True
 
         # 各カテゴリーの最初のページの場合、次回に向け現在クロール中のカテゴリーの情報を更新する。
-        # ・1ページ目の10件をcrawler_controllerへ保存
+        # ・1ページ目の10件をcontrollerへ保存
         # ・Keyとなるurlには、http〜各カテゴリー(url_header)までの一部とする。
         if response.url in self.start_urls:
-            self._next_crawl_point[url_header] = {
+            self._crawl_point[url_header] = {
                 'urls': urls_list[0:10],
-                'crawl_start_time': self._crawl_start_time.isoformat()
+                'crawling_start_time': self._crawling_start_time.isoformat()
             }
 
         # 続きがある場合、次のページを読み込む

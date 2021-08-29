@@ -18,23 +18,23 @@ logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 def check_and_save(kwargs: dict):
     '''あとで'''
     global logger
-    starting_time: datetime = kwargs['starting_time']
+    start_time: datetime = kwargs['start_time']
     scraped_from_response: ScrapedFromResponse = kwargs['scraped_from_response']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
 
     domain: str = kwargs['domain']
-    scrapying_starting_time_from: datetime = kwargs['scrapying_starting_time_from']
-    scrapying_starting_time_to: datetime = kwargs['scrapying_starting_time_to']
+    scrapying_start_time_from: datetime = kwargs['scrapying_start_time_from']
+    scrapying_start_time_to: datetime = kwargs['scrapying_start_time_to']
 
     conditions: list = []
     if domain:
         conditions.append({'domain': domain})
-    if scrapying_starting_time_from:
+    if scrapying_start_time_from:
         conditions.append(
-            {'scrapying_starting_time': {'$gte': scrapying_starting_time_from}})
-    if scrapying_starting_time_to:
+            {'scrapying_start_time': {'$gte': scrapying_start_time_from}})
+    if scrapying_start_time_to:
         conditions.append(
-            {'scrapying_starting_time': {'$lte': scrapying_starting_time_to}})
+            {'scrapying_start_time': {'$lte': scrapying_start_time_to}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -77,7 +77,7 @@ def check_and_save(kwargs: dict):
 
                 # 重複するレコードがなければ保存する。
                 if news_clip_duplicate_count == 0:
-                    record['scraped_save_starting_time'] = starting_time
+                    record['scraped_save_start_time'] = start_time
                     news_clip_master.insert_one(record)
                     logger.info('=== news_clip_master への登録 : ' + record['url'])
                 else:

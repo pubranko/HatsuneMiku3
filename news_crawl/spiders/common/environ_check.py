@@ -22,7 +22,7 @@ def environ_check() -> None:
         os.environ['MONGO_USER']
         os.environ['MONGO_PASS']
         os.environ['MONGO_CRAWLER_RESPONSE']
-        os.environ['MONGO_CRAWLER_CONTROLLER']
+        os.environ['MONGO_CONTROLLER']
         os.environ['MONGO_CRAWLER_LOGS']
     except:
         raise CloseSpider('環境変数エラー：不足している環境変数があります。')

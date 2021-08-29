@@ -34,7 +34,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         itertagに指定したタグ単位に順次処理を実施
         '''
         # 直近の数分間の指定がある場合
-        until_this_time: datetime = self._crawl_start_time
+        until_this_time: datetime = self._crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
@@ -43,7 +43,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
-                self._next_crawl_point[response.url]['latest_lastmod'])
+                self._crawl_point[response.url]['latest_lastmod'])
 
         # itertagに指定したタグの中身を取得
         node_text: str = node.getall()[0]
@@ -88,7 +88,7 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
             if _date_lastmod < _last_time:
                 _crwal_flg = False
             elif _date_lastmod == _last_time \
-                    and self._next_crawl_point[response.url]['latest_url']:
+                    and self._crawl_point[response.url]['latest_url']:
                 _crwal_flg = False
 
         if _crwal_flg:
