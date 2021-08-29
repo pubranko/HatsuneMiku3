@@ -27,9 +27,9 @@ class JpReutersComSitemapSpider(ExtensionsSitemapSpider):
         #     https://jp.reuters.com/sitemap_20210505-20210506.xml,
         #     https://jp.reuters.com/sitemap_20210504-20210505.xml
         _sitemap_term_days_list_start = term_days_Calculation(
-            self._crawl_start_time - timedelta(days=1), int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
+            self._crawling_start_time - timedelta(days=1), int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
         _sitemap_term_days_list_end = term_days_Calculation(
-            self._crawl_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
+            self._crawling_start_time, int(self.kwargs_save['sitemap_term_days']), '%Y%m%d')
 
         self.sitemap_urls = [
             'https://jp.reuters.com/sitemap_%s-%s.xml' % (s, e) for s, e in zip(_sitemap_term_days_list_start, _sitemap_term_days_list_end)]

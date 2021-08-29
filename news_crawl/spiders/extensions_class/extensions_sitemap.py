@@ -37,11 +37,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
-    _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
+    _crawling_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
-    _next_crawl_point: dict = {}
+    _crawl_point: dict = {}
     # sitemap_urlsに複数のサイトマップを指定した場合、その数だけsitemap_filterが可動する。その際、どのサイトマップか判別できるように処理中のサイトマップと連動するカウント。
     _sitemap_urls_count: int = 0
     # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
@@ -77,7 +77,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             self.name, sitemap_url, entries, self.kwargs_save)
 
         # 直近の数分間の指定がある場合
-        until_this_time: datetime = self._crawl_start_time
+        until_this_time: datetime = self._crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
@@ -88,7 +88,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _url_term_days_list: list = []
         if 'url_term_days' in self.kwargs_save:   #
             _url_term_days_list = term_days_Calculation(
-                self._crawl_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
+                self._crawling_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
             self.logger.info(
                 '=== sitemap_filter : url_term_daysより計算した日付 %s', ', '.join(_url_term_days_list))
 
@@ -96,7 +96,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
             _last_time = parser.parse(
-                self._next_crawl_point[sitemap_url]['latest_lastmod'])
+                self._crawl_point[sitemap_url]['latest_lastmod'])
 
         # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
         _max_lstmod: str = ''
@@ -131,7 +131,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if _date_lastmod < _last_time:
                     _crwal_flg = False
                 elif _date_lastmod == _last_time \
-                        and self._next_crawl_point[sitemap_url]['latest_url']:
+                        and self._crawl_point[sitemap_url]['latest_url']:
                     _crwal_flg = False
 
             if _crwal_flg:
@@ -140,11 +140,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
                 yield _entry
 
-        # サイトマップごとの最大更新時間を記録(crawler_controllerコレクションへ保存する内容)
-        self._next_crawl_point[sitemap_url] = {
+        # サイトマップごとの最大更新時間を記録(controllerコレクションへ保存する内容)
+        self._crawl_point[sitemap_url] = {
             'latest_lastmod': _max_lstmod,
             'latest_url': _max_url,
-            'crawl_start_time': self._crawl_start_time.isoformat(),
+            'crawling_start_time': self._crawling_start_time.isoformat(),
         }
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 
@@ -162,7 +162,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
-            crawl_starting_time=self._crawl_start_time,
+            crawling_start_time=self._crawling_start_time,
         )
 
     def closed(self, spider):

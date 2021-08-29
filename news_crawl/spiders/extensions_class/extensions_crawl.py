@@ -30,11 +30,11 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
-    _crawl_start_time: datetime         # Scrapy起動時点の基準となる時間
+    _crawling_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
-    _next_crawl_point: dict = {}
+    _crawl_point: dict = {}
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -70,7 +70,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
-            crawl_starting_time=self._crawl_start_time,
+            crawling_start_time=self._crawling_start_time,
         )
 
     def pagination_check(self, response: Response) -> ResultSet:

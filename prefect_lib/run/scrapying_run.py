@@ -19,20 +19,20 @@ logger: Logger = logging.getLogger('prefect.run.scrapying_deco')
 def exec(kwargs:dict):
     '''あとで'''
     global logger
-    starting_time: datetime = kwargs['starting_time']
+    start_time: datetime = kwargs['start_time']
     crawler_response: CrawlerResponseModel = kwargs['crawler_response']
     scraped_from_response: ScrapedFromResponse = kwargs['scraped_from_response']
     domain: str = kwargs['domain']
-    response_time_from: datetime = kwargs['response_time_from']
-    response_time_to: datetime = kwargs['response_time_to']
+    crawling_start_time_from: datetime = kwargs['crawling_start_time_from']
+    crawling_start_time_to: datetime = kwargs['crawling_start_time_to']
 
     conditions: list = []
     if domain:
         conditions.append({'domain': domain})
-    if response_time_from:
-        conditions.append({'response_time': {'$gte': response_time_from}})
-    if response_time_to:
-        conditions.append({'response_time': {'$lte': response_time_to}})
+    if crawling_start_time_from:
+        conditions.append({'crawling_start_time': {'$gte': crawling_start_time_from}})
+    if crawling_start_time_to:
+        conditions.append({'crawling_start_time': {'$lte': crawling_start_time_to}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -64,9 +64,9 @@ def exec(kwargs:dict):
             scraped: dict = {}
             scraped['domain'] = record['domain']
             scraped['url'] = record['url']
-
             scraped['response_time'] = timezone_recovery(record['response_time'])
-            scraped['scrapying_starting_time'] = starting_time
+            scraped['crawling_start_time'] = timezone_recovery(record['crawling_start_time'])
+            scraped['scrapying_start_time'] = start_time
 
             # 各サイトのスクレイピングした項目を結合
             module_name = record['domain'].replace('.', '_')
@@ -74,6 +74,6 @@ def exec(kwargs:dict):
             scraped.update(getattr(mod, 'exec')(record))
 
             # データチェック
-            error_flg:bool = scraped_record_error_check(record)
+            error_flg:bool = scraped_record_error_check(scraped)
             if not error_flg:
                 scraped_from_response.insert_one(scraped)

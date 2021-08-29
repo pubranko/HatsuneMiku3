@@ -6,14 +6,14 @@ from scrapy.exceptions import CloseSpider
 from datetime import datetime
 
 
-def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: dict, *args, **kwargs) -> None:
+def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *args, **kwargs) -> None:
     '''
     各引数が存在したらチェックを行う。
     '''
     # 単項目チェック
-    def __crawl_start_time() -> None:
-        if not isinstance(kwargs['crawl_start_time'],datetime):
-            raise CloseSpider('引数エラー：crawl_start_timeにはdatetimeオブジェクトのみ設定可能。')
+    def __crawling_start_time() -> None:
+        if not isinstance(kwargs['crawling_start_time'],datetime):
+            raise CloseSpider('引数エラー：crawling_start_timeにはdatetimeオブジェクトのみ設定可能。')
 
     def __debug_check() -> None:
         if not kwargs['debug'] == 'Yes':
@@ -39,7 +39,7 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
 
     def __continued_check() -> None:
         if kwargs['continued'] == 'Yes':
-            if crawler_controller_recode == {}:
+            if controller_recode == {}:
                 raise CloseSpider('引数エラー：domain = ' + domain_name +
                          ' は前回のcrawl情報がありません。初回から"continued"の使用は不可です。')
         else:
@@ -73,8 +73,8 @@ def argument_check(spider: Spider, domain_name: str, crawler_controller_recode: 
         raise CloseSpider('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
 
     ### 単項目チェック ###
-    if 'crawl_start_time' in kwargs:
-        __crawl_start_time()
+    if 'crawling_start_time' in kwargs:
+        __crawling_start_time()
     if 'debug' in kwargs:
         __debug_check()
     if 'url_term_days' in kwargs:

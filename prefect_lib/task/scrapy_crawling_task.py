@@ -14,7 +14,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
     def run(self,module,method):
         '''ここがprefectで起動するメイン処理'''
         mod:Any = import_module(module)
-        getattr(mod,method)(self.starting_time)
+        getattr(mod,method)(self.start_time)
         # 終了処理
         self.closed()
         #return ''

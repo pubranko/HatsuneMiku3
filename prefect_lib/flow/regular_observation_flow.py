@@ -17,7 +17,7 @@ from prefect.utilities.context import Context
 from common_lib.mail_send import mail_send
 
 
-starting_time = datetime.now().astimezone(
+start_time = datetime.now().astimezone(
     TIMEZONE)
 log_file_path = os.path.join(
     'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
@@ -36,7 +36,7 @@ def status_change(obj: Flow, old_state, new_state):
         with open(log_file_path) as f:
             log_file = f.read()
         # mail_send('【prefectフローでエラー発生】' +
-        #           crawl_start_time.isoformat(), log_file,)
+        #           start_time.isoformat(), log_file,)
 
     if not isinstance(new_state, Running):
         pass  # 成否に関係なく終わったときに動く処理
@@ -48,7 +48,7 @@ with Flow(
 ) as flow:
 
     task = RegularObservationTask(
-        log_file_path=log_file_path, starting_time=starting_time)
+        log_file_path=log_file_path, start_time=start_time)
     result = task()
 
 flow.run()

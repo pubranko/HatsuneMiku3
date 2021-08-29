@@ -20,22 +20,22 @@ def check_and_save(kwargs:dict):
     '''あとで'''
     global logger
     print('=== check_and_saveで確認', kwargs)
-    starting_time: datetime = kwargs['starting_time']
+    start_time: datetime = kwargs['start_time']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
 
     domain: str = kwargs['domain']
-    scraped_save_starting_time_from: datetime = kwargs['scraped_save_starting_time_from']
-    scraped_save_starting_time_to: datetime = kwargs['scraped_save_starting_time_to']
+    scraped_save_start_time_from: datetime = kwargs['scraped_save_start_time_from']
+    scraped_save_start_time_to: datetime = kwargs['scraped_save_start_time_to']
 
     conditions: list = []
     if domain:
         conditions.append({'domain': domain})
-    if scraped_save_starting_time_from:
+    if scraped_save_start_time_from:
         conditions.append(
-            {'scraped_save_starting_time': {'$gte': scraped_save_starting_time_from}})
-    if scraped_save_starting_time_to:
+            {'scraped_save_start_time': {'$gte': scraped_save_start_time_from}})
+    if scraped_save_start_time_to:
         conditions.append(
-            {'scraped_save_starting_time': {'$lte': scraped_save_starting_time_to}})
+            {'scraped_save_start_time': {'$lte': scraped_save_start_time_to}})
 
     if conditions:
         filter: Any = {'$and': conditions}
