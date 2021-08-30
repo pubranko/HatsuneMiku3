@@ -5,6 +5,7 @@ from typing import Any
 import logging
 from datetime import datetime,timedelta
 from logging import Logger
+import threading
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -15,8 +16,8 @@ from models.scraped_from_response_model import ScrapedFromResponse
 from models.news_clip_master_model import NewsClipMaster
 from models.controller_model import ControllerModel
 from common_lib.timezone_recovery import timezone_recovery
+from models.controller_model import ControllerModel
 
-import threading
 
 class RegularObservationTask(ExtensionsTask):
     '''
@@ -31,6 +32,7 @@ class RegularObservationTask(ExtensionsTask):
         kwargs['crawler_response'] = CrawlerResponseModel(mongo)
         kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
         kwargs['news_clip_master'] = NewsClipMaster(mongo)
+        kwargs['controller'] = ControllerModel(self.mongo)
 
         #前回のstart_timeから、前回処理以降に追加された
         # controller = ControllerModel(mongo)
@@ -46,7 +48,7 @@ class RegularObservationTask(ExtensionsTask):
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
 
-        thread = threading.Thread(target=scrapy_crawling_continue_run.exec(self.start_time))
+        thread = threading.Thread(target=scrapy_crawling_continue_run.exec(self.start_time,kwargs['controller']))
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
         thread.start()
         thread.join()
