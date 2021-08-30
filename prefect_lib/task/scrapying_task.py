@@ -8,6 +8,7 @@ from prefect_lib.run import scrapying_run
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponse
+from models.controller_model import ControllerModel
 
 
 class ScrapyingTask(ExtensionsTask):
@@ -22,6 +23,8 @@ class ScrapyingTask(ExtensionsTask):
         mongo: MongoModel = kwargs['mongo']
         kwargs['crawler_response'] = CrawlerResponseModel(mongo)
         kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
+        kwargs['controller'] = ControllerModel(mongo)
+
 
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
