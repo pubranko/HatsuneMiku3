@@ -2,13 +2,16 @@
 コントロールの見直し
 ・crawler_controller → controllerへリネーム
 ・Prefect側でクロール可否を制御するコントロールを実装する。
-　1. ドメイン単位で制御
+  1. ドメイン単位で制御
   2. crawling、scrapyingごとに止める箇所を制御できるようにする。
-・scrapying,scraped,solr部分で前回実績の続きから抽出する機能を実装する。
-　前回情報がなければ全部。
+  3. 配列でドメインをもたせる。配列に含まれるドメインの場合、停止対象とみなす。
 
-
-
+mongoDB 
+{
+    record_type : stop_controller,
+    crawling_stop_domain_list:[],
+    scrayping_stop_domain_list:[],
+}
 
 2021/7/24
 

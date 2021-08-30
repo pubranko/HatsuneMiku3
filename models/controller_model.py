@@ -49,29 +49,60 @@ class ControllerModel(object):
 
         self.update({'domain': domain_name}, record,)
 
-    # def regular_observation_point_get(self,) -> dict:
-    #     '''
-    #     直近で定期観測を行ったstart_timeを取得する。
-    #     '''
-    #     record: Any = self.find_one(key={'$and': [{'document_type': 'regular_observation_point'}]})
+    def crawling_stop_domain_list_get(self,) -> list:
+        '''
+        atode
+        '''
+        record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 
-    #     if record == None:
-    #         record = {}
+        if record == None:
+            return []
+        elif not 'crawling_stop_domain_list' in record:
+            return []
+        else:
+            return record['crawling_stop_domain_list']
 
-    #     return record
+    def crawling_stop_domain_list_update(self, crawling_stop_domain_list:list) -> None:
+        '''
+        atode
+        '''
+        record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 
-    # def regular_observation_point_update(self, start_time:datetime) -> None:
-    #     '''
-    #     今回の定期観測のstart_timeを保存する。
-    #     '''
-    #     record: Any = self.find_one(key={'$and': [{'document_type': 'regular_observation_point'}]})
+        if record == None:  # 初回の場合
+            record = {
+                'document_type': 'stop_controller',
+                'crawling_stop_domain_list': crawling_stop_domain_list,
+            }
+        else:
+            record['crawling_stop_domain_list'] = crawling_stop_domain_list
 
-    #     if record == None:  # 初回の場合
-    #         record = {
-    #             'document_type': 'regular_observation_point',
-    #             'start_time': start_time,
-    #         }
-    #     else:
-    #         record['start_time'] = start_time
+        self.update({'document_type': 'stop_controller'}, record,)
 
-    #     self.update({'document_type': 'regular_observation_point'}, record,)
+    def scrapying_stop_domain_list_get(self,) -> list:
+        '''
+        atode
+        '''
+        record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
+
+        if record == None:
+            return []
+        elif not 'scrapying_stop_domain_list' in record:
+            return []
+        else:
+            return record['scrapying_stop_domain_list']
+
+    def scrapying_stop_domain_list_update(self, scrapying_stop_domain_list:list) -> None:
+        '''
+        atode
+        '''
+        record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
+
+        if record == None:  # 初回の場合
+            record = {
+                'document_type': 'stop_controller',
+                'scrapying_stop_domain_list': scrapying_stop_domain_list,
+            }
+        else:
+            record['scrapying_stop_domain_list'] = scrapying_stop_domain_list
+
+        self.update({'document_type': 'stop_controller'}, record,)
