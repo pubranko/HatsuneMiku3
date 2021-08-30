@@ -8,7 +8,7 @@
 
 mongoDB 
 {
-    record_type : stop_controller,
+    document_type : stop_controller,
     crawling_stop_domain_list:[],
     scrayping_stop_domain_list:[],
 }
