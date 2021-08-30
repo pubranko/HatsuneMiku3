@@ -18,18 +18,19 @@ def exec(record:dict) -> dict:
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body:str = pickle.loads(record['response_body'])
     soup = bs4(response_body,'lxml')
+    scraped_record:dict = {}
 
     ### url
     url:str = record['url']
+    scraped_record['url'] = url
     logger.info('=== スクレイピングURL : ' + url)
 
     ### title
     temp:Any = soup.select_one('title')
     if temp:
         tag:Tag = temp
-        title:str = tag.get_text()
+        scraped_record['title'] = tag.get_text()
     else:
-        title = ''
         logger.error('=== スクレイピング：失敗(title)：URL : ' + url)
 
     ### article
@@ -37,21 +38,19 @@ def exec(record:dict) -> dict:
     if temp:
         result_set:ResultSet = temp
         tag_list:list = [tag.get_text() for tag in result_set]
-        article:str = '\n'.join(tag_list).strip()
+        scraped_record['article'] = '\n'.join(tag_list).strip()
     else:
-        article:str = ''
         logger.error('=== スクレイピング：失敗(artcle)：URL : ' + url)
 
     ### publish_date
     temp:Any = soup.select_one('div.article-meta-upper > time[datetime]')
     if temp:
         tag:Tag = temp
-        publish_date = parse(tag['datetime']).astimezone(TIMEZONE)
+        scraped_record['publish_date'] = parse(tag['datetime']).astimezone(TIMEZONE)
     else:
-        publish_date = None
         logger.error('=== スクレイピング：失敗(publish_date)：URL : ' + url)
 
     #発行者
-    issuer = ['産経新聞社','産経']
+    scraped_record['issuer'] = ['産経新聞社','産経']
 
-    return {'title':title,'article':article,'publish_date':publish_date,'issuer':issuer}
+    return scraped_record

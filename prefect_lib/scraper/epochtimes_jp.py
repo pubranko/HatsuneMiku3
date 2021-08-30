@@ -19,18 +19,19 @@ def exec(record: dict) -> dict:
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body: str = pickle.loads(record['response_body'])
     soup = bs4(response_body, 'lxml')
+    scraped_record:dict = {}
 
     # url
     url: str = record['url']
+    scraped_record['url'] = url
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
     temp: Any = soup.select_one('title')
     if temp:
         tag: Tag = temp
-        title:str = tag.text
+        scraped_record['title'] = tag.get_text()
     else:
-        title = ''
         logger.error('=== スクレイピング：失敗(title)：URL : ' + url)
 
     # article
@@ -38,21 +39,19 @@ def exec(record: dict) -> dict:
     if temp:
         result_set:ResultSet = temp
         tag: Tag = result_set[0]
-        article: str = tag.get_text().strip()
+        scraped_record['article'] = tag.get_text().strip()
     else:
-        article: str = ''
         logger.error('=== スクレイピング：失敗(artcle)：URL : ' + url)
 
     # publish_date
     temp: Any = soup.select_one('.page_datetime.col-sm-12.col-md-12')
     if temp:
         tag: Tag = temp
-        publish_date = datetime.strptime(tag.get_text().replace('\n','').strip(), '%Y年%m月%d日 %H時%M分').astimezone(TIMEZONE)
+        scraped_record['publish_date'] = datetime.strptime(tag.get_text().replace('\n','').strip(), '%Y年%m月%d日 %H時%M分').astimezone(TIMEZONE)
     else:
-        publish_date = None
         logger.error('=== スクレイピング：失敗(publish_date)：URL : ' + url)
 
     # 発行者
-    issuer = ['大紀元時報日本', 'エポックタイムズジャパン', 'Epoch Times Japan', '大紀元', ]
+    scraped_record['issuer'] = ['大紀元時報日本', 'エポックタイムズジャパン', 'Epoch Times Japan', '大紀元', ]
 
-    return {'title': title, 'article': article, 'publish_date': publish_date, 'issuer': issuer}
+    return scraped_record
