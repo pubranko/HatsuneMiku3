@@ -7,14 +7,17 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 
+
 class ScrapyCrawlingTask(ExtensionsTask):
     '''
-    定期観測用タスク
+    クローリング用タスク
     '''
-    def run(self,module,method):
+
+    def run(self, module, method):
         '''ここがprefectで起動するメイン処理'''
-        mod:Any = import_module(module)
-        getattr(mod,method)(self.start_time)
+
+        mod: Any = import_module(module)
+        getattr(mod, method)(self.start_time)
         # 終了処理
         self.closed()
-        #return ''
+        # return ''
