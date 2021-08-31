@@ -83,8 +83,7 @@ class ExtensionsTask(Task):
         crawler_logs = CrawlerLogsModel(self.mongo)
         crawler_logs.insert_one({
             'start_time': self.start_time.isoformat(),
-            #'record_type': 'regular_observation_task',
-            'task_name': self.name,
+            'record_type': self.name,
             'logs': self.log_file,
         })
 

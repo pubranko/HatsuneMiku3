@@ -7,12 +7,21 @@ from dateutil import parser
 from scrapy.spiders import SitemapSpider
 from scrapy.http import Response
 from scrapy.utils.sitemap import Sitemap
+from scrapy.spiders import Rule
+from scrapy.linkextractors import LinkExtractor
+from scrapy.spiders.sitemap import iterloc
+from scrapy.http import Request
+from scrapy.http import Response
+from scrapy.utils.sitemap import Sitemap, sitemap_urls_from_robots
+from scrapy_selenium import SeleniumRequest
+from selenium.webdriver.remote.webdriver import WebDriver
 from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
+from news_crawl.items import NewsCrawlItem
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -47,6 +56,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
     # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
     _custom_url_flg: bool = False
+    # seleniumモード
+    selenium_mode: bool = False
+    rules = (Rule(LinkExtractor(allow=(r'.+')), callback='parse'),)
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -57,10 +69,44 @@ class ExtensionsSitemapSpider(SitemapSpider):
         spider_init(self, *args, **kwargs)
 
     def start_requests(self):
+        '''(オーバーライド)
+        通常版とselenium版の切り替え機能を追加。
+        '''
         for url in self.sitemap_urls:
-            yield scrapy.Request(
-                url, callback=self._parse_sitemap,  # dont_filter=True
-            )
+            yield scrapy.Request(url, self.custom_parse_sitemap)
+
+    def custom_parse_sitemap(self, response):
+        '''selenium版のparse_sitemap'''
+        if response.url.endswith('/robots.txt'):
+            for url in sitemap_urls_from_robots(response.text, base_url=response.url):
+                yield Request(url, callback=self.custom_parse_sitemap)
+        else:
+            body = self._get_sitemap_body(response)
+            if body is None:
+                self.logger.warning("Ignoring invalid sitemap: %(response)s",
+                                    {'response': response}, extra={'spider': self})
+                return
+
+            s = Sitemap(body)
+            it = self.sitemap_filter(s)
+
+            # 親サイトマップの場合
+            if s.type == 'sitemapindex':
+                for loc in iterloc(it, self.sitemap_alternate_links):
+                    if any(x.search(loc) for x in self._follow):
+                        yield Request(loc, callback=self.custom_parse_sitemap)
+
+            # 子サイトマップの場合
+            elif s.type == 'urlset':
+                for loc in iterloc(it, self.sitemap_alternate_links):
+                    for r, c in self._cbs:
+                        if r.search(loc):
+                            # seleniumモードによる切り替え
+                            if self.selenium_mode:
+                                yield SeleniumRequest(url=loc, callback=c)
+                            else:
+                                yield Request(loc, callback=c)
+                            break
 
     def sitemap_filter(self, entries: Sitemap):
         '''
@@ -161,6 +207,27 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
+            spider_version_info=_info,
+            crawling_start_time=self._crawling_start_time,
+        )
+
+    def selenium_parse(self, response: Response):
+        '''
+        seleniumu版parse。JavaScript処理終了後のレスポンスよりDBへ書き込み
+        '''
+        driver: WebDriver = response.request.meta['driver']
+        # Javascript実行が終了するまで最大30秒間待つように指定
+        driver.set_script_timeout(30)
+
+        _info = self.name + ':' + str(self._spider_version) + ' / ' \
+            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
+
+        yield NewsCrawlItem(
+            domain=self.allowed_domains[0],
+            url=response.url,
+            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+            response_headers=pickle.dumps(response.headers),
+            response_body=pickle.dumps(driver.page_source),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
         )
