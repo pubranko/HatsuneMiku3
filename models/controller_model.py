@@ -51,7 +51,7 @@ class ControllerModel(object):
 
     def crawling_stop_domain_list_get(self,) -> list:
         '''
-        atode
+        stop_controllerからクローリング停止ドメインリストを取得して返す
         '''
         record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 
@@ -64,7 +64,7 @@ class ControllerModel(object):
 
     def crawling_stop_domain_list_update(self, crawling_stop_domain_list:list) -> None:
         '''
-        atode
+        stop_controllerのクローリング停止ドメインリストを更新する。
         '''
         record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 
@@ -80,7 +80,7 @@ class ControllerModel(object):
 
     def scrapying_stop_domain_list_get(self,) -> list:
         '''
-        atode
+        stop_controllerからスクレイピング停止ドメインリストを取得して返す。
         '''
         record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 
@@ -93,7 +93,7 @@ class ControllerModel(object):
 
     def scrapying_stop_domain_list_update(self, scrapying_stop_domain_list:list) -> None:
         '''
-        atode
+        stop_controllerのスクレイピング停止ドメインリストを更新する。
         '''
         record: Any = self.find_one(key={'$and': [{'document_type': 'stop_controller'}]})
 

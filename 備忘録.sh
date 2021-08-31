@@ -1,3 +1,17 @@
+2021/8/31
+scrapyの見直し
+・selenium版sitemap_spiderの実装完成
+・抽出条件の改善
+・親サイトマップから子サイトマップのクローリングの実装
+
+2021/8/30
+scrapyの見直し
+・selenium版sitemap_spiderの実装途中
+prefect
+・スクレイピングエラーの解消
+  タイプ別のスクレイピング機能の実装
+・url指定のスクレイピング機能実装
+
 2021/8/29
 コントロールの見直し
 ・crawler_controller → controllerへリネーム

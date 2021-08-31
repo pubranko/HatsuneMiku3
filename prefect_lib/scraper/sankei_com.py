@@ -18,6 +18,7 @@ def exec(record:dict) -> dict:
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body:str = pickle.loads(record['response_body'])
     soup = bs4(response_body,'lxml')
+    soup2 = bs4(response_body,'html.parser')
     scraped_record:dict = {}
 
     ### url
@@ -26,29 +27,38 @@ def exec(record:dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     ### title
-    temp:Any = soup.select_one('title')
-    if temp:
-        tag:Tag = temp
+    type1:Any = soup.select_one('title')
+    if type1:
+        tag:Tag = type1
         scraped_record['title'] = tag.get_text()
     else:
-        logger.error('=== スクレイピング：失敗(title)：URL : ' + url)
+        pass
 
     ### article
-    temp:Any = soup.select('p.article-text')
-    if temp:
-        result_set:ResultSet = temp
+    type1:Any = soup.select('p.article-text')
+    type2:Any = soup.select('.article-body > .article-raw_html')
+    if type1:
+        result_set:ResultSet = type1
+        tag_list:list = [tag.get_text() for tag in result_set]
+        scraped_record['article'] = '\n'.join(tag_list).strip()
+    elif type2:
+        result_set:ResultSet = type2
         tag_list:list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
     else:
-        logger.error('=== スクレイピング：失敗(artcle)：URL : ' + url)
+        pass
 
     ### publish_date
-    temp:Any = soup.select_one('div.article-meta-upper > time[datetime]')
-    if temp:
-        tag:Tag = temp
+    type1:Any = soup.select_one('div.article-meta-upper > time[datetime]')
+    type2:Any = soup.select_one('div.article-datetime > time[datetime]')
+    if type1:
+        tag:Tag = type1
+        scraped_record['publish_date'] = parse(tag['datetime']).astimezone(TIMEZONE)
+    elif type2:
+        tag:Tag = type2
         scraped_record['publish_date'] = parse(tag['datetime']).astimezone(TIMEZONE)
     else:
-        logger.error('=== スクレイピング：失敗(publish_date)：URL : ' + url)
+        pass
 
     #発行者
     scraped_record['issuer'] = ['産経新聞社','産経']
