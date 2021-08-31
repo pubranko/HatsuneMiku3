@@ -27,6 +27,8 @@ def exec(kwargs:dict):
     domain: str = kwargs['domain']
     crawling_start_time_from: datetime = kwargs['crawling_start_time_from']
     crawling_start_time_to: datetime = kwargs['crawling_start_time_to']
+    #print('=== urls:',type(kwargs['urls']))
+    urls: list = kwargs['urls']
 
     conditions: list = []
     if domain:
@@ -35,6 +37,8 @@ def exec(kwargs:dict):
         conditions.append({'crawling_start_time': {'$gte': crawling_start_time_from}})
     if crawling_start_time_to:
         conditions.append({'crawling_start_time': {'$lte': crawling_start_time_to}})
+    if urls:
+        conditions.append({'url':{'$in': urls}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -55,7 +59,6 @@ def exec(kwargs:dict):
     skip_list = list(range(0, record_count, limit))
 
     stop_domain:list = controller.scrapying_stop_domain_list_get()
-    print('=== stop_domain:',stop_domain)
 
     for skip in skip_list:
         records: Cursor = crawler_response.find(

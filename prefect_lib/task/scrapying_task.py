@@ -25,9 +25,9 @@ class ScrapyingTask(ExtensionsTask):
         kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
         kwargs['controller'] = ControllerModel(mongo)
 
-
         logger: Logger = self.logger
         logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
+
         scrapying_run.exec(kwargs)
 
         # 終了処理

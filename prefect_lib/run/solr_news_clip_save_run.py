@@ -19,7 +19,6 @@ logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 def check_and_save(kwargs:dict):
     '''あとで'''
     global logger
-    print('=== check_and_saveで確認', kwargs)
     start_time: datetime = kwargs['start_time']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
 

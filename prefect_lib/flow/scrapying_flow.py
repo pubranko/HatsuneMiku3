@@ -52,17 +52,20 @@ with Flow(
         'crawling_start_time_from', required=False,)
     crawling_start_time_to = DateTimeParameter(
         'crawling_start_time_to', required=False)
+    urls = Parameter('urls', required=False)()
 
     task = ScrapyingTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(domain=domain,
                   crawling_start_time_from=crawling_start_time_from,
-                  crawling_start_time_to=crawling_start_time_to)
+                  crawling_start_time_to=crawling_start_time_to,
+                  urls=urls)
 
 # domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
     # domain='epochtimes.jp',
     crawling_start_time_from=datetime(2021, 8, 29, 21, 33, 48).astimezone(TIMEZONE),
     #crawling_start_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
+    #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
 ))
 #2021-08-29T13:33:48.503Z
