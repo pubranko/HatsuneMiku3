@@ -21,7 +21,7 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
-from news_crawl.items import NewsCrawlItem
+from news_crawl.spiders.common.lastmod_period_check import LastmodPeriodMinutesCheck
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -122,7 +122,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
         start_request_debug_file_generate(
             self.name, sitemap_url, entries, self.kwargs_save)
 
-        # 直近の数分間の指定がある場合
+        # lastmodの期間指定クラス初期化
+        lastmod_pefiod = LastmodPeriodMinutesCheck(self,self._crawling_start_time,self.kwargs_save)
+
         until_this_time: datetime = self._crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
@@ -173,6 +175,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if 'lastmod_recent_time' in self.kwargs_save:             # lastmod絞り込み指定あり
                 if _date_lastmod < until_this_time:
                     _crwal_flg = False
+            if lastmod_pefiod.skip_check(_date_lastmod):    # lastmod絞り込み範囲指定あり
+                _crwal_flg = False
             if 'continued' in self.kwargs_save:
                 if _date_lastmod < _last_time:
                     _crwal_flg = False
