@@ -21,7 +21,9 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
-from news_crawl.spiders.common.lastmod_period_check import LastmodPeriodMinutesCheck
+from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
+from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
+from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -122,79 +124,45 @@ class ExtensionsSitemapSpider(SitemapSpider):
         start_request_debug_file_generate(
             self.name, sitemap_url, entries, self.kwargs_save)
 
-        # lastmodの期間指定クラス初期化
-        lastmod_pefiod = LastmodPeriodMinutesCheck(self,self._crawling_start_time,self.kwargs_save)
-
-        until_this_time: datetime = self._crawling_start_time
-        if 'lastmod_recent_time' in self.kwargs_save:
-            until_this_time = until_this_time - \
-                timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
-            self.logger.info(
-                '=== sitemap_filter : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
-
-        # urlに含まれる日付に指定がある場合
-        _url_term_days_list: list = []
-        if 'url_term_days' in self.kwargs_save:   #
-            _url_term_days_list = term_days_Calculation(
-                self._crawling_start_time, int(self.kwargs_save['url_term_days']), '%y%m%d')
-            self.logger.info(
-                '=== sitemap_filter : url_term_daysより計算した日付 %s', ', '.join(_url_term_days_list))
-
-        # 前回からの続きの指定がある場合
-        _last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
-        if 'continued' in self.kwargs_save:
-            _last_time = parser.parse(
-                self._crawl_point[sitemap_url]['latest_lastmod'])
+        # チェック用クラスの初期化
+        lastmod_pefiod = LastmodPeriodMinutesSkipCheck(self,self._crawling_start_time,self.kwargs_save)
+        crawling_continued = CrawlingContinuedSkipCheck(self._crawl_point,sitemap_url,self.kwargs_save)
 
         # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
-        _max_lstmod: str = ''
-        _max_url: str = ''
+        max_lstmod: str = ''
+        max_url: str = ''
 
-        for _entry in entries:
+        for entry in entries:
             '''
             引数に絞り込み指定がある場合、その条件を満たす場合のみ対象とする。
             '''
-            _entry: dict
-
-            if _max_lstmod < _entry['lastmod']:
-                _max_lstmod = _entry['lastmod']
-                _max_url = _entry['loc']
-
-            _crwal_flg: bool = True
-            _date_lastmod = parser.parse(_entry['lastmod']).astimezone(
+            entry: dict
+            if max_lstmod < entry['lastmod']:
+                max_lstmod = entry['lastmod']
+                max_url = entry['loc']
+            crwal_flg: bool = True
+            date_lastmod = parser.parse(entry['lastmod']).astimezone(
                 self.settings['TIMEZONE'])
 
-            if 'url_pattern' in self.kwargs_save:   # url絞り込み指定あり
-                pattern = re.compile(self.kwargs_save['url_pattern'])
-                if pattern.search(_entry['loc']) == None:
-                    _crwal_flg = False
-            if 'url_term_days' in self.kwargs_save:                       # 期間指定あり
-                _pattern = re.compile('|'.join(_url_term_days_list))
-                if _pattern.search(_entry['loc']) == None:
-                    _crwal_flg = False
-            if 'lastmod_recent_time' in self.kwargs_save:             # lastmod絞り込み指定あり
-                if _date_lastmod < until_this_time:
-                    _crwal_flg = False
-            if lastmod_pefiod.skip_check(_date_lastmod):    # lastmod絞り込み範囲指定あり
-                _crwal_flg = False
-            if 'continued' in self.kwargs_save:
-                if _date_lastmod < _last_time:
-                    _crwal_flg = False
-                elif _date_lastmod == _last_time \
-                        and self._crawl_point[sitemap_url]['latest_url']:
-                    _crwal_flg = False
+            if  url_pattern_skip_check(entry['loc'],self.kwargs_save):
+                crwal_flg = False
+            if lastmod_pefiod.skip_check(date_lastmod):    # lastmod絞り込み範囲指定あり
+                crwal_flg = False
+            if crawling_continued.skip_check(date_lastmod,entry['loc']):
+                crwal_flg = False
 
-            if _crwal_flg:
+            if crwal_flg:
                 if self._custom_url_flg:
-                    _entry['loc'] = self._custom_url(_entry)
-
-                yield _entry
+                    entry['loc'] = self._custom_url(entry)
+                yield entry
 
         # サイトマップごとの最大更新時間を記録(controllerコレクションへ保存する内容)
+        _ = parser.parse(max_lstmod)
+
         self._crawl_point[sitemap_url] = {
-            'latest_lastmod': _max_lstmod,
-            'latest_url': _max_url,
-            'crawling_start_time': self._crawling_start_time.isoformat(),
+            'latest_lastmod': _,
+            'latest_url': max_url,
+            'crawling_start_time': self._crawling_start_time,
         }
         self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
 

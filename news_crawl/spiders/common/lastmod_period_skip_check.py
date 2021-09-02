@@ -2,13 +2,16 @@ from typing import Union
 from datetime import datetime, timedelta
 
 
-class LastmodPeriodMinutesCheck(object):
+class LastmodPeriodMinutesSkipCheck(object):
 
     lastmod_period_minutes_from: Union[datetime, None] = None
     lastmod_period_minutes_to: Union[datetime, None] = None
 
     def __init__(self, spider, start_time: datetime, kwargs: dict) -> None:
-        '''lastmodの期間指定がある場合、datetime形式にしてクラス変数に保存'''
+        '''
+        lastmodの期間指定がある場合、datetime形式にしてクラス変数に保存
+        ※kwargs['lastmod_period_minutes']=[from,to]
+        '''
         if 'lastmod_period_minutes' in kwargs:             # lastmod期間指定あり
             lastmod_period_minutes_list = str(kwargs['lastmod_period_minutes']).split(',')
             if not lastmod_period_minutes_list[0] == '':

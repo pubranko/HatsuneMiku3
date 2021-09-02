@@ -1,3 +1,12 @@
+2021/9/2残タスク確認
+・mongo controllerの日付を文字列からISODate化 → 完了
+・親サイトマップから子サイトマップのクローリングの実装
+
+2021/9/2
+・CrawlingContinuedSkipCheckによるクローリングの続き機能への改修完了。
+・url_pattern_skip_checkによるurlのパターン抽出機能への改修完了。
+2021/9/1
+・LastmodPeriodMinutesSkipCheckによりlastmodの範囲指定機能実装完了
 2021/8/31
 scrapyの見直し
 ・selenium版sitemap_spiderの実装完成
