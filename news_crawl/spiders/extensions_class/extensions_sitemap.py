@@ -2,6 +2,7 @@ import pickle
 import scrapy
 import re
 import scrapy
+from typing import Any, Union
 from datetime import datetime, timedelta
 from dateutil import parser
 from scrapy.spiders import SitemapSpider
@@ -35,7 +36,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     '''
     name: str = 'extension_sitemap'                                 # 継承先で上書き要。
     allowed_domains: list = ['sample.com']                          # 継承先で上書き要。
-    sitemap_urls: list = ['https://www.sample.com/sitemap.xml', ]   # 継承先で上書き要。
+    sitemap_urls: list = ['https://www.sample.com/sitemap.xml', ]   # 継承先で上書き要。sitemapindexがある場合、それを指定すること。複数指定不可。
     custom_settings: dict = {
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True,
@@ -58,9 +59,21 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # sitemapのリンク先urlをカスタマイズしたい場合、継承先のクラスでTrueにする。
     # Trueの場合、継承先でオーバーライドしたcustom_url()メソッドを使い、urlをカスタムする。
     _custom_url_flg: bool = False
+
+    # ＜domain_lastmodについて＞
+    # 複数のsitemapを読み込む場合、最大のlastmodは以下のように判断する。
+    # 1. sitemap_indexがない場合 → そのページの最大lastmod
+    # 2. sitemap_indexから複数のsitemapを読み込んだ場合 → sitemap_indexの最大lastmod
+    # これは順番にsitemapを呼び出す際、タイムラグがあるため、このように処理している。
+    domain_lastmod: Union[datetime, None] = None
+
+    crawling_continued: CrawlingContinuedSkipCheck
+    lastmod_pefiod: LastmodPeriodMinutesSkipCheck
     # seleniumモード
     selenium_mode: bool = False
     rules = (Rule(LinkExtractor(allow=(r'.+')), callback='parse'),)
+    # sitemap_index用のルール
+    #rules = (Rule(LinkExtractor(allow=(r'.+/sitemap.xml$')), callback='sitemap_index_parse'),)
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -78,7 +91,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             yield scrapy.Request(url, self.custom_parse_sitemap)
 
     def custom_parse_sitemap(self, response):
-        '''selenium版のparse_sitemap'''
+        '''カスタマイズ版の_parse_sitemap'''
         if response.url.endswith('/robots.txt'):
             for url in sitemap_urls_from_robots(response.text, base_url=response.url):
                 yield Request(url, callback=self.custom_parse_sitemap)
@@ -90,9 +103,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 return
 
             s = Sitemap(body)
-            it = self.sitemap_filter(s)
+            it = self.sitemap_filter(s, response)   # 引数にresponseを追加
 
-            # 親サイトマップの場合
+            # サイトマップインデックスの場合
             if s.type == 'sitemapindex':
                 for loc in iterloc(it, self.sitemap_alternate_links):
                     if any(x.search(loc) for x in self._follow):
@@ -110,7 +123,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                 yield Request(loc, callback=c)
                             break
 
-    def sitemap_filter(self, entries: Sitemap):
+    def sitemap_filter(self, entries: Sitemap, response: Response):
         '''
         親クラスのSitemapSpiderの同名メソッドをオーバーライド。
         entriesには、サイトマップから取得した情報(loc,lastmodなど）が辞書形式で格納されている。
@@ -118,19 +131,19 @@ class ExtensionsSitemapSpider(SitemapSpider):
         サイトマップから取得したurlへrequestを行う前に条件で除外することができる。
         対象のurlの場合、”yield entry”で返すと親クラス側でrequestされる。
         '''
-        sitemap_url = self.sitemap_urls[self._sitemap_urls_count]
-
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
         start_request_debug_file_generate(
-            self.name, sitemap_url, entries, self.kwargs_save)
+            self.name, response.url, entries, self.kwargs_save)
 
         # チェック用クラスの初期化
-        lastmod_pefiod = LastmodPeriodMinutesSkipCheck(self,self._crawling_start_time,self.kwargs_save)
-        crawling_continued = CrawlingContinuedSkipCheck(self._crawl_point,sitemap_url,self.kwargs_save)
+        # self.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
+        #     self, self._crawling_start_time, self.kwargs_save)
+        # self.crawling_continued = CrawlingContinuedSkipCheck(
+        #    self._crawl_point, self.kwargs_save)
+        #crawling_continued = CrawlingContinuedSkipCheck(self._crawl_point,sitemap_url,self.kwargs_save)
 
-        # 処理中のサイトマップ内で、最大のlastmodとurlを記録するエリア
+        # 処理中のサイトマップ内で、最大のlastmodを記録するエリア
         max_lstmod: str = ''
-        max_url: str = ''
 
         for entry in entries:
             '''
@@ -139,32 +152,38 @@ class ExtensionsSitemapSpider(SitemapSpider):
             entry: dict
             if max_lstmod < entry['lastmod']:
                 max_lstmod = entry['lastmod']
-                max_url = entry['loc']
             crwal_flg: bool = True
             date_lastmod = parser.parse(entry['lastmod']).astimezone(
                 self.settings['TIMEZONE'])
 
-            if  url_pattern_skip_check(entry['loc'],self.kwargs_save):
-                crwal_flg = False
-            if lastmod_pefiod.skip_check(date_lastmod):    # lastmod絞り込み範囲指定あり
-                crwal_flg = False
-            if crawling_continued.skip_check(date_lastmod,entry['loc']):
-                crwal_flg = False
+            if entries.type == 'sitemapindex':
+                if self.lastmod_pefiod.skip_check(date_lastmod):
+                    crwal_flg = False
+                if self.crawling_continued.skip_check(date_lastmod):
+                    crwal_flg = False
+            else:
+                if url_pattern_skip_check(entry['loc'], self.kwargs_save):
+                    crwal_flg = False
+                if self.lastmod_pefiod.skip_check(date_lastmod):
+                    crwal_flg = False
+                if self.crawling_continued.skip_check(date_lastmod):
+                    crwal_flg = False
 
             if crwal_flg:
                 if self._custom_url_flg:
                     entry['loc'] = self._custom_url(entry)
                 yield entry
 
-        # サイトマップごとの最大更新時間を記録(controllerコレクションへ保存する内容)
-        _ = parser.parse(max_lstmod)
-
-        self._crawl_point[sitemap_url] = {
-            'latest_lastmod': _,
-            'latest_url': max_url,
-            'crawling_start_time': self._crawling_start_time,
-        }
-        self._sitemap_urls_count += 1  # 次のサイトマップurl用にカウントアップ
+        # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
+        # サイトマップインデックスをクロールする場合、その最大更新時間をドメイン単位の最大更新時間とする。
+        if not self.domain_lastmod:
+            self.domain_lastmod = self.crawling_continued.max_lastmod_dicision(
+                parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))
+            # クロールポイントを更新する。
+            self._crawl_point = {
+                'latest_lastmod': self.domain_lastmod,
+                'crawling_start_time': self._crawling_start_time,
+            }
 
     def parse(self, response: Response):
         '''

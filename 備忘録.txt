@@ -1,6 +1,8 @@
-2021/9/2残タスク確認
+2021/9/4残タスク確認
 ・mongo controllerの日付を文字列からISODate化 → 完了
-・親サイトマップから子サイトマップのクローリングの実装
+・親サイトマップから子サイトマップのクローリングの実装 → 完了
+・_crawl_pointの更新制御用のパラメータの実装
+・urlをリストで渡して、それだけをクローリングする機能の実装
 
 2021/9/2
 ・CrawlingContinuedSkipCheckによるクローリングの続き機能への改修完了。
@@ -29,7 +31,7 @@ prefect
   2. crawling、scrapyingごとに止める箇所を制御できるようにする。
   3. 配列でドメインをもたせる。配列に含まれるドメインの場合、停止対象とみなす。
 
-mongoDB 
+mongoDB
 {
     document_type : stop_controller,
     crawling_stop_domain_list:[],
@@ -44,7 +46,9 @@ mongoDB
         ①クロール中ドメイン：document_type = crawling_domain
     ２）同一ドメインでクロール中のものがあるかチェック
         ①あれば(crawling_status=True)クロールを中止。
-            a)ワーニングを発報
+        '''
+
+        '''
             b)クローリングログ(crawling_log)へ書き込み
             c)正常終了させる(sys.exit())
         ②なければ
@@ -219,6 +223,6 @@ mongoDB
 ２．スクレイピング基本処理（各サイトから基本項目を抽出し、mongoDBへ保存）
 　　１）url、タイトル、本文、発行者、response_time、publish_datetime(またはpublish_date)、スクレイピングバージョン
 
-{'mongo_id': ['〜'], 'url': '〜', 'title': '〜', 'article': '〜', 'issuer': ['〜'], 'update_count': 0, 
+{'mongo_id': ['〜'], 'url': '〜', 'title': '〜', 'article': '〜', 'issuer': ['〜'], 'update_count': 0,
 'id': '〜', '_version_': 1638412764864053248, 'response_time': '2019-01-20T19:24:59.014Z', 'publish_date': '2018-04-01T00:00:00Z'}
 
