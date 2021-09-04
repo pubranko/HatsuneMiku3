@@ -9,6 +9,8 @@ from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
+from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
+from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
 from common_lib.resource_check import resource_check
 
 
@@ -72,3 +74,9 @@ def spider_init(spider, *args, **kwargs):
         '=== __init__ : 今回向けクロールポイント情報 \n %s', spider._crawl_point)
 
     start_request_debug_file_init(spider, spider.kwargs_save)
+
+    # チェック用クラスの初期化＆スパイダーのクラス変数に保存
+    spider.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
+            spider, spider._crawling_start_time, kwargs)
+    spider.crawling_continued = CrawlingContinuedSkipCheck(
+        spider._crawl_point, kwargs)
