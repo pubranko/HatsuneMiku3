@@ -1,33 +1,32 @@
 import os
 import sys
-from typing import Union,Any
-from datetime import datetime, timedelta
-from dateutil import parser
+from typing import Any
+from datetime import datetime
 path = os.getcwd()
 sys.path.append(path)
 from common_lib.timezone_recovery import timezone_recovery
 
 
 class CrawlingContinuedSkipCheck(object):
-    ''''''
+    '''
+    続きからクロール
+    '''
     crawl_point_save: dict = {}
     latest_lastmod: Any = None
-    #latest_url: str = ''
+    latest_urls:Any = None
     kwargs_save: dict = {}
 
-    #def __init__(self, crawl_point: dict, sitemap_url: str, kwargs: dict) -> None:
     def __init__(self, crawl_point: dict, kwargs: dict) -> None:
         '''
         '''
         self.kwargs_save = kwargs
 
         if 'continued' in kwargs:
-            self.crawl_point_save = crawl_point
-            self.latest_lastmod = timezone_recovery(
-                crawl_point['latest_lastmod'])
-            # self.latest_lastmod = timezone_recovery(
-            #     crawl_point[sitemap_url]['latest_lastmod'])
-            #self.latest_url = crawl_point[sitemap_url]['latest_url']
+            # lastmodがあるサイト用
+            if 'lastmod' in crawl_point:
+                self.crawl_point_save = crawl_point
+                self.latest_lastmod = timezone_recovery(
+                    crawl_point['latest_lastmod'])
 
     def skip_check(self, lastmod: datetime) -> bool:
         '''
@@ -36,9 +35,6 @@ class CrawlingContinuedSkipCheck(object):
         if 'continued' in self.kwargs_save:
             if lastmod < self.latest_lastmod:
                 crwal_flg = True
-            # elif lastmod == self.latest_lastmod and url == self.latest_url:
-            #     crwal_flg = True
-
         return crwal_flg
 
     def max_lastmod_dicision(self,in_the_page_max_lastmod:datetime) -> datetime:

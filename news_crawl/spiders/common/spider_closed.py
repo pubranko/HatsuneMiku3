@@ -9,8 +9,6 @@ from common_lib.resource_check import resource_check
 
 def spider_closed(spider):
     '''spider共通の終了処理'''
-
-
     mongo: MongoModel = spider.mongo
     domain_name: str = spider._domain_name
     name: str = spider.name
@@ -18,15 +16,18 @@ def spider_closed(spider):
     logger: Logger = spider.logger
     stats: MemoryStatsCollector = spider.crawler.stats
     crawling_start_time: datetime = spider._crawling_start_time
+    kwargs:dict = spider.kwargs_save
 
-    controller = ControllerModel(mongo)
-    controller.crawl_point_update(
-        domain_name, name, crawl_point)
+    if 'crawl_point_non_update' in kwargs:
+        logger.info(
+            '=== closed : 次回クロールポイント情報の更新Skip')
+    else:
+        controller = ControllerModel(mongo)
+        controller.crawl_point_update(domain_name, name, crawl_point)
+        logger.info(
+            '=== closed : controllerに次回クロールポイント情報を保存 \n %s', crawl_point)
 
     resource_check()
-
-    logger.info(
-        '=== closed : controllerに次回クロールポイント情報を保存 \n %s', crawl_point)
 
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_logs.insert_one({

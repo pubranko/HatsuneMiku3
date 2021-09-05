@@ -1,6 +1,4 @@
-import sys
 import re
-from typing import Any
 from scrapy.spiders import Spider
 from scrapy.exceptions import CloseSpider
 from datetime import datetime
@@ -111,10 +109,17 @@ def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *a
                 '引数エラー：lastmod_period_minutesは配列形式[int|None,int|None]で指定してください。（例）[60,10] （値 = ' + kwargs['lastmod_period_minutes'] + '）')
             raise CloseSpider()
 
-    # 項目関連チェック
+    def __crawl_point_non_update() -> None:
+        if kwargs['crawl_point_non_update'] == 'Yes':
+            pass
+        else:
+            spider.logger.critical('引数エラー：crawl_point_non_updateに使用できるのは、"Yes"のみです。')
+            raise CloseSpider()
 
+    # 項目関連チェック
     def __lastmod_recent_time_and_continued() -> None:
-        raise CloseSpider('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
+        spider.logger.critical('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
+        raise CloseSpider()
 
     ### 単項目チェック ###
     if 'crawling_start_time' in kwargs:
@@ -137,6 +142,8 @@ def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *a
         __error_notice()
     if 'lastmod_period_minutes' in kwargs:
         __lastmod_period_minutes()
+    if 'crawl_point_non_update' in kwargs:
+        __crawl_point_non_update()
 
     ### 項目関連チェック ###
     if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:

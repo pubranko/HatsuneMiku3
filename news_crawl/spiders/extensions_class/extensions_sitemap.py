@@ -1,30 +1,25 @@
 import pickle
 import scrapy
-import re
-import scrapy
-from typing import Any, Union
-from datetime import datetime, timedelta
+from typing import Union,Any
+from datetime import datetime
 from dateutil import parser
-from scrapy.spiders import SitemapSpider
-from scrapy.http import Response
-from scrapy.utils.sitemap import Sitemap
-from scrapy.spiders import Rule
-from scrapy.linkextractors import LinkExtractor
+from lxml.etree import _Element
+from scrapy.spiders import SitemapSpider,Rule
 from scrapy.spiders.sitemap import iterloc
-from scrapy.http import Request
-from scrapy.http import Response
-from scrapy.utils.sitemap import Sitemap, sitemap_urls_from_robots
+from scrapy.linkextractors import LinkExtractor
+from scrapy.http import Response,Request
+from scrapy.utils.sitemap import sitemap_urls_from_robots,Sitemap
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
-from news_crawl.spiders.common.term_days_Calculation import term_days_Calculation
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
+from news_crawl.spiders.common.custom_sitemap import CustomSitemap
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -64,9 +59,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # 複数のsitemapを読み込む場合、最大のlastmodは以下のように判断する。
     # 1. sitemap_indexがない場合 → そのページの最大lastmod
     # 2. sitemap_indexから複数のsitemapを読み込んだ場合 → sitemap_indexの最大lastmod
-    # これは順番にsitemapを呼び出す際、タイムラグがあるため、このように処理している。
+    # ※これは順番にsitemapを呼び出す際、タイムラグによる取りこぼしがないようにするため。
     domain_lastmod: Union[datetime, None] = None
 
+    # パラメータによる抽出処理のためのクラス
     crawling_continued: CrawlingContinuedSkipCheck
     lastmod_pefiod: LastmodPeriodMinutesSkipCheck
     # seleniumモード
@@ -74,6 +70,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
     rules = (Rule(LinkExtractor(allow=(r'.+')), callback='parse'),)
     # sitemap_index用のルール
     #rules = (Rule(LinkExtractor(allow=(r'.+/sitemap.xml$')), callback='sitemap_index_parse'),)
+
+    # イレギラーなサイトマップの場合、Trueにしてxml解析を各スパイダー用に切り替える。
+    irregular_sitemap_parse_flg:bool = False
+
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -102,7 +102,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                     {'response': response}, extra={'spider': self})
                 return
 
-            s = Sitemap(body)
+            #s = Sitemap(body)
+            s = CustomSitemap(body,response,self)        # 引数にresponseを追加
             it = self.sitemap_filter(s, response)   # 引数にresponseを追加
 
             # サイトマップインデックスの場合
@@ -123,7 +124,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                 yield Request(loc, callback=c)
                             break
 
-    def sitemap_filter(self, entries: Sitemap, response: Response):
+    #def sitemap_filter(self, entries: Sitemap, response: Response):
+    def sitemap_filter(self, entries: CustomSitemap, response: Response):
         '''
         親クラスのSitemapSpiderの同名メソッドをオーバーライド。
         entriesには、サイトマップから取得した情報(loc,lastmodなど）が辞書形式で格納されている。
@@ -134,13 +136,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
         # ExtensionsSitemapSpiderクラスを継承した場合のsitemap_filter共通処理
         start_request_debug_file_generate(
             self.name, response.url, entries, self.kwargs_save)
-
-        # チェック用クラスの初期化
-        # self.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
-        #     self, self._crawling_start_time, self.kwargs_save)
-        # self.crawling_continued = CrawlingContinuedSkipCheck(
-        #    self._crawl_point, self.kwargs_save)
-        #crawling_continued = CrawlingContinuedSkipCheck(self._crawl_point,sitemap_url,self.kwargs_save)
 
         # 処理中のサイトマップ内で、最大のlastmodを記録するエリア
         max_lstmod: str = ''
@@ -232,3 +227,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         requestしたいurlをカスタマイズしたい場合、継承先でオーバーライドして使用する。
         '''
         return url['url']
+
+    @classmethod
+    def irregular_sitemap_parse(cls, d: dict, el: _Element, name: Any):
+        '''
+        イレギラーなサイトマップの場合、独自のxml解析を行う。
+        各スパイダーでオーバーライドして使用する。
+        '''
+        return d
