@@ -68,7 +68,7 @@ TELNETCONSOLE_ENABLED = False
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # ダウンロードのミドルウェアを自作のものを使いたい場合、以下の設定を変える。
 DOWNLOADER_MIDDLEWARES = {
-    # 'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
+    #'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
     'scrapy_selenium.SeleniumMiddleware': 800,
 }
 
@@ -106,10 +106,10 @@ ITEM_PIPELINES = {
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 # HTTPキャッシュを使うかどうかの指定。キャッシュを使うと、２回目以降はサーバーにリクエストが送られず、
 # レスポンスがキャッシュから取得できる。
-#HTTPCACHE_ENABLED = True
-HTTPCACHE_ENABLED = False
+HTTPCACHE_ENABLED = True
+#HTTPCACHE_ENABLED = False
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
-HTTPCACHE_EXPIRATION_SECS = 300  # 3600
+HTTPCACHE_EXPIRATION_SECS = 900  # 3600
 
 # フォルダ名だけ指定した場合、こうなる「〜/myproject/.scrapy/scrapy_httpcache」
 # 絶対パスでの指定の場合：'/var/cache/ranko'
