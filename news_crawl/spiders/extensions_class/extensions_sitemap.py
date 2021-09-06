@@ -85,13 +85,28 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
     def start_requests(self):
         '''(オーバーライド)
+        引数にdirect_crawl_urlsがある場合、sitemapを無視して渡されたurlsをクロールさせる機能を追加。
+        また通常版とselenium版の切り替え機能を追加。
+        '''
+        if 'direct_crawl_urls' in self.kwargs_save:
+            for loc in self.kwargs_save['direct_crawl_urls']:
+                for r, c in self._cbs:
+                    if r.search(loc):
+                        # seleniumモードによる切り替え
+                        if self.selenium_mode:
+                            yield SeleniumRequest(url=loc, callback=c)
+                        else:
+                            yield Request(loc, callback=c)
+                        break
+        else:
+            for url in self.sitemap_urls:
+                yield scrapy.Request(url, self.custom_parse_sitemap)
+
+    def custom_parse_sitemap(self, response:Response):
+        '''
+        カスタマイズ版の_parse_sitemap
         通常版とselenium版の切り替え機能を追加。
         '''
-        for url in self.sitemap_urls:
-            yield scrapy.Request(url, self.custom_parse_sitemap)
-
-    def custom_parse_sitemap(self, response):
-        '''カスタマイズ版の_parse_sitemap'''
         if response.url.endswith('/robots.txt'):
             for url in sitemap_urls_from_robots(response.text, base_url=response.url):
                 yield Request(url, callback=self.custom_parse_sitemap)
@@ -124,7 +139,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                 yield Request(loc, callback=c)
                             break
 
-    #def sitemap_filter(self, entries: Sitemap, response: Response):
     def sitemap_filter(self, entries: CustomSitemap, response: Response):
         '''
         親クラスのSitemapSpiderの同名メソッドをオーバーライド。
