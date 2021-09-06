@@ -1,11 +1,28 @@
-2021/9/4残タスク確認
+2021/9/6残タスク
+・sitemap_spiderには、 direct_crawl_files のパラメータによるクロール機能実装完了。
+・urlをリストで渡して、それだけをクローリングする機能の実装検討中
+  1. textファイルに対象のurlを持たせて、それをstart_urlsを使わずに、直接リクエストを飛ばす流れ。call_back=parse。
+     ファイル名には、ドメイン+(任意)+.txt
+  2. root/direct_crawl_files内に、ファイルを配置
+  3. flowは、入力ファイル名とサイトマップスパイダー名＆パス（デフォルト=news_crawl/spiders/モジュール名が、、、）を指定。内部はimport_moduleで読み込む。
+  4. spiderの引数は、direct_crawl_urls=[]、crawl_point_non_update=Yes
+  5. 課題として、フォルダ内のモジュールの一覧とクラスの一覧を取得するスクリプトが必要そうだ。
+     まずこれの実装を行う。それを使って上記1〜4の機能の実装を考える。
+
+
+2021/9/5残タスク確認
 ・mongo controllerの日付を文字列からISODate化 → 完了
 ・親サイトマップから子サイトマップのクローリングの実装 → 完了
 ・_crawl_pointの更新制御用のパラメータの実装 → 完了
 ・xmlfeedにも同様の機能実装 → asahi分は、sitemap側へ吸収 → 完了
-・crwalにも同様の機能を実装 → むりだった、、、
-後回し
+・crwalにも同様の機能を実装 → むりだった、、、中止
 ・urlをリストで渡して、それだけをクローリングする機能の実装
+  1. textファイルに対象のurlを持たせて、それをstart_urlsを使わずに、直接リクエストを飛ばす流れ。call_back=parse。
+     ファイル名には、ドメイン+(任意)+.txt
+  2. root/direct_crawl_files内に、ファイルを配置
+  3. flowは、入力ファイル名とサイトマップスパイダー名＆パス（デフォルト=news_crawl/spiders/モジュール名が、、、）を指定。内部はimport_moduleで読み込む。
+  4. spiderの引数は、direct_crawl_urls=[]、crawl_point_non_update=Yes
+
 
 2021/9/2
 ・CrawlingContinuedSkipCheckによるクローリングの続き機能への改修完了。

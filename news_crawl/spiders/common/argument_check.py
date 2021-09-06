@@ -1,10 +1,24 @@
+from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を回避するため
 import re
-from scrapy.spiders import Spider
+import copy
+from typing import Union, Any, TYPE_CHECKING
 from scrapy.exceptions import CloseSpider
 from datetime import datetime
+from urllib.parse import urlparse
+
+if TYPE_CHECKING:  # 型チェック時のみインポート
+    from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
+    from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
+    from news_crawl.spiders.extensions_class.extensions_xml_feed import ExtensionsXmlFeedSpider
 
 
-def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *args, **kwargs) -> None:
+def argument_check(
+    spider: Union[ExtensionsSitemapSpider, ExtensionsCrawlSpider, ExtensionsXmlFeedSpider],
+    domain_name: str,
+    controller_recode: dict,
+    *args,
+    **kwargs
+) -> None:
     '''
     各引数が存在したらチェックを行う。
     '''
@@ -113,12 +127,36 @@ def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *a
         if kwargs['crawl_point_non_update'] == 'Yes':
             pass
         else:
-            spider.logger.critical('引数エラー：crawl_point_non_updateに使用できるのは、"Yes"のみです。')
+            spider.logger.critical(
+                '引数エラー：crawl_point_non_updateに使用できるのは、"Yes"のみです。')
+            raise CloseSpider()
+
+    def __direct_crawl_urls() -> None:
+        if type(kwargs['direct_crawl_urls']) == list:
+            for url in kwargs['direct_crawl_urls']:
+                parsed_url = urlparse(url)
+                if not spider.allowed_domains[0] == parsed_url.netloc.replace('www.', ''):
+                    spider.logger.critical(
+                        '引数エラー：direct_crawl_urlsとspiderのドメイン不一致 : ' + url)
+                    raise CloseSpider()
+        elif type(kwargs['direct_crawl_urls']) == str:
+            parsed_url = urlparse(kwargs['direct_crawl_urls'])
+            if not spider.allowed_domains[0] == parsed_url.netloc.replace('www.', ''):
+                spider.logger.critical(
+                    '引数エラー：direct_crawl_urlsとspiderのドメイン不一致 : ' + kwargs['direct_crawl_urls'])
+                raise CloseSpider()
+            else:
+                spider.kwargs_save['direct_crawl_urls'] = [copy.deepcopy(spider.kwargs_save['direct_crawl_urls'])]
+                # これ以降は、direct_crawl_urlsの型をlistへ統一して後続の処理を行わせる。
+        else:
+            spider.logger.critical(
+                '引数エラー：direct_crawl_urlsにはlist型またはstr型を指定してください。')
             raise CloseSpider()
 
     # 項目関連チェック
     def __lastmod_recent_time_and_continued() -> None:
-        spider.logger.critical('引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
+        spider.logger.critical(
+            '引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
         raise CloseSpider()
 
     ### 単項目チェック ###
@@ -144,6 +182,8 @@ def argument_check(spider: Spider, domain_name: str, controller_recode: dict, *a
         __lastmod_period_minutes()
     if 'crawl_point_non_update' in kwargs:
         __crawl_point_non_update()
+    if 'direct_crawl_urls' in kwargs:
+        __direct_crawl_urls()
 
     ### 項目関連チェック ###
     if 'lastmod_recent_time' in kwargs and 'continued' in kwargs:
