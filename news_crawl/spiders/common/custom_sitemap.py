@@ -2,7 +2,6 @@ from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を�
 from typing import Any, TYPE_CHECKING
 import lxml.etree
 from lxml.etree import XMLParser, _Element
-from urllib.parse import urlparse
 from scrapy.http import Response
 
 if TYPE_CHECKING:
@@ -15,7 +14,6 @@ class CustomSitemap:
     from scrapy.utils.sitemap import Sitemap
     """
     _root: Any
-    domain: str = ''
     spider: ExtensionsSitemapSpider
 
     def __init__(self, xmltext, response: Response, spider: ExtensionsSitemapSpider):
@@ -24,10 +22,6 @@ class CustomSitemap:
         self._root = lxml.etree.fromstring(xmltext, parser=xmlp)
         rt = self._root.tag
         self.type = self._root.tag.split('}', 1)[1] if '}' in rt else rt
-
-        parsed_url = urlparse(response.url)
-        self.domain = parsed_url.netloc
-
         self.spider = spider
 
     def __iter__(self):
