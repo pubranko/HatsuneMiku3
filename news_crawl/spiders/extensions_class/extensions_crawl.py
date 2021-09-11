@@ -9,6 +9,7 @@ from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from bs4.element import ResultSet
 
+
 class ExtensionsCrawlSpider(CrawlSpider):
     '''
     CrawlSpiderの機能を拡張したクラス。
@@ -78,7 +79,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         次ページがあれば、BeautifulSoupのResultSetで返す。
         このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
         '''
-        return ResultSet('','')
+        return ResultSet('', '')
 
     def closed(self, spider):
         '''spider終了処理'''
