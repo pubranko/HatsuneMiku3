@@ -21,6 +21,9 @@ def spider_init(spider, *args, **kwargs):
     logger: Logger = spider.logger
     crawling_start_time: datetime
 
+    logger.info(
+        '=== spider_init : ' + name + '開始')
+
     # 必要な環境変数チェック
     environ_check()
     # MongoDBオープン
@@ -59,8 +62,9 @@ def spider_init(spider, *args, **kwargs):
 
     # クロール開始時間をスパイダーのクラス変数に保存
     if 'crawling_start_time' in spider.kwargs_save:
-        crawling_start_time = parser.parse(
-            spider.kwargs_save['crawling_start_time'])
+        # crawling_start_time = parser.parse(
+        #     spider.kwargs_save['crawling_start_time'])
+        crawling_start_time = spider.kwargs_save['crawling_start_time']
     else:
         crawling_start_time = datetime.now().astimezone(TIMEZONE)
 
