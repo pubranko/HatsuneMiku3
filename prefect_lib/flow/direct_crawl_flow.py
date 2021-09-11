@@ -2,16 +2,16 @@ import os
 import sys
 from datetime import datetime
 import logging
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 import prefect
 from prefect import Flow, task, Parameter
+from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
-from prefect_lib.task.scrapy_crawling_task import ScrapyCrawlingTask
+from prefect_lib.task.direct_crawl_task import DirectCrawlTask
 from prefect.utilities.context import Context
 from common_lib.mail_send import mail_send
 from prefect_lib.settings import TIMEZONE
@@ -43,19 +43,23 @@ def status_change(obj: Flow, old_state, new_state):
 
 
 with Flow(
-    name='Scrapy crawling flow',
+    name='Direct crawl flow',
     state_handlers=[status_change],
 ) as flow:
 
-    module = Parameter(
-        'module', default='prefect_lib.run.regular_crawler_run')()
-    method = Parameter('method', default='regular_crawler_run')()
-    task = ScrapyCrawlingTask(
+    spider_name = Parameter('spider_name', required=True)()
+    file = Parameter('file', required=False)()
+    task = DirectCrawlTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(module=module, method=method)
+    result = task(spider_name=spider_name,file=file,)
 
-# flow.run()
-# flow.run(parameters=dict(module='prefect_lib.run.test_crawling',method='test1'))
-#flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test2'))
-flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test3'))   #直近60〜120分
-#flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test4'))
+# scraped_save_start_time_*による絞り込みは任意
+flow.run(parameters=dict(
+    spider_name='sankei_com_sitemap',
+    file='sankei_com(test).txt',
+    #domain='',
+    #scrapying_start_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
+    #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+    #scrapying_start_time_from=datetime(2021, 8, 21, 10, 18, 12, 161000).astimezone(TIMEZONE),
+    #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
+))

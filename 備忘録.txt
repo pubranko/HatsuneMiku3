@@ -5,10 +5,36 @@
      ファイル名には、ドメイン+(任意)+.txt
   2. root/direct_crawl_files内に、ファイルを配置
   3. flowは、入力ファイル名とサイトマップスパイダー名＆パス（デフォルト=news_crawl/spiders/モジュール名が、、、）を指定。内部はimport_moduleで読み込む。
+     flow = direct_crawl_flow.py
+     task = direct_crawl_task.py
+     run  = 不要(task内)
   4. spiderの引数は、direct_crawl_urls=[]、crawl_point_non_update=Yes
   5. 課題として、フォルダ内のモジュールの一覧とクラスの一覧を取得するスクリプトが必要そうだ。
      まずこれの実装を行う。それを使って上記1〜4の機能の実装を考える。
+     1）common_libに作る。directory_search.py
+     2）news_crawl/spiders/*　ファイル一覧を取得
+'''
+【残課題】
+【日次レポート機能】
+【週次レポート機能】
+【月次レポート機能】
+【年次レポート機能】
+・各サイト別、全サイト単位件数
+・クロール、件数バイト数
+・正常、件数
+・エラー、件数
+・平均時間
+・最長時間
+・最大件数
+・最大バイト数
 
+【別プロジェクトとして管理するべき。別途検討】
+・API郡(twitter、FBなど)クロール（起動しっぱなし？）
+※ログのファイル名切り替え随時
+・solrへ流し込み
+※ログのファイル名切り替え随時
+
+'''
 
 2021/9/5残タスク確認
 ・mongo controllerの日付を文字列からISODate化 → 完了
