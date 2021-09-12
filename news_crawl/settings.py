@@ -7,6 +7,9 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+# デフォルトの設定はこちらにあるようだ。
+# ~.venv/lib/python3.8/site-packages/scrapy/settings/default_settings.py
+
 from datetime import timedelta, timezone
 from shutil import which
 BOT_NAME = 'news_crawl'
@@ -26,6 +29,7 @@ ROBOTSTXT_OBEY = True
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 # 同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS = 100
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -34,9 +38,10 @@ ROBOTSTXT_OBEY = True
 DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
 # webサイトのドメインごとに、同時平行処理するリクエストの最大値
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
+#CONCURRENT_REQUESTS_PER_DOMAIN = 100
+CONCURRENT_REQUESTS_PER_DOMAIN = 1
 # webサイトのIPごとの同時並行リクエストの最大値。これを指定すると、DOWNLOAD_DELAYもipごとになり、CONCURRENT_REQUESTS_PER_DOMAINは無視される。
-#CONCURRENT_REQUESTS_PER_IP = 16
+#CONCURRENT_REQUESTS_PER_IP = 1
 
 # Disable cookies (enabled by default)
 # Cookieを有効にするかどうか。
@@ -106,8 +111,8 @@ ITEM_PIPELINES = {
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 # HTTPキャッシュを使うかどうかの指定。キャッシュを使うと、２回目以降はサーバーにリクエストが送られず、
 # レスポンスがキャッシュから取得できる。
-HTTPCACHE_ENABLED = True
-#HTTPCACHE_ENABLED = False
+#HTTPCACHE_ENABLED = True
+HTTPCACHE_ENABLED = False
 # 上記でキャッシュを有効にした場合、有効な秒数を指定。0は無限。 900秒→15分、3600→1時間、86400→1日
 HTTPCACHE_EXPIRATION_SECS = 900  # 3600
 
@@ -122,6 +127,14 @@ HTTPCACHE_DIR = 'httpcache'
 ##########################################
 # 拡張してみた
 ##########################################
+# 異なるドメインを並列にクロールさせるための設定
+# 単一のドメインへ最適化された設定（デフォルト）
+#SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.ScrapyPriorityQueue'
+# 広範囲なドメインへ最適化された設定
+SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
+REACTOR_THREADPOOL_MAXSIZE = 100
+#AJAXCRAWL_ENABLED = True
+
 #DEPTH_LIMIT = 2
 #DEPTH_STATS_VERBOSE = True
 

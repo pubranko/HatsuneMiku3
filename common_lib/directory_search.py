@@ -33,6 +33,7 @@ def directory_search(directory_path: str = 'news_crawl/spiders') -> list:
                                     'ExtensionsXmlFeedSpider', 'CloseSpider']
             select_flg: bool = True
             domain: str = ''
+            domain_name: str = ''
             spider_name: str = ''
             if ptn.search(class_name) and \
                     class_name not in exclusion_list:
@@ -43,6 +44,7 @@ def directory_search(directory_path: str = 'news_crawl/spiders') -> list:
                         select_flg: bool = False
                     else:
                         domain: str = members['allowed_domains'][0]
+                        domain_name: str = members['_domain_name']
                         spider_name: str = members['name']
                 else:
                     select_flg: bool = False
@@ -55,6 +57,7 @@ def directory_search(directory_path: str = 'news_crawl/spiders') -> list:
                     'class_name': class_name,
                     'class_instans': class_instans,
                     'domain': domain,
+                    'domain_name': domain_name,
                     'spider_name': spider_name,
                 })
 
