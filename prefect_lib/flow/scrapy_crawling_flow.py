@@ -57,5 +57,5 @@ with Flow(
 # flow.run()
 # flow.run(parameters=dict(module='prefect_lib.run.test_crawling',method='test1'))
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test2'))
-flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test3'))   #直近60〜120分
+flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test5'))   #直近60〜120分
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test4'))

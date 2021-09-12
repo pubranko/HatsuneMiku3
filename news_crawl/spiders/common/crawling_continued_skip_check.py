@@ -23,7 +23,7 @@ class CrawlingContinuedSkipCheck(object):
 
         if 'continued' in kwargs:
             # lastmodがあるサイト用
-            if 'lastmod' in crawl_point:
+            if 'latest_lastmod' in crawl_point:
                 self.crawl_point_save = crawl_point
                 self.latest_lastmod = timezone_recovery(
                     crawl_point['latest_lastmod'])
