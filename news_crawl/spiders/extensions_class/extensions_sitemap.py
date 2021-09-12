@@ -74,7 +74,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # イレギラーなサイトマップの場合、Trueにしてxml解析を各スパイダー用に切り替える。
     irregular_sitemap_parse_flg:bool = False
 
-
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
         親クラスの__init__処理後に追加で初期処理を行う。
