@@ -110,3 +110,34 @@ class ControllerModel(object):
             record['scrapying_stop_domain_list'] = scrapying_stop_domain_list
 
         self.update({'document_type': 'stop_controller'}, record,)
+
+
+    def regular_observation_spider_name_set_get(self,) -> set:
+        '''
+        定点観測対象のスパイダーのセットを返す。
+        '''
+        record: Any = self.find_one(
+            key={'$and': [{'document_type': 'regular_observation_controller'}]})
+
+        if record == None:
+            return set([])
+        else:
+            return set(record['spiders_name_set'])
+
+    def regular_observation_spider_name_set_update(self, spiders_name_set: set) -> None:
+        '''
+        定点観測対象のスパイダーリストを更新する。
+        '''
+        record: Any = self.find_one(
+            key={'$and': [{'document_type': 'regular_observation_controller'}]})
+
+        if record == None:  # 初回の場合
+            record = {
+                'document_type': 'regular_observation_controller',
+                'spiders_name_set': list(spiders_name_set),
+            }
+        else:
+            record['spiders_name_set'] = list(spiders_name_set)
+
+        self.update({'document_type': 'regular_observation_controller'}, record,)
+

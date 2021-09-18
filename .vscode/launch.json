@@ -1,0 +1,43 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid:830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/.venv/bin/python",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "MONGO_SERVER":"localhost",
+                "MONGO_PORT":"47017",
+                "MONGO_USE_DB":"test_crawler_db",
+                "MONGO_USER":"test_Megurine_Luka",
+                "MONGO_PASS":"test",
+                "MONGO_CRAWLER_RESPONSE":"crawler_response",
+                "MONGO_CONTROLLER":"controller",
+                "MONGO_CRAWLER_LOGS":"crawler_logs",
+                "MONGO_SCRAPED_FROM_RESPONSE":"scraped_from_response",
+                "MONGO_NEWS_CLIP_MASTER":"news_clip_master",
+                "EMAIL_FROM":"mikuras2@outlook.com",
+                "EMAIL_TO":"mikuras3@outlook.com",
+                "EMAIL_PASS":"zhckqmjfvaifjiea",
+                "PREFECT__LOGGING__LEVEL":"DEBUG",
+                "PREFECT__LOGGING__FORMAT":"%(asctime)s %(levelname)s [%(name)s] : %(message)s",
+                "PREFECT__LOGGING__DATEFMT":"%Y-%m-%d %H:%M:%S",
+                "SOLR_URL":"http://localhost:8983/solr/",
+                "SOLR_CORE":"mycore/",
+                "SOLR_WRITE_USER":"HatsuneMiku",
+                "SOLR_WRITE_PASS":"sinfonii2017",
+                "SOLR_READ_USER":"KasaneTeto",
+                "SOLR_READ_PASS":"furansupan22379",
+                "SOLR_ADMIN_USER":"MySolrAdomin",
+                "SOLR_ADMIN_PASS":"lkdsfa78932852a342fds",
+            }
+        }
+    ]
+}

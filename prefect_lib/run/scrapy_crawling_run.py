@@ -53,6 +53,7 @@ def continued_run(kwargs: dict):
     crawling_stop_domain_listに登録がある場合は対象外。
     前回情報がないdomain＆spiderは対象外。
     '''
+    logger: Logger = kwargs['logger']
     start_time: datetime = kwargs['start_time']
     controller: ControllerModel = kwargs['controller']
     spiders_info: list = kwargs['spiders_info']
@@ -68,10 +69,12 @@ def continued_run(kwargs: dict):
         spider_domain_name: str = spider['domain_name']
         spider_name: str = spider['spider_name']
 
-        if not spider_domain in stop_domain:
+        if spider_domain in stop_domain:
+            logger.info('=== Stop domainの指定によりクロール中止 : ドメイン(' +
+                        spider_domain + ') : spider_name(' + spider_name + ')')
+        else:
             next_point_record: dict = controller.crawl_point_get(
                 spider_domain_name, spider_name,)
-
             if len(next_point_record):
                 process.crawl(spider['class_instans'],
                               crawling_start_time=start_time,
