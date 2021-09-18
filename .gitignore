@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 ### 拡張してみた
-.vscode/*
+#.vscode/*
 debug/*
 logs/*
 news_crawl/exclusive_work/*

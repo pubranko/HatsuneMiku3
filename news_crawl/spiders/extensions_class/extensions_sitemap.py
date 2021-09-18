@@ -59,7 +59,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # 複数のsitemapを読み込む場合、最大のlastmodは以下のように判断する。
     # 1. sitemap_indexがない場合 → そのページの最大lastmod
     # 2. sitemap_indexから複数のsitemapを読み込んだ場合 → sitemap_indexの最大lastmod
-    # ※これは順番にsitemapを呼び出す際、タイムラグによる取りこぼしがないようにするため。
+    # ※1.2.について → 順番にsitemapを呼び出す際、タイムラグによる取りこぼしがないようにするため。
+    # 3. ただし、クロールするlastmodの範囲指定(lastmod_period_minutes)でTOが指定されている場合、その時間を最大更新時間とする。(テストで利用しやすくするため)
     domain_lastmod: Union[datetime, None] = None
 
     # パラメータによる抽出処理のためのクラス
@@ -184,9 +185,13 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
         # サイトマップインデックスをクロールする場合、その最大更新時間をドメイン単位の最大更新時間とする。
+        # ただし、クロールするlastmodの範囲指定でTOが指定されている場合、その時間を最大更新時間とする。
         if not self.domain_lastmod:
-            self.domain_lastmod = self.crawling_continued.max_lastmod_dicision(
-                parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))
+            if type(self.lastmod_pefiod.lastmod_period_minutes_to) == datetime:
+                self.domain_lastmod = self.lastmod_pefiod.lastmod_period_minutes_to
+            else:
+                self.domain_lastmod = self.crawling_continued.max_lastmod_dicision(
+                    parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))
             # クロールポイントを更新する。
             self._crawl_point = {
                 'latest_lastmod': self.domain_lastmod,
