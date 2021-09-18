@@ -44,13 +44,13 @@ def test5(start_time: datetime):
     process.crawl(EpochtimesJpSitemapSpider,
                   crawling_start_time=start_time,
                   debug='Yes',
-                  lastmod_period_minutes='60,0',)
+                  lastmod_period_minutes='60,',)
     process.crawl(SankeiComSitemapSpider,
                   crawling_start_time=start_time,
                   debug='Yes',
-                  lastmod_period_minutes='60,0',)
+                  lastmod_period_minutes='60,',)
     process.crawl(AsahiComSitemapSpider,
                   crawling_start_time=start_time,
                   debug='Yes',
-                  lastmod_period_minutes='60,0',)
+                  lastmod_period_minutes='60,',)
     process.start()
