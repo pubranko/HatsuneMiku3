@@ -75,13 +75,14 @@ def exec(kwargs:dict):
             scraped['response_time'] = timezone_recovery(record['response_time'])
             scraped['crawling_start_time'] = timezone_recovery(record['crawling_start_time'])
             scraped['scrapying_start_time'] = start_time
+            scraped['sitemap_data'] = record['sitemap_data']
 
             if not record['domain'] in stop_domain:
 
                 # 各サイトのスクレイピングした項目を結合
                 module_name = str(record['domain']).replace('.', '_')
                 mod: Any = import_module('prefect_lib.scraper.' + module_name)
-                scraped.update(getattr(mod, 'exec')(record))
+                scraped.update(getattr(mod, 'exec')(record,kwargs))
 
                 # データチェック
                 error_flg:bool = scraped_record_error_check(scraped)

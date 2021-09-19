@@ -10,8 +10,10 @@ from bs4.element import ResultSet
 from datetime import datetime
 from dateutil.parser import parse
 from prefect_lib.settings import TIMEZONE
+from common_lib.timezone_recovery import timezone_recovery
 
-logger: Logger = logging.getLogger('prefect.scraper.epochtimes_jp')
+file_name = os.path.splitext(os.path.basename(__file__))[0]
+logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
 
 
 def exec(record: dict, kwargs: dict) -> dict:
@@ -27,27 +29,23 @@ def exec(record: dict, kwargs: dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    temp: Any = soup.select_one('title')
-    if temp:
-        tag: Tag = temp
+    type1: Any = soup.select_one('title')
+    if type1:
+        tag: Tag = type1
         scraped_record['title'] = tag.get_text()
 
     # article
-    temp: Any = soup.select('article .page_content')
-    if temp:
-        result_set: ResultSet = temp
-        tag: Tag = result_set[0]
-        scraped_record['article'] = tag.get_text().strip()
+    type1: Any = soup.select('div.area-content > div.entry-content p')
+    if type1:
+        result_set: ResultSet = type1
+        tag_list: list = [tag.get_text() for tag in result_set]
+        scraped_record['article'] = '\n'.join(tag_list).strip()
 
     # publish_date
-    temp: Any = soup.select_one('.page_datetime.col-sm-12.col-md-12')
-    if temp:
-        tag: Tag = temp
-        scraped_record['publish_date'] = datetime.strptime(tag.get_text().replace(
-            '\n', '').strip(), '%Y年%m月%d日 %H時%M分').astimezone(TIMEZONE)
+    # 共同のpublish_dateは日付のみ。時間部分がないため、sitemap側のlastmodで代用する。
+    scraped_record['publish_date'] = timezone_recovery(record['sitemap_data']['lastmod'])
 
     # 発行者
-    scraped_record['issuer'] = ['大紀元時報日本',
-                                'エポックタイムズジャパン', 'Epoch Times Japan', '大紀元', ]
+    scraped_record['issuer'] = ['共同通信社', '共同']
 
     return scraped_record

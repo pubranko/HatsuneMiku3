@@ -107,6 +107,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
+            sitemap_data=[],
         )
 
     def closed(self, spider):

@@ -54,3 +54,26 @@ def test5(start_time: datetime):
                   debug='Yes',
                   lastmod_period_minutes='60,',)
     process.start()
+
+@crawling_deco
+def test6(start_time: datetime):
+    '''正常：データ（直近60分）'''
+    process = CrawlerProcess(settings=get_project_settings())
+    configure_logging(install_root_handler=False)
+    process.crawl(KyodoCoJpSitemapSpider,
+                  crawling_start_time=start_time,
+                  debug='Yes',
+                  lastmod_period_minutes='1000,',)
+    process.start()
+
+@crawling_deco
+def test7(start_time: datetime):
+    '''正常：データ（直近60分）'''
+    process = CrawlerProcess(settings=get_project_settings())
+    configure_logging(install_root_handler=False)
+    process.crawl(SankeiComSitemapSpider,
+                  crawling_start_time=start_time,
+                  debug='Yes',
+                  lastmod_period_minutes='15,',)
+    process.start()
+

@@ -77,15 +77,15 @@ def check_and_save(kwargs:dict):
             }
             if solr_recodes_count:
                 for solr_recode in solr_results.docs:
-                    master_publish_date = timezone_recovery(
-                        master_record['publish_date'])
-                    solr_publish_date: datetime = parse(
-                        solr_recode['publish_date']).astimezone(TIMEZONE)
+                    # master_publish_date = timezone_recovery(
+                    #     master_record['publish_date'])
+                    # solr_publish_date: datetime = parse(
+                    #     solr_recode['publish_date']).astimezone(TIMEZONE)
 
                     # 重複チェック
                     if master_record['title'] == solr_recode['title'] and \
-                            master_record['article'] == solr_recode['article'] and \
-                            master_publish_date == solr_publish_date:
+                            master_record['article'] == solr_recode['article']: # and \
+                            #master_publish_date == solr_publish_date:
 
                         logger.info('=== solrに登録済みのためスキップ: ' +
                                     str(new_record['url']))

@@ -1,6 +1,6 @@
 from datetime import datetime
 from dateutil import parser
-from logging import Logger
+from logging import Logger,LoggerAdapter
 from scrapy.exceptions import CloseSpider
 from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
@@ -18,7 +18,7 @@ def spider_init(spider, *args, **kwargs):
     '''spider共通の初期処理'''
     domain_name: str = spider._domain_name
     name: str = spider.name
-    logger: Logger = spider.logger
+    logger: LoggerAdapter = spider.logger
     crawling_start_time: datetime
 
     logger.info(
