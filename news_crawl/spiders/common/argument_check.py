@@ -73,16 +73,17 @@ def argument_check(
             raise CloseSpider('引数エラー：continuedに使用できるのは、"Yes"のみです。')
 
     def __pages_check() -> None:
-        ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$')
+        #ptn = re.compile(r'^\[[0-9]+,[0-9]+\]$')
+        ptn = re.compile(r'^[0-9]+,[0-9]+$')
         if ptn.search(kwargs['pages']):
-            pages = eval(kwargs['pages'])
+            pages = kwargs['pages'].split(',')
             if pages[0] > pages[1]:
                 spider.logger.critical(
-                    '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）[3,2] （値 = ' + kwargs['pages'] + '）')
+                    '引数エラー：pagesの開始ページと終了ページは開始≦終了で指定してください。（エラー例）3,2 （値 = ' + kwargs['pages'] + '）')
                 raise CloseSpider()
         else:
             spider.logger.critical(
-                '引数エラー：pagesは配列形式[num,num]で開始・終了ページを指定してください。（例）[2,3] （値 = ' + kwargs['pages'] + '）')
+                '引数エラー：pagesはカンマ区切りで開始・終了ページを指定してください。（例）2,3 （値 = ' + kwargs['pages'] + '）')
             raise CloseSpider()
 
     def __category_urls() -> None:

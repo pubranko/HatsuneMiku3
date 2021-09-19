@@ -10,8 +10,10 @@ from bs4.element import ResultSet
 from datetime import datetime
 from dateutil.parser import parse
 from prefect_lib.settings import TIMEZONE
+from common_lib.timezone_recovery import timezone_recovery
 
-logger: Logger = logging.getLogger('prefect.scraper.sankei_com')
+file_name = os.path.splitext(os.path.basename(__file__))[0]
+logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
 
 
 def exec(record: dict, kwargs: dict) -> dict:
@@ -19,7 +21,6 @@ def exec(record: dict, kwargs: dict) -> dict:
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body: str = pickle.loads(record['response_body'])
     soup = bs4(response_body, 'lxml')
-    soup2 = bs4(response_body, 'html.parser')
     scraped_record: dict = {}
 
     # url
@@ -34,30 +35,20 @@ def exec(record: dict, kwargs: dict) -> dict:
         scraped_record['title'] = tag.get_text()
 
     # article
-    type1: Any = soup.select('p.article-text')
-    type2: Any = soup.select('.article-body > .article-raw_html')
+    type1: Any = soup.select('article[class^=ArticlePage-article-body] > div.ArticleBodyWrapper > p[class*=ArticleBody-]')
     if type1:
         result_set: ResultSet = type1
         tag_list: list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
-    elif type2:
-        result_set: ResultSet = type2
-        tag_list: list = [tag.get_text() for tag in result_set]
-        scraped_record['article'] = '\n'.join(tag_list).strip()
 
     # publish_date
-    type1: Any = soup.select_one('div.article-meta-upper > time[datetime]')
-    type2: Any = soup.select_one('div.article-datetime > time[datetime]')
+    type1: Any = soup.select_one('meta[property="og:article:published_time"]')
     if type1:
-        tag: Tag = type1
-        scraped_record['publish_date'] = parse(
-            tag['datetime']).astimezone(TIMEZONE)
-    elif type2:
-        tag: Tag = type2
-        scraped_record['publish_date'] = parse(
-            tag['datetime']).astimezone(TIMEZONE)
+        tag:Tag = type1
+        scraped_record['publish_date'] = parse(tag['content']).astimezone(TIMEZONE)
+
 
     # 発行者
-    scraped_record['issuer'] = ['産経新聞社', '産経']
+    scraped_record['issuer'] = ['トムソン・ロイター', 'ロイター','Thomson Reuters','Reuters,']
 
     return scraped_record

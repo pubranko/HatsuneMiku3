@@ -15,6 +15,7 @@ class NewsCrawlItem(scrapy.Item):
     response_body = scrapy.Field()
     spider_version_info = scrapy.Field()
     crawling_start_time = scrapy.Field()
+    sitemap_data = scrapy.Field()
 
     def __repr__(self):
         # 当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
@@ -27,4 +28,5 @@ class NewsCrawlItem(scrapy.Item):
         del p['response_body']
         del p['spider_version_info']
         del p['crawling_start_time']
+        del p['sitemap_data']
         return super(NewsCrawlItem, p).__repr__()

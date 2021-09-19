@@ -59,5 +59,6 @@ with Flow(
 flow.run(parameters=dict(
     in_out='in',
     #spiders_name='asahi_com_sitemap,epochtimes_jp_sitemap,jp_reuters_com_crawl,kyodo_co_jp_sitemap,sankei_com_sitemap,yomiuri_co_jp_sitemap',
-    spiders_name='asahi_com_sitemap, epochtimes_jp_sitemap,sankei_com_sitemap',
+    spiders_name='jp_reuters_com_crawl,kyodo_co_jp_sitemap,yomiuri_co_jp_sitemap',
+    #spiders_name='asahi_com_sitemap, epochtimes_jp_sitemap,sankei_com_sitemap',
 ))

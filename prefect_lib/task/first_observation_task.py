@@ -15,9 +15,11 @@ from models.controller_model import ControllerModel
 from common_lib.directory_search import directory_search
 
 
-class RegularObservationTask(ExtensionsTask):
+class FirstObservationTask(ExtensionsTask):
     '''
-    定期観測用タスク
+    初回観測用タスク：以下の条件を満たすスパイダーを対象とする。
+    １．定期観測コントローラーに登録のあるスパイダー
+    ２．前回クロール情報がないスパイダー
     '''
 
     def run(self):
@@ -42,32 +44,35 @@ class RegularObservationTask(ExtensionsTask):
         kwargs['scraped_save_start_time_from'] = self.start_time
         kwargs['scraped_save_start_time_to'] = self.start_time
 
+        # 初回観測の対象spiders_infoを抽出
         spiders_info = directory_search()
         controller: ControllerModel = kwargs['controller']
-        spider_name_set: set = controller.regular_observation_spider_name_set_get()
+        regular_observation_spider_name_set: set = controller.regular_observation_spider_name_set_get()
 
-        # 定期観測の対象・対象外spiderを振り分け
         crawling_target_spiders: list = []
         crawling_target_spiders_name: list = []
-        crawling_subject_spiders_name: list = []
         for spider_info in spiders_info:
-            if spider_info['spider_name'] in spider_name_set:
+
+            crawl_point_record: dict = controller.crawl_point_get(
+                spider_info['domain_name'], spider_info['spider_name'],)
+
+            if not spider_info['spider_name'] in regular_observation_spider_name_set:
+                pass    #定期観測に登録がないスパイダーは対象外
+            elif len(crawl_point_record):
+                pass    #クロールポイントがある（既にクロール実績がある）スパイダーは対象外
+            else:
                 crawling_target_spiders.append(spider_info)
                 crawling_target_spiders_name.append(spider_info['spider_name'])
-            else:
-                crawling_subject_spiders_name.append(
-                    spider_info['spider_name'])
+
 
         kwargs['spiders_info'] = crawling_target_spiders
 
-        logger.info('=== 定期観測対象スパイダー : ' +
+        logger.info('=== 初回観測対象スパイダー : ' +
                     str(crawling_target_spiders_name) + '\n')
-        logger.info('=== 定期観測対象外スパイダー : ' +
-                    str(crawling_subject_spiders_name) + '\n')
-        logger.info('=== 定期観測 run kwargs : ' + str(kwargs) + '\n')
+        logger.info('=== 初回観測 run kwargs : ' + str(kwargs) + '\n')
 
         thread = threading.Thread(
-            target=scrapy_crawling_run.continued_run(kwargs))
+            target=scrapy_crawling_run.first_run(kwargs))
 
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
         thread.start()
@@ -80,3 +85,5 @@ class RegularObservationTask(ExtensionsTask):
         # 終了処理
         self.closed()
         # return ''
+
+

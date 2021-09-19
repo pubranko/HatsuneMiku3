@@ -1,14 +1,19 @@
 import pickle
+from pandas.core import series
 import scrapy
-from typing import Union,Any
+from typing import Union, Any
 from datetime import datetime
 from dateutil import parser
 from lxml.etree import _Element
-from scrapy.spiders import SitemapSpider,Rule
+import pandas as pd
+from pandas import DataFrame,Series
+import numpy
+
+from scrapy.spiders import SitemapSpider, Rule
 from scrapy.spiders.sitemap import iterloc
 from scrapy.linkextractors import LinkExtractor
-from scrapy.http import Response,Request
-from scrapy.utils.sitemap import sitemap_urls_from_robots,Sitemap
+from scrapy.http import Response, Request
+from scrapy.utils.sitemap import sitemap_urls_from_robots, Sitemap
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 from news_crawl.items import NewsCrawlItem
@@ -21,7 +26,6 @@ from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingCont
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.custom_sitemap import CustomSitemap
 
-
 class ExtensionsSitemapSpider(SitemapSpider):
     '''
     SitemapSpiderの機能を拡張したクラス。
@@ -31,7 +35,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
     '''
     name: str = 'extension_sitemap'                                 # 継承先で上書き要。
     allowed_domains: list = ['sample.com']                          # 継承先で上書き要。
-    sitemap_urls: list = ['https://www.sample.com/sitemap.xml', ]   # 継承先で上書き要。sitemapindexがある場合、それを指定すること。複数指定不可。
+    # 継承先で上書き要。sitemapindexがある場合、それを指定すること。複数指定不可。
+    sitemap_urls: list = ['https://www.sample.com/sitemap.xml', ]
     custom_settings: dict = {
         'DEPTH_LIMIT': 2,
         'DEPTH_STATS_VERBOSE': True,
@@ -73,7 +78,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
     #rules = (Rule(LinkExtractor(allow=(r'.+/sitemap.xml$')), callback='sitemap_index_parse'),)
 
     # イレギラーなサイトマップの場合、Trueにしてxml解析を各スパイダー用に切り替える。
-    irregular_sitemap_parse_flg:bool = False
+    irregular_sitemap_parse_flg: bool = False
+
+    # sitemap情報を保存
+    sitemap_records: list = []
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -102,7 +110,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             for url in self.sitemap_urls:
                 yield scrapy.Request(url, self.custom_parse_sitemap)
 
-    def custom_parse_sitemap(self, response:Response):
+    def custom_parse_sitemap(self, response: Response):
         '''
         カスタマイズ版の_parse_sitemap
         通常版とselenium版の切り替え機能を追加。
@@ -118,7 +126,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 return
 
             #s = Sitemap(body)
-            s = CustomSitemap(body,response,self)        # 引数にresponseを追加
+            s = CustomSitemap(body, response, self)        # 引数にresponseを追加
             it = self.sitemap_filter(s, response)   # 引数にresponseを追加
 
             # サイトマップインデックスの場合
@@ -181,6 +189,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if crwal_flg:
                 if self._custom_url_flg:
                     entry['loc'] = self._custom_url(entry)
+
+                self.sitemap_records.append({
+                    'sitemap_url':response.url,
+                    'lastmod':date_lastmod,
+                    'loc':entry['loc']})
                 yield entry
 
         # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
@@ -205,6 +218,13 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
+        sitemap_data:dict = {}
+        for record in self.sitemap_records:
+            record:dict
+            if response.url == record['loc']:
+                sitemap_data['sitemap_url'] = record['sitemap_url']
+                sitemap_data['lastmod'] = record['lastmod']
+
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
             url=response.url,
@@ -213,6 +233,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
+            sitemap_data=sitemap_data,
         )
 
     def selenium_parse(self, response: Response):
@@ -226,6 +247,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
+        sitemap_data:list = []
+        for rec in self.sitemap_records:
+            if response.url in rec:
+                sitemap_data = rec
+                sitemap_data.remove(response.url)
+
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
             url=response.url,
@@ -234,6 +261,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_body=pickle.dumps(driver.page_source),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
+            sitemap_data=sitemap_data,
         )
 
     def closed(self, spider):

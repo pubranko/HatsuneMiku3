@@ -114,7 +114,7 @@ class ControllerModel(object):
 
     def regular_observation_spider_name_set_get(self,) -> set:
         '''
-        定点観測対象のスパイダーのセットを返す。
+        定期観測対象のスパイダーのセットを返す。
         '''
         record: Any = self.find_one(
             key={'$and': [{'document_type': 'regular_observation_controller'}]})
@@ -126,7 +126,7 @@ class ControllerModel(object):
 
     def regular_observation_spider_name_set_update(self, spiders_name_set: set) -> None:
         '''
-        定点観測対象のスパイダーリストを更新する。
+        定期観測対象のスパイダーリストを更新する。
         '''
         record: Any = self.find_one(
             key={'$and': [{'document_type': 'regular_observation_controller'}]})

@@ -24,16 +24,6 @@ def solr_del():
         'response_time:[2021-08-20T00:06:18Z TO *]',
     )
 
-    # solr = pysolr.Solr(
-    #     os.environ['SOLR_URL'] + os.environ['SOLR_CORE'],
-    #     timeout=30,
-    #     verify='',
-    #     # verify=SolrEnv.VERIFY,     #solrの公開鍵を指定する場合、ここにファイルパスを入れる。
-    #     auth=(os.environ['SOLR_WRITE_USER'],
-    #             os.environ['SOLR_WRITE_PASS']),
-    #     #always_commit=True,
-    # )
-
     #solr.delete(id=["e234a380-e9c9-44f0-8b50-d0181c8a057e"])
     # solr.delete(id=[
     #     "94dcbcce-fe9a-4cab-b134-450e1bb04526",
