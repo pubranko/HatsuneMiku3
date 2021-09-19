@@ -13,7 +13,7 @@ from prefect_lib.settings import TIMEZONE
 
 logger:Logger = logging.getLogger('prefect.scraper.asahi_com')
 
-def exec(record:dict) -> dict:
+def exec(record:dict, kwargs:dict) -> dict:
     global logger
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body:str = pickle.loads(record['response_body'])
@@ -30,8 +30,6 @@ def exec(record:dict) -> dict:
     if temp:
         tag:Tag = temp
         scraped_record['title'] = tag.get_text()
-    else:
-        logger.error('=== スクレイピング：失敗(title)：URL : ' + url)
 
     ### article
     temp:Any = soup.select('.l-main > main > div > p,.l-main > main > div > h2')
@@ -39,16 +37,12 @@ def exec(record:dict) -> dict:
         result_set:ResultSet = temp
         tag_list:list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
-    else:
-        logger.error('=== スクレイピング：失敗(artcle)：URL : ' + url)
 
     ### publish_date
     temp:Any = soup.select_one('.l-main > main time')
     if temp:
         tag:Tag = temp
         scraped_record['publish_date'] = parse(tag['datetime']).astimezone(TIMEZONE)
-    else:
-        logger.error('=== スクレイピング：失敗(publish_date)：URL : ' + url)
 
     #発行者
     scraped_record['issuer'] = ['朝日新聞社','朝日新聞デジタル','朝日']

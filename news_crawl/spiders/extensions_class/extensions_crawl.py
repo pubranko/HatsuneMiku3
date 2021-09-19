@@ -72,6 +72,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
+            sitemap_data={},
         )
 
     def pagination_check(self, response: Response) -> ResultSet:
@@ -98,7 +99,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ・それ以外は、各サイトの標準値に従う。
         '''
         if 'pages' in self.kwargs_save:
-            pages: list = eval(self.kwargs_save['pages'])
+            #pages: list = eval(self.kwargs_save['pages'])
+            pages:list = list(map(int,str(self.kwargs_save['pages']).split(',')))
             return{'start_page': pages[0], 'end_page': pages[1]}
         else:
             return{'start_page': start_page, 'end_page': end_page}

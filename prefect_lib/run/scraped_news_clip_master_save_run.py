@@ -70,8 +70,8 @@ def check_and_save(kwargs: dict):
                         {'url': record['url']},
                         {'title': record['title']},
                         {'article': record['article']},
-                        {'publish_date': timezone_recovery(
-                            record['publish_date'])},
+                        # {'publish_date': timezone_recovery(
+                        #     record['publish_date'])},
                     ]},
                 ).count()
 
