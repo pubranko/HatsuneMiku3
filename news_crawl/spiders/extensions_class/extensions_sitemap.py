@@ -6,7 +6,7 @@ from datetime import datetime
 from dateutil import parser
 from lxml.etree import _Element
 import pandas as pd
-from pandas import DataFrame,Series
+from pandas import DataFrame, Series
 import numpy
 
 from scrapy.spiders import SitemapSpider, Rule
@@ -15,6 +15,8 @@ from scrapy.linkextractors import LinkExtractor
 from scrapy.http import Response, Request
 from scrapy.utils.sitemap import sitemap_urls_from_robots, Sitemap
 from scrapy_selenium import SeleniumRequest
+from scrapy_splash import SplashRequest
+from scrapy_splash.response import SplashTextResponse
 from selenium.webdriver.remote.webdriver import WebDriver
 from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
@@ -25,6 +27,7 @@ from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMin
 from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.custom_sitemap import CustomSitemap
+
 
 class ExtensionsSitemapSpider(SitemapSpider):
     '''
@@ -73,9 +76,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
     lastmod_pefiod: LastmodPeriodMinutesSkipCheck
     # seleniumモード
     selenium_mode: bool = False
-    rules = (Rule(LinkExtractor(allow=(r'.+')), callback='parse'),)
-    # sitemap_index用のルール
-    #rules = (Rule(LinkExtractor(allow=(r'.+/sitemap.xml$')), callback='sitemap_index_parse'),)
+    #sitemap_rules = [(r'.*', 'selenium_parse')]
+    # splashモード
+    splash_mode: bool = False
+    #sitemap_rules = [(r'.*', 'splash_parse')]
 
     # イレギラーなサイトマップの場合、Trueにしてxml解析を各スパイダー用に切り替える。
     irregular_sitemap_parse_flg: bool = False
@@ -143,6 +147,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
                             # seleniumモードによる切り替え
                             if self.selenium_mode:
                                 yield SeleniumRequest(url=loc, callback=c)
+                            elif self.splash_mode:
+                                yield SplashRequest(url=loc, callback=c, args={'wait': 1.0})
                             else:
                                 yield Request(loc, callback=c)
                             break
@@ -191,9 +197,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     entry['loc'] = self._custom_url(entry)
 
                 self.sitemap_records.append({
-                    'sitemap_url':response.url,
-                    'lastmod':date_lastmod,
-                    'loc':entry['loc']})
+                    'sitemap_url': response.url,
+                    'lastmod': date_lastmod,
+                    'loc': entry['loc']})
                 yield entry
 
         # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
@@ -218,9 +224,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data:dict = {}
+        sitemap_data: dict = {}
         for record in self.sitemap_records:
-            record:dict
+            record: dict
             if response.url == record['loc']:
                 sitemap_data['sitemap_url'] = record['sitemap_url']
                 sitemap_data['lastmod'] = record['lastmod']
@@ -247,7 +253,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data:list = []
+        sitemap_data: list = []
         for rec in self.sitemap_records:
             if response.url in rec:
                 sitemap_data = rec
@@ -263,6 +269,50 @@ class ExtensionsSitemapSpider(SitemapSpider):
             crawling_start_time=self._crawling_start_time,
             sitemap_data=sitemap_data,
         )
+
+    def splash_parse(self, response: SplashTextResponse):
+        '''
+        splash版parse。JavaScript処理終了後のレスポンスよりDBへ書き込み
+        '''
+        print('=== splash_parse ')
+        print(type(response))
+        #import inspect
+        #print(inspect.getmembers(response,inspect.ismethod))
+        # ('body_as_unicode', <bound method TextResponse.body_as_unicode of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('copy', <bound method Response.copy of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('css', <bound method TextResponse.css of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('follow', <bound method TextResponse.follow of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('follow_all', <bound method TextResponse.follow_all of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('json', <bound method TextResponse.json of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('replace', <bound method SplashTextResponse.replace of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('urljoin', <bound method TextResponse.urljoin of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
+        # ('xpath', <bound method TextResponse.xpath of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>)
+        #print(response.body_as_unicode())
+
+
+        #driver: WebDriver = response.request.meta['driver']
+        # Javascript実行が終了するまで最大30秒間待つように指定
+        #driver.set_script_timeout(30)
+
+        _info = self.name + ':' + str(self._spider_version) + ' / ' \
+            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
+
+        sitemap_data: list = []
+        for rec in self.sitemap_records:
+            if response.url in rec:
+                sitemap_data = rec
+                sitemap_data.remove(response.url)
+
+        # yield NewsCrawlItem(
+        #     domain=self.allowed_domains[0],
+        #     url=response.url,
+        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+        #     response_headers=pickle.dumps(response.headers),
+        #     response_body=pickle.dumps(driver.page_source),
+        #     spider_version_info=_info,
+        #     crawling_start_time=self._crawling_start_time,
+        #     sitemap_data=sitemap_data,
+        # )
 
     def closed(self, spider):
         '''spider終了処理'''
