@@ -37,6 +37,12 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # 次回クロールポイント情報
     _crawl_point: dict = {}
 
+    # seleniumモード
+    selenium_mode: bool = False
+    # splashモード
+    splash_mode: bool = False
+
+
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
         親クラスの__init__処理後に追加で初期処理を行う。

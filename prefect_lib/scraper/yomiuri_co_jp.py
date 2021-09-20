@@ -12,7 +12,6 @@ from dateutil.parser import parse
 from prefect_lib.settings import TIMEZONE
 
 file_name = os.path.splitext(os.path.basename(__file__))[0]
-
 logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
 
 
