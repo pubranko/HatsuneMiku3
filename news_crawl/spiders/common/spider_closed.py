@@ -29,13 +29,18 @@ def spider_closed(spider):
 
     resource_check()
 
+    stats_edit:dict = {}
+    for item in stats.get_stats().items():
+        key:str = str(item[0]).replace('.','_')
+        stats_edit[key] = item[1]
+
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_logs.insert_one({
         'crawling_start_time': crawling_start_time.isoformat(),
         'record_type': 'spider_stats',
         'domain_name': domain_name,
         'spider_name': name,
-        'stats': stats.get_stats(),
+        'stats': stats_edit,
     })
 
     mongo.close()

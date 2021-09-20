@@ -134,3 +134,4 @@ debug/*
 logs/*
 news_crawl/exclusive_work/*
 static/direct_crawl_files/*
+report_files/*

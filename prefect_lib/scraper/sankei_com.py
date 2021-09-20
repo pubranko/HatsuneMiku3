@@ -11,7 +11,9 @@ from datetime import datetime
 from dateutil.parser import parse
 from prefect_lib.settings import TIMEZONE
 
-logger: Logger = logging.getLogger('prefect.scraper.sankei_com')
+file_name = os.path.splitext(os.path.basename(__file__))[0]
+logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
+
 
 
 def exec(record: dict, kwargs: dict) -> dict:
