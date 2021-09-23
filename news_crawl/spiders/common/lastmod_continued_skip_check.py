@@ -7,7 +7,7 @@ sys.path.append(path)
 from common_lib.timezone_recovery import timezone_recovery
 
 
-class CrawlingContinuedSkipCheck(object):
+class LastmodContinuedSkipCheck(object):
     '''
     続きからクロール
     '''

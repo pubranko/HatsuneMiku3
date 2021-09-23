@@ -10,7 +10,7 @@ from news_crawl.spiders.common.argument_check import argument_check
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
-from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
+from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from common_lib.resource_check import resource_check
 
 
@@ -82,5 +82,5 @@ def spider_init(spider, *args, **kwargs):
     # チェック用クラスの初期化＆スパイダーのクラス変数に保存
     spider.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
             spider, spider._crawling_start_time, kwargs)
-    spider.crawling_continued = CrawlingContinuedSkipCheck(
+    spider.crawling_continued = LastmodContinuedSkipCheck(
         spider._crawl_point, kwargs)

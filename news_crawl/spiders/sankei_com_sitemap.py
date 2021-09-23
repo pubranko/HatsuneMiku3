@@ -18,4 +18,3 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
     # sitemap_rules = [(r'.*', 'selenium_parse')]
     # splashモードON。callbackをsplash用parseに変更。
     splash_mode: bool = True
-    sitemap_rules = [(r'.*', 'splash_parse')]
