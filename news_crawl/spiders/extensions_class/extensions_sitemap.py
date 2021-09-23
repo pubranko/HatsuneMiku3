@@ -24,7 +24,7 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
-from news_crawl.spiders.common.crawling_continued_skip_check import CrawlingContinuedSkipCheck
+from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.custom_sitemap import CustomSitemap
 
@@ -72,7 +72,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     domain_lastmod: Union[datetime, None] = None
 
     # パラメータによる抽出処理のためのクラス
-    crawling_continued: CrawlingContinuedSkipCheck
+    crawling_continued: LastmodContinuedSkipCheck
     lastmod_pefiod: LastmodPeriodMinutesSkipCheck
     # seleniumモード
     selenium_mode: bool = False
@@ -130,27 +130,32 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 return
 
             #s = Sitemap(body)
-            s = CustomSitemap(body, response, self)        # 引数にresponseを追加
-            it = self.sitemap_filter(s, response)   # 引数にresponseを追加
+            sitemap = CustomSitemap(body, response, self)        # 引数にresponseを追加
+            it = self.sitemap_filter(sitemap, response)   # 引数にresponseを追加
 
             # サイトマップインデックスの場合
-            if s.type == 'sitemapindex':
+            if sitemap.type == 'sitemapindex':
                 for loc in iterloc(it, self.sitemap_alternate_links):
                     if any(x.search(loc) for x in self._follow):
                         yield Request(loc, callback=self.custom_parse_sitemap)
 
             # 子サイトマップの場合
-            elif s.type == 'urlset':
+            elif sitemap.type == 'urlset':
                 for loc in iterloc(it, self.sitemap_alternate_links):
-                    for r, c in self._cbs:
-                        if r.search(loc):
+                    for rule_regex, call_back in self._cbs:
+                        if rule_regex.search(loc):
                             # seleniumモードによる切り替え
                             if self.selenium_mode:
-                                yield SeleniumRequest(url=loc, callback=c)
+                                yield SeleniumRequest(url=loc, callback=call_back)
                             elif self.splash_mode:
-                                yield SplashRequest(url=loc, callback=c, args={'wait': 1.0})
+                                yield SplashRequest(url=loc, callback=call_back, args={
+                                    'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
+                                    'wait': 1.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
+                                    'resource_timeout': 30.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                                    'images': 0,  # 画像はダウンロードしない(0)
+                                })
                             else:
-                                yield Request(loc, callback=c)
+                                yield Request(loc, callback=call_back)
                             break
 
     def sitemap_filter(self, entries: CustomSitemap, response: Response):
@@ -272,47 +277,30 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
     def splash_parse(self, response: SplashTextResponse):
         '''
-        splash版parse。JavaScript処理終了後のレスポンスよりDBへ書き込み
+        splash版parse。
+        読み込んだページへ何かしら操作したい（クリックなど）場合、オーバーライドして使用する。
+        標準の動作はparseと同じ。
         '''
-        print('=== splash_parse ')
-        print(type(response))
-        #import inspect
-        #print(inspect.getmembers(response,inspect.ismethod))
-        # ('body_as_unicode', <bound method TextResponse.body_as_unicode of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('copy', <bound method Response.copy of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('css', <bound method TextResponse.css of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('follow', <bound method TextResponse.follow of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('follow_all', <bound method TextResponse.follow_all of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('json', <bound method TextResponse.json of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('replace', <bound method SplashTextResponse.replace of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('urljoin', <bound method TextResponse.urljoin of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>), 
-        # ('xpath', <bound method TextResponse.xpath of <200 https://www.sankei.com/article/20210920-GJILJ5ZHZJJTBIASSDSXHB4RRY/>>)
-        #print(response.body_as_unicode())
-
-
-        #driver: WebDriver = response.request.meta['driver']
-        # Javascript実行が終了するまで最大30秒間待つように指定
-        #driver.set_script_timeout(30)
-
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data: list = []
-        for rec in self.sitemap_records:
-            if response.url in rec:
-                sitemap_data = rec
-                sitemap_data.remove(response.url)
+        sitemap_data: dict = {}
+        for record in self.sitemap_records:
+            record: dict
+            if response.url == record['loc']:
+                sitemap_data['sitemap_url'] = record['sitemap_url']
+                sitemap_data['lastmod'] = record['lastmod']
 
-        # yield NewsCrawlItem(
-        #     domain=self.allowed_domains[0],
-        #     url=response.url,
-        #     response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-        #     response_headers=pickle.dumps(response.headers),
-        #     response_body=pickle.dumps(driver.page_source),
-        #     spider_version_info=_info,
-        #     crawling_start_time=self._crawling_start_time,
-        #     sitemap_data=sitemap_data,
-        # )
+        yield NewsCrawlItem(
+            domain=self.allowed_domains[0],
+            url=response.url,
+            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+            response_headers=pickle.dumps(response.headers),
+            response_body=pickle.dumps(response.body),
+            spider_version_info=_info,
+            crawling_start_time=self._crawling_start_time,
+            sitemap_data=sitemap_data,
+        )
 
     def closed(self, spider):
         '''spider終了処理'''

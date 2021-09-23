@@ -84,9 +84,7 @@ def continued_run(kwargs: dict):
 @scrapy_deco
 def first_run(kwargs: dict):
     '''
-    前回の続きからクロールさせるようScrapyを実行する(多重起動)。
-    crawling_stop_domain_listに登録がある場合は対象外。
-    前回情報がないdomain＆spiderは対象外。
+
     '''
     start_time: datetime = kwargs['start_time']
     spiders_info: list = kwargs['spiders_info']
@@ -96,7 +94,6 @@ def first_run(kwargs: dict):
 
     for spider in spiders_info:
         spider: dict
-        print('=== あれ？')
         process.crawl(spider['class_instans'],
                         crawling_start_time=start_time,
                         lastmod_period_minutes='60,',
