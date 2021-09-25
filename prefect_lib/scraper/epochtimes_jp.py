@@ -28,22 +28,22 @@ def exec(record: dict, kwargs: dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    temp: Any = soup.select_one('title')
-    if temp:
-        tag: Tag = temp
+    title_selecter: Any = soup.select_one('head > title')
+    if title_selecter:
+        tag: Tag = title_selecter
         scraped_record['title'] = tag.get_text()
 
     # article
-    temp: Any = soup.select('article .page_content')
-    if temp:
-        result_set: ResultSet = temp
+    article_selecter: Any = soup.select('article .page_content')
+    if article_selecter:
+        result_set: ResultSet = article_selecter
         tag: Tag = result_set[0]
         scraped_record['article'] = tag.get_text().strip()
 
     # publish_date
-    temp: Any = soup.select_one('.page_datetime.col-sm-12.col-md-12')
-    if temp:
-        tag: Tag = temp
+    publish_selecter: Any = soup.select_one('.page_datetime.col-sm-12.col-md-12')
+    if publish_selecter:
+        tag: Tag = publish_selecter
         scraped_record['publish_date'] = datetime.strptime(tag.get_text().replace(
             '\n', '').strip(), '%Y年%m月%d日 %H時%M分').astimezone(TIMEZONE)
 

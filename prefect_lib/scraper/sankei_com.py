@@ -14,14 +14,15 @@ from prefect_lib.settings import TIMEZONE
 file_name = os.path.splitext(os.path.basename(__file__))[0]
 logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
 
+import time
 
 
 def exec(record: dict, kwargs: dict) -> dict:
+
     global logger
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body: str = pickle.loads(record['response_body'])
     soup = bs4(response_body, 'lxml')
-    soup2 = bs4(response_body, 'html.parser')
     scraped_record: dict = {}
 
     # url
@@ -30,35 +31,40 @@ def exec(record: dict, kwargs: dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    type1: Any = soup.select_one('title')
-    if type1:
-        tag: Tag = type1
+    title_selecter: Any = soup.select_one('head > title')
+    if title_selecter:
+        tag: Tag = title_selecter
         scraped_record['title'] = tag.get_text()
 
     # article
-    type1: Any = soup.select('p.article-text')
-    type2: Any = soup.select('.article-body > .article-raw_html')
-    if type1:
-        result_set: ResultSet = type1
+    #body > div#fusion-app > div.grid div.grid > section > article.article-wrapper > div.article-body > p.article-text
+    article_selecter: Any = soup.select('body  article.article-wrapper > div.article-body > p.article-text')
+    if not article_selecter:
+        print('＠＠＠ ＠＠＠ 産経　article　type2')
+        article_selecter: Any = soup.select(
+            '.article-body > .article-text')
+    if article_selecter:
+        result_set: ResultSet = article_selecter
         tag_list: list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
-    elif type2:
-        result_set: ResultSet = type2
-        tag_list: list = [tag.get_text() for tag in result_set]
-        scraped_record['article'] = '\n'.join(tag_list).strip()
+    p5 = time.perf_counter()
 
     # publish_date
-    type1: Any = soup.select_one('div.article-meta-upper > time[datetime]')
-    type2: Any = soup.select_one('div.article-datetime > time[datetime]')
-    if type1:
-        tag: Tag = type1
+    modified_selecter: Any = soup.select_one('meta[name="article:modified_time"]')
+    if modified_selecter:
+        tag: Tag = modified_selecter
         scraped_record['publish_date'] = parse(
-            tag['datetime']).astimezone(TIMEZONE)
-    elif type2:
-        tag: Tag = type2
-        scraped_record['publish_date'] = parse(
-            tag['datetime']).astimezone(TIMEZONE)
+            tag['content']).astimezone(TIMEZONE)
+    else:
+        #publish_selecter: Any = soup.select_one('div.article-meta-upper > time[datetime]')
+        #publish_selecter: Any = soup.select_one('div.article-datetime > time[datetime]')
+        publish_selecter: Any = soup.select_one('meta[name="article:published_time"]')
+        if publish_selecter:
+            tag: Tag = publish_selecter
+            scraped_record['publish_date'] = parse(
+                tag['content']).astimezone(TIMEZONE)
 
+    p6 = time.perf_counter()
     # 発行者
     scraped_record['issuer'] = ['産経新聞社', '産経']
 

@@ -63,9 +63,9 @@ with Flow(
 
 # domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
-    domain='kyodo.co.jp',
-    #crawling_start_time_from=datetime(2021, 8, 29, 21, 33, 48).astimezone(TIMEZONE),
-    #crawling_start_time_to=datetime(2021, 8, 14, 23, 19, 53).astimezone(TIMEZONE),
+    #domain='sankei.com',
+    crawling_start_time_from=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
+    crawling_start_time_to=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
     #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
 ))
 #2021-08-29T13:33:48.503Z

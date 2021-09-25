@@ -28,29 +28,43 @@ def exec(record: dict, kwargs: dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    type1: Any = soup.select_one('title')
-    if type1:
-        tag: Tag = type1
+    title_selecter: Any = soup.select_one('head > title')
+    if title_selecter:
+        tag: Tag = title_selecter
         scraped_record['title'] = tag.get_text()
 
     # article
-    type1: Any = soup.select('div.main-contents > p[itemprop=articleBody]')
-    type2: Any = soup.select('div.p-main-contents > p[itemprop=articleBody]')
-    if type1:
-        result_set: ResultSet = type1
-        tag_list: list = [tag.get_text() for tag in result_set]
-        scraped_record['article'] = '\n'.join(tag_list).strip()
-    elif type2:
-        result_set: ResultSet = type1
+    article_selecter: Any = soup.select(
+        'div.main-contents > p[iarticle_selecterrop=articleBody]')
+    if not article_selecter:
+        article_selecter: Any = soup.select(
+            'div.p-main-contents > p[iarticle_selecterrop=articleBody]')
+    if not article_selecter:
+        article_selecter: Any = soup.select(
+            'div.p-main-contents > p[class^=par]')
+    if not article_selecter:
+        article_selecter: Any = soup.select('div.p-main-contents > p')
+    if article_selecter:
+        result_set: ResultSet = article_selecter
         tag_list: list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
 
     # publish_date
-    type1: Any = soup.select_one('div.c-article-header-date > time[datetime]')
-    if type1:
-        tag: Tag = type1
+    # <meta property="article:modified_time" content="2021-09-24T15:20:15+09:00">
+    modified_selecter: Any = soup.select_one(
+        'head > meta[property="article:modified_time"]')
+    if modified_selecter:
+        tag: Tag = modified_selecter
         scraped_record['publish_date'] = parse(
-            tag['datetime']).astimezone(TIMEZONE)
+            tag['content']).astimezone(TIMEZONE)
+    else:
+        # <meta property="article:published_time" content="2021-09-17T11:48:14+09:00">
+        publish_selecter: Any = soup.select_one(
+            'head > meta[property="article:published_time"]')
+        if publish_selecter:
+            tag: Tag = publish_selecter
+            scraped_record['publish_date'] = parse(
+                tag['content']).astimezone(TIMEZONE)
 
     # 発行者
     scraped_record['issuer'] = ['読売新聞社', '読売']
