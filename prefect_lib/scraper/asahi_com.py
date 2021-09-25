@@ -27,23 +27,25 @@ def exec(record:dict, kwargs:dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     ### title
-    temp:Any = soup.select_one('title')
-    if temp:
-        tag:Tag = temp
+    title_selecter:Any = soup.select_one('head > title')
+    if title_selecter:
+        tag:Tag = title_selecter
         scraped_record['title'] = tag.get_text()
 
     ### article
-    temp:Any = soup.select('.l-main > main > div > p,.l-main > main > div > h2')
-    if temp:
-        result_set:ResultSet = temp
+    article_selecter:Any = soup.select('.l-main > main > div > p,.l-main > main > div > h2')
+    if article_selecter:
+        result_set:ResultSet = article_selecter
         tag_list:list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
 
     ### publish_date
-    temp:Any = soup.select_one('.l-main > main time')
-    if temp:
-        tag:Tag = temp
-        scraped_record['publish_date'] = parse(tag['datetime']).astimezone(TIMEZONE)
+    publish_selecter: Any = soup.select_one(
+        'head > meta[name="pubdate"]')
+    if publish_selecter:
+        tag: Tag = publish_selecter
+        scraped_record['publish_date'] = parse(
+            tag['content']).astimezone(TIMEZONE)
 
     #発行者
     scraped_record['issuer'] = ['朝日新聞社','朝日新聞デジタル','朝日']

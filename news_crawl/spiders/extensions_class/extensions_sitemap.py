@@ -148,7 +148,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
                             if self.selenium_mode:
                                 yield SeleniumRequest(url=loc, callback=call_back)
                             elif self.splash_mode:
-                                yield SplashRequest(url=loc, callback=call_back, args={
+                                yield SplashRequest(url=loc, callback=call_back, meta={'max_retry_times':10},
+                                args={
                                     'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
                                     'wait': 1.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
                                     'resource_timeout': 30.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。

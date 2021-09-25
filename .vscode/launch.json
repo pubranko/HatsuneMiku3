@@ -16,9 +16,9 @@
                 "${fileBasenameNoExtension}",   //現在開いているファイル（拡張子なし）つまり開いているスパイダー名となる
                 //"-a","lastmod_period_minutes=30,0",
                 "-a","debug=Yes",
-                //"-a","pages=2,2",
+                "-a","pages=3,3",
                 //"-a","crawl_point_non_update=Yes",
-                "-a","continued=Yes",
+                //"-a","continued=Yes",
             ],
             "console": "integratedTerminal",    //プログラムを起動するコンソールの種類を指定
             "env": {
@@ -53,9 +53,14 @@
             "name": "Prefect:Flow",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${file}",   //デバッグ実行時にアクティブなファイルを指定？
             "console": "integratedTerminal",
             "python": "${workspaceFolder}/.venv/bin/python",
+            "args": [
+                "-m","cProfile",
+                "-s","time",
+                //">","temp.html",
+            ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}",
                 "MONGO_SERVER": "localhost",

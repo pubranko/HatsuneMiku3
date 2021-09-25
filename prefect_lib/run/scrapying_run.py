@@ -16,6 +16,7 @@ from prefect_lib.common_module.scraped_record_error_check import scraped_record_
 
 logger: Logger = logging.getLogger('prefect.run.scrapying_deco')
 
+import time
 
 def exec(kwargs:dict):
     '''あとで'''
@@ -30,6 +31,8 @@ def exec(kwargs:dict):
     #print('=== urls:',type(kwargs['urls']))
     urls: list = kwargs['urls']
 
+    stop_domain:list = controller.scrapying_stop_domain_list_get()
+
     conditions: list = []
     if domain:
         conditions.append({'domain': domain})
@@ -39,6 +42,9 @@ def exec(kwargs:dict):
         conditions.append({'crawling_start_time': {'$lte': crawling_start_time_to}})
     if urls:
         conditions.append({'url':{'$in': urls}})
+    if len(stop_domain) > 0:
+        conditions.append({'domain':{'$nin': stop_domain}})
+
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -58,7 +64,8 @@ def exec(kwargs:dict):
     limit: int = 100
     skip_list = list(range(0, record_count, limit))
 
-    stop_domain:list = controller.scrapying_stop_domain_list_get()
+    scraped: dict = {}
+    scraper_mod:dict = {}
 
     for skip in skip_list:
         records: Cursor = crawler_response.find(
@@ -67,9 +74,11 @@ def exec(kwargs:dict):
             sort=None
         ).skip(skip).limit(limit)
 
+        #items:list = [None] # * limit #リストの枠を予め確保。処理速度がわずかに早くなるらしい。
+
         for record in records:
             # 各サイト共通の項目を設定
-            scraped: dict = {}
+            scraped = {}
             scraped['domain'] = record['domain']
             scraped['url'] = record['url']
             scraped['response_time'] = timezone_recovery(record['response_time'])
@@ -77,16 +86,20 @@ def exec(kwargs:dict):
             scraped['scrapying_start_time'] = start_time
             scraped['sitemap_data'] = record['sitemap_data']
 
-            if not record['domain'] in stop_domain:
+            # 各サイトのスクレイピングした項目を結合
+            module_name = str(record['domain']).replace('.', '_')
+            if not module_name in scraper_mod:
+                scraper_mod[module_name] = import_module('prefect_lib.scraper.' + module_name)
+            scraped.update(getattr(scraper_mod[module_name], 'exec')(record,kwargs))
+            # mod: Any = import_module('prefect_lib.scraper.' + module_name)
+            # scraped.update(getattr(mod, 'exec')(record,kwargs))
 
-                # 各サイトのスクレイピングした項目を結合
-                module_name = str(record['domain']).replace('.', '_')
-                mod: Any = import_module('prefect_lib.scraper.' + module_name)
-                scraped.update(getattr(mod, 'exec')(record,kwargs))
+            # データチェック
+            error_flg:bool = scraped_record_error_check(scraped)
+            if not error_flg:
+                #items = list(scraped)
+                #一時停止中！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！
+                pass
+                scraped_from_response.insert_one(scraped)
 
-                # データチェック
-                error_flg:bool = scraped_record_error_check(scraped)
-                if not error_flg:
-                    scraped_from_response.insert_one(scraped)
-            else:
-                logger.info('=== scrapying_stop_domain_listにより除外 : ' + str(record['url']))
+        #scraped_from_response.insert(items)

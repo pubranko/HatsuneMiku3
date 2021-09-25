@@ -21,7 +21,7 @@ def scraped_record_error_check(record:dict) -> bool:
                 '=== エラー：' + item + ' = None :' + str(record[log_item]))
 
     global error_flg
-
+    error_flg = False
     # データチェック
     check(record,'url','_id')
     check(record,'title','url')

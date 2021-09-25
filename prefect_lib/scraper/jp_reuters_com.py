@@ -17,6 +17,7 @@ logger: Logger = logging.getLogger('prefect.scraper.' + file_name)
 
 
 def exec(record: dict, kwargs: dict) -> dict:
+
     global logger
     #response_headers:str = pickle.loads(record['response_headers'])
     response_body: str = pickle.loads(record['response_body'])
@@ -29,26 +30,35 @@ def exec(record: dict, kwargs: dict) -> dict:
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    type1: Any = soup.select_one('title')
-    if type1:
-        tag: Tag = type1
+    title_selecter: Any = soup.select_one('head > title')
+    if title_selecter:
+        tag: Tag = title_selecter
         scraped_record['title'] = tag.get_text()
 
     # article
-    type1: Any = soup.select('article[class^=ArticlePage-article-body] > div.ArticleBodyWrapper > p[class*=ArticleBody-]')
-    if type1:
-        result_set: ResultSet = type1
+    article_selecter: Any = soup.select(
+        'article[class^=ArticlePage-article-body] > div.ArticleBodyWrapper > p[class*=ArticleBody-]')
+    if article_selecter:
+        result_set: ResultSet = article_selecter
         tag_list: list = [tag.get_text() for tag in result_set]
         scraped_record['article'] = '\n'.join(tag_list).strip()
 
     # publish_date
-    type1: Any = soup.select_one('meta[property="og:article:published_time"]')
-    if type1:
-        tag:Tag = type1
-        scraped_record['publish_date'] = parse(tag['content']).astimezone(TIMEZONE)
-
+    modified_selecter: Any = soup.select_one(
+        'head > meta[property="og:article:modified_time"]')
+    if modified_selecter:
+        tag: Tag = modified_selecter
+        scraped_record['publish_date'] = parse(
+            tag['content']).astimezone(TIMEZONE)
+    else:
+        publish_selecter: Any = soup.select_one(
+            'head > meta[property="og:article:published_time"]')
+        if publish_selecter:
+            tag: Tag = publish_selecter
+            scraped_record['publish_date'] = parse(
+                tag['content']).astimezone(TIMEZONE)
 
     # 発行者
-    scraped_record['issuer'] = ['トムソン・ロイター', 'ロイター','Thomson Reuters','Reuters,']
-
+    scraped_record['issuer'] = ['トムソン・ロイター',
+                                'ロイター', 'Thomson Reuters', 'Reuters,']
     return scraped_record
