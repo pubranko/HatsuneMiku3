@@ -36,9 +36,9 @@ class RegularObservationTask(ExtensionsTask):
         kwargs['domain'] = None
         kwargs['crawling_start_time_from'] = self.start_time
         kwargs['crawling_start_time_to'] = self.start_time
+        kwargs['urls'] = []
         kwargs['scrapying_start_time_from'] = self.start_time
         kwargs['scrapying_start_time_to'] = self.start_time
-        kwargs['urls'] = []
         kwargs['scraped_save_start_time_from'] = self.start_time
         kwargs['scraped_save_start_time_to'] = self.start_time
 
