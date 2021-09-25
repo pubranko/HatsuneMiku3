@@ -102,13 +102,21 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         if 'direct_crawl_urls' in self.kwargs_save:
             for loc in self.kwargs_save['direct_crawl_urls']:
-                for r, c in self._cbs:
-                    if r.search(loc):
+                for rule_regix, call_back in self._cbs:
+                    if rule_regix.search(loc):
                         # seleniumモードによる切り替え
                         if self.selenium_mode:
-                            yield SeleniumRequest(url=loc, callback=c)
+                            yield SeleniumRequest(url=loc, callback=call_back)
+                        elif self.splash_mode:
+                            yield SplashRequest(url=loc, callback=call_back, meta={'max_retry_times':10},
+                            args={
+                                'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
+                                'wait': 1.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
+                                'resource_timeout': 30.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                                'images': 0,  # 画像はダウンロードしない(0)
+                            })
                         else:
-                            yield Request(loc, callback=c)
+                            yield Request(loc, callback=call_back)
                         break
         else:
             for url in self.sitemap_urls:
