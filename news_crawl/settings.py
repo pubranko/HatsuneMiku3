@@ -188,7 +188,6 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 # splashの再起動でエラーが多発する。その分をretryでカバーしたい。
 RETRY_ENABLED = True
 #RETRY_TIMES = 2    requestオブジェクトで直接拡張させたのでここでの設定不要。
-#RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 
 
