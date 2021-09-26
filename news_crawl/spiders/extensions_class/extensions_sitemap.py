@@ -85,7 +85,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     irregular_sitemap_parse_flg: bool = False
 
     # sitemap情報を保存
-    sitemap_records: list = []
+    crawl_urls_list: list = []
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -210,7 +210,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if self._custom_url_flg:
                     entry['loc'] = self._custom_url(entry)
 
-                self.sitemap_records.append({
+                self.crawl_urls_list.append({
                     'sitemap_url': response.url,
                     'lastmod': date_lastmod,
                     'loc': entry['loc']})
@@ -238,12 +238,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data: dict = {}
-        for record in self.sitemap_records:
+        source_of_information: dict = {}
+        for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                sitemap_data['sitemap_url'] = record['sitemap_url']
-                sitemap_data['lastmod'] = record['lastmod']
+                source_of_information['sitemap_url'] = record['sitemap_url']
+                source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
@@ -253,7 +253,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
-            sitemap_data=sitemap_data,
+            source_of_information=source_of_information,
         )
 
     def selenium_parse(self, response: Response):
@@ -267,11 +267,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data: list = []
-        for rec in self.sitemap_records:
+        source_of_information: list = []
+        for rec in self.crawl_urls_list:
             if response.url in rec:
-                sitemap_data = rec
-                sitemap_data.remove(response.url)
+                source_of_information = rec
+                source_of_information.remove(response.url)
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
@@ -281,7 +281,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_body=pickle.dumps(driver.page_source),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
-            sitemap_data=sitemap_data,
+            source_of_information=source_of_information,
         )
 
     def splash_parse(self, response: SplashTextResponse):
@@ -293,12 +293,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        sitemap_data: dict = {}
-        for record in self.sitemap_records:
+        source_of_information: dict = {}
+        for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                sitemap_data['sitemap_url'] = record['sitemap_url']
-                sitemap_data['lastmod'] = record['lastmod']
+                source_of_information['source_url'] = record['sitemap_url']
+                source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
@@ -308,7 +308,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
-            sitemap_data=sitemap_data,
+            source_of_information=source_of_information,
         )
 
     def closed(self, spider):
