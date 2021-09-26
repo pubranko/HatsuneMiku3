@@ -1,6 +1,5 @@
 from datetime import datetime
-from dateutil import parser
-from logging import Logger,LoggerAdapter
+from logging import LoggerAdapter
 from scrapy.exceptions import CloseSpider
 from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
@@ -14,7 +13,7 @@ from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContin
 from common_lib.resource_check import resource_check
 
 
-def spider_init(spider, *args, **kwargs):
+def spider_init(spider,*args, **kwargs):
     '''spider共通の初期処理'''
     domain_name: str = spider._domain_name
     name: str = spider.name
@@ -37,6 +36,11 @@ def spider_init(spider, *args, **kwargs):
     spider.kwargs_save = kwargs
     argument_check(
         spider, domain_name, spider._crawl_point, *args, **kwargs)
+
+    # クロール対象となるurlと付随する情報（サイトマップurl、lastmodなど）を保存。
+    # spiderを並列で実行する際、extensions_~.pyの定義のみでは全て共有されてしまいデータが混在する。
+    # 初期処理で各spiderのインスタンスへ直接値を入れることで混在を避けている。
+    spider.crawl_urls_list = []
 
     # 同一ドメインへの多重クローリングを防止
     spider.crawling_domain_control = CrawlingDomainDuplicatePrevention()
@@ -81,6 +85,6 @@ def spider_init(spider, *args, **kwargs):
 
     # チェック用クラスの初期化＆スパイダーのクラス変数に保存
     spider.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
-            spider, spider._crawling_start_time, kwargs)
+        spider, spider._crawling_start_time, kwargs)
     spider.crawling_continued = LastmodContinuedSkipCheck(
         spider._crawl_point, kwargs)

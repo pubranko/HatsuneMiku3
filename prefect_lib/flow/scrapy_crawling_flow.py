@@ -55,12 +55,13 @@ with Flow(
 
 flow.run(parameters=dict(
     spider_names=[
-        'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
+        #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
+        'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
     ],
     spider_kwargs={
         'debug': 'Yes',
-        'lastmod_period_minutes': '60,15',
-        'pages': '2,2',
+        'lastmod_period_minutes': '90,',
+        #'pages': '2,3',
         # 'continued':'Yes',
         # 'direct_crawl_urls':[],
         # 'crawl_point_non_update':'Yes',
