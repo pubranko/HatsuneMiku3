@@ -210,10 +210,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if self._custom_url_flg:
                     entry['loc'] = self._custom_url(entry)
 
-                self.crawl_urls_list.append({
-                    'sitemap_url': response.url,
-                    'lastmod': date_lastmod,
-                    'loc': entry['loc']})
+                if not entries.type == 'sitemapindex':
+                    self.crawl_urls_list.append({
+                        'sitemap_url': response.url,
+                        'lastmod': date_lastmod,
+                        'loc': entry['loc']})
                 yield entry
 
         # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
@@ -267,11 +268,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
-        source_of_information: list = []
-        for rec in self.crawl_urls_list:
-            if response.url in rec:
-                source_of_information = rec
-                source_of_information.remove(response.url)
+        source_of_information: dict = {}
+        for record in self.crawl_urls_list:
+            record: dict
+            if response.url == record['loc']:
+                source_of_information['source_url'] = record['sitemap_url']
+                source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
