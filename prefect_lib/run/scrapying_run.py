@@ -84,7 +84,7 @@ def exec(kwargs:dict):
             scraped['response_time'] = timezone_recovery(record['response_time'])
             scraped['crawling_start_time'] = timezone_recovery(record['crawling_start_time'])
             scraped['scrapying_start_time'] = start_time
-            scraped['sitemap_data'] = record['sitemap_data']
+            scraped['source_of_information'] = record['source_of_information']
 
             # 各サイトのスクレイピングした項目を結合
             module_name = str(record['domain']).replace('.', '_')

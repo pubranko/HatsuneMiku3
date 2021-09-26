@@ -60,7 +60,7 @@ def exec(record: dict, kwargs: dict) -> dict:
                 tag['content']).astimezone(TIMEZONE)
 
     # 共同のpublish_dateは日付のみ。時間部分がないため、sitemap側のlastmodで代用する。
-    #scraped_record['publish_date'] = timezone_recovery(record['sitemap_data']['lastmod'])
+    #scraped_record['publish_date'] = timezone_recovery(record['source_of_information']['lastmod'])
 
     # 発行者
     scraped_record['issuer'] = ['共同通信社', '共同']

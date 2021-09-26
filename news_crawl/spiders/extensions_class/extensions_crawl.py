@@ -42,6 +42,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # splashモード
     splash_mode: bool = False
 
+    crawl_urls_list: list = []
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -70,6 +71,13 @@ class ExtensionsCrawlSpider(CrawlSpider):
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
 
+        source_of_information: dict = {}
+        for record in self.crawl_urls_list:
+            record: dict
+            if response.url == record['loc']:
+                source_of_information['source_url'] = record['source_url']
+                source_of_information['lastmod'] = record['lastmod']
+
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
             url=response.url,
@@ -78,7 +86,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
-            sitemap_data={},
+            source_of_information=source_of_information,
         )
 
     def pagination_check(self, response: Response) -> ResultSet:
