@@ -160,6 +160,12 @@ def argument_check(
             '引数エラー：lastmod_recent_timeとcontinuedは同時には使えません。')
         raise CloseSpider()
 
+    ### (前処理) keyの値がNoneの値の場合、引数なしとして扱うためkwargs、spider.kwargs_saveより削除する。
+    for key in spider.kwargs_save.keys():
+        if spider.kwargs_save[key] == None:
+            del kwargs[key]
+    spider.kwargs_save = kwargs
+
     ### 単項目チェック ###
     if 'crawling_start_time' in kwargs:
         __crawling_start_time()

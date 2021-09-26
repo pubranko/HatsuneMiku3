@@ -39,10 +39,11 @@ def direct_crawl_run(kwargs: dict):
 
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
+
     process.crawl(kwargs['class_instans'],
-                  crawling_start_time=start_time,
+                  dict(crawling_start_time=start_time,
                   direct_crawl_urls=urls,
-                  crawl_point_non_update='Yes')
+                  crawl_point_non_update='Yes'))
     process.start()
 
 
@@ -81,6 +82,7 @@ def continued_run(kwargs: dict):
                               continued='Yes')
     process.start()
 
+
 @scrapy_deco
 def first_run(kwargs: dict):
     '''
@@ -95,8 +97,30 @@ def first_run(kwargs: dict):
     for spider in spiders_info:
         spider: dict
         process.crawl(spider['class_instans'],
-                        crawling_start_time=start_time,
-                        lastmod_period_minutes='60,',
-                        pages='1,3',
-                    )
+                      crawling_start_time=start_time,
+                      lastmod_period_minutes='60,',
+                      pages='1,3',
+                      )
+    process.start()
+
+
+@scrapy_deco
+def custom_crawl_run(kwargs: dict):
+    '''
+    クロールするurlを直接指定。
+    '''
+    process = CrawlerProcess(settings=get_project_settings())
+    configure_logging(install_root_handler=False)
+    spider_run_list = kwargs['spider_run_list']
+
+    for spider_run in spider_run_list:
+        process.crawl(spider_run['class_instans'],
+                      crawling_start_time=spider_run['start_time'],
+                      lastmod_period_minutes=spider_run['lastmod_period_minutes'],
+                      pages=spider_run['pages'],
+                      continued=spider_run['continued'],
+                      direct_crawl_urls=spider_run['direct_crawl_urls'],
+                      debug=spider_run['debug'],
+                      crawl_point_non_update=spider_run['crawl_point_non_update'],
+                      )
     process.start()
