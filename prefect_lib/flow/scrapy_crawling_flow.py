@@ -47,17 +47,42 @@ with Flow(
     state_handlers=[status_change],
 ) as flow:
 
-    module = Parameter(
-        'module', default='prefect_lib.run.regular_crawler_run')()
-    method = Parameter('method', default='regular_crawler_run')()
+    # module = Parameter(
+    #     'module', default='prefect_lib.run.regular_crawler_run')()
+    # method = Parameter('method', default='regular_crawler_run')()
+    # task = ScrapyCrawlingTask(
+    #     log_file_path=log_file_path, start_time=start_time)
+    spider_names = Parameter('spider_names')()
+    spider_kwargs = Parameter('spider_kwargs')()
     task = ScrapyCrawlingTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(module=module, method=method)
+    result = task(spider_names=spider_names,spider_kwargs=spider_kwargs)
 
 # flow.run()
 # flow.run(parameters=dict(module='prefect_lib.run.test_crawling',method='test1'))
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test2'))
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test5'))   #直近60〜120分
-flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test6'))
+#flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test6'))
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test7'))
 #flow.run(parameters=dict(module='prefect_lib.run.test_crawling', method='test4'))
+
+flow.run(parameters=dict(
+    spider_names=[
+        'sankei_com_sitemap','asahi_com_sitemap','kyodo_co_jp_sitemap','jp_reuters_com_crawl','yomiuri_co_jp_sitemap','epochtimes_jp_sitemap',
+    ],
+    spider_kwargs={
+        'debug':'Yes',
+        'lastmod_period_minutes':'60,15',
+        'pages':'2,2',
+        #'continued':'Yes',
+        #'direct_crawl_urls':[],
+        #'crawl_point_non_update':'Yes',
+    }
+))
+
+'''
+スパイダーの指定：配列で複数同時可能
+引数を辞書で渡せるようにしたい。
+引数が異なるspiderはflow.runを複数行にして実行すればたぶんいける
+
+'''
