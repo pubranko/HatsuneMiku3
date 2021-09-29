@@ -113,7 +113,7 @@ def full_check(kwargs: dict):
         mastar_conditions.append({'response_time': response['response_time']})
 
         # mastar_conditions = [
-        #     {'url': 'https://jp.reuters.com/article/usa-fed-powell-idJPKBN2GO28N'}, 
+        #     {'url': 'https://jp.reuters.com/article/usa-fed-powell-idJPKBN2GO28N'},
         #     {'response_time': datetime(2021, 9, 29, 17, 54, 50, 113000, tzinfo=timezone(timedelta(seconds=32400), 'JST'))}
         # ]
         filter: Any = {'$and': mastar_conditions}
@@ -124,7 +124,7 @@ def full_check(kwargs: dict):
         )
         if master_records.count() == 0:
             print('masterなし ',response['url'])
-            master_non_list.append({'url':response['url'],'response_time':timezone_recovery(response['response_time'])})
+            master_non_list.append(response['url'])
 
         for master_record in master_records:
             print('masterあり ',response['url'])
@@ -132,9 +132,38 @@ def full_check(kwargs: dict):
         mastar_conditions.pop(-1)
 
     pprint.pprint(master_list)
+    #log_urls_list :list [url]
+    #response_list :dict {'url':response_record['url'], 'response_time':timezone_recovery(response_record['response_time'])}
+    #response_non_list
+    #master_list:dict {'url':response_record['url'], 'response_time':timezone_recovery(response_record['response_time'])}
+    #master_non_list
+
+    '''
+    1. response_non_list
+        (1)urlをDBに貯める
+            ・非同期レポート、asynchronous_report
+            ・record_type : news_crawl_async
+        (2)メールで非同期が発生していることを通知する。（ドメイン別件数まで）
+        (3)別のflowをにて手動起動し、非同期レポートからurlを抽出する。重複を除去した一覧を作成する。
+        (4)scrapy_crawling_taskを実行する。
+            引数には抽出したurlをkwargs['urls']へ直接渡す。
+    2. master_non_list
+        (1)スクレイピングでエラーとなっているケースと、news_clip_masterへの保存の際、
+            データ重複で除去されているケースがある。
+            現在後者の判定ができない。
+        (2)news_clip_masterへの登録時に重複skipとなった情報をログに出力しておく。
+            ・record_type = duplicate_skip
+            ・collection = news_clip_master
+            ・url、response_time,crawling_start_time、id、、、どうする？urlだけでいける？
+        (3)当runで上記(2)を読み込み、(1)の後者の判定を行い同期チェックを行う。
+        (4)url,crawling_start_timeをDBに貯める
+            ・非同期レポート、asynchronous_report
+            ・record_type : news_clip_master_async
+        (5)メールで非同期が発生していることを通知する。（ドメイン別件数まで）
+        (6) 別のflowをにて手動起動し、非同期レポートからurl,crawling_start_timeを抽出し、scrapying_taskを実行する。
+            引数には抽出したurlをkwargs['urls']へ直接渡す。
+            response_timeかidでレコードの特定して抽出する処理を実装するのが良さそう。
 
 
-    log_urls_list
-    response_list
-    master_list
-    
+
+    '''

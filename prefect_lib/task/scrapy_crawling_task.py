@@ -24,16 +24,6 @@ class ScrapyCrawlingTask(ExtensionsTask):
     '''
     クローリング用タスク
     '''
-
-    # def run(self, module, method):
-    #     '''ここがprefectで起動するメイン処理'''
-    #     mod: Any = import_module(module)
-    #     getattr(mod, method)(self.start_time)
-    #     # 終了処理
-    #     self.closed()
-    #     # return ''
-
-    #def run(self, spider_names:list,spider_kwargs:dict):
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
         logger: Logger = self.logger
