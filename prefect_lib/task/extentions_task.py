@@ -82,7 +82,7 @@ class ExtensionsTask(Task):
         '''処理が終わったらログを保存'''
         crawler_logs = CrawlerLogsModel(self.mongo)
         crawler_logs.insert_one({
-            'start_time': self.start_time.isoformat(),
+            'start_time': self.start_time,
             'record_type': self.name,
             'logs': self.log_file,
         })

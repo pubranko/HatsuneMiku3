@@ -212,7 +212,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
                 if not entries.type == 'sitemapindex':
                     self.crawl_urls_list.append({
-                        'sitemap_url': response.url,
+                        'source_url': response.url,
                         'lastmod': date_lastmod,
                         'loc': entry['loc']})
                 yield entry
@@ -243,7 +243,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                source_of_information['sitemap_url'] = record['sitemap_url']
+                source_of_information['source_url'] = record['source_url']
                 source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(
@@ -272,7 +272,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                source_of_information['source_url'] = record['sitemap_url']
+                source_of_information['source_url'] = record['source_url']
                 source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(
@@ -299,7 +299,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                source_of_information['source_url'] = record['sitemap_url']
+                source_of_information['source_url'] = record['source_url']
                 source_of_information['lastmod'] = record['lastmod']
 
         yield NewsCrawlItem(

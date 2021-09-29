@@ -13,9 +13,9 @@ class CrawlerLogsModel(object):
     def insert_one(self, item):
         self.mongo.crawler_db['crawler_logs'].insert_one(item)
 
-    def find_one(self, key):
-        return self.mongo.crawler_db['crawler_logs'].find_one(key)
+    def find_one(self, projection=None,filter=None):
+        return self.mongo.crawler_db['crawler_logs'].find_one(projection=projection,filter=filter)
 
-    def find(self, key):
-        return self.mongo.crawler_db['crawler_logs'].find(key)
+    def find(self, projection=None,filter=None, sort=None):
+        return self.mongo.crawler_db['crawler_logs'].find(projection=projection,filter=filter,sort=sort)
 

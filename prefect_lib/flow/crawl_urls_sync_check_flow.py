@@ -2,19 +2,20 @@ import os
 import sys
 from datetime import datetime
 import logging
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 import prefect
 from prefect import Flow, task, Parameter
+from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
-from prefect_lib.task.scrapy_crawling_task import ScrapyCrawlingTask
+from prefect_lib.task.scrapying_task import ScrapyingTask
+from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
+from prefect_lib.settings import TIMEZONE
 from prefect.utilities.context import Context
 from common_lib.mail_send import mail_send
-from prefect_lib.settings import TIMEZONE
 
 
 start_time = datetime.now().astimezone(
@@ -36,38 +37,34 @@ def status_change(obj: Flow, old_state, new_state):
         with open(log_file_path) as f:
             log_file = f.read()
         # mail_send('【prefectフローでエラー発生】' +
-        #           crawling_start_time.isoformat(), log_file,)
+        #           start_time.isoformat(), log_file,)
 
     if not isinstance(new_state, Running):
         pass  # 成否に関係なく終わったときに動く処理
 
 
 with Flow(
-    name='Scrapy crawling flow',
+    name='Crawl urls sync check flow',
     state_handlers=[status_change],
 ) as flow:
-    spider_names = Parameter('spider_names')()
-    spider_kwargs = Parameter('spider_kwargs')()
-    following_processing_execution = Parameter(
-        'following_processing_execution', default='No')()
-    task = ScrapyCrawlingTask(
+
+    domain = Parameter('domain', required=False)()
+    start_time_from = DateTimeParameter(
+        'start_time_from', required=False,)
+    start_time_to = DateTimeParameter(
+        'start_time_to', required=False)
+
+    task = CrawlUrlsSyncCheckTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(spider_names=spider_names, spider_kwargs=spider_kwargs,
-                  following_processing_execution=following_processing_execution)
+    result = task(domain=domain,
+                  start_time_from=start_time_from,
+                  start_time_to=start_time_to)
 
-
+# domain、start_time_*による絞り込みは任意
 flow.run(parameters=dict(
-    spider_names=[
-        'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
-        #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
-    ],
-    spider_kwargs={
-        'debug': 'Yes',
-        'lastmod_period_minutes': '45,',
-        'pages': '2,3',
-        # 'continued':'Yes',
-        # 'direct_crawl_urls':[],
-        # 'crawl_point_non_update':'Yes',
-    },
-    following_processing_execution='Yes'
+    #domain='sankei.com',
+    #start_time_from=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
+    #start_time_to=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
+    #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
 ))
+#2021-08-29T13:33:48.503Z
