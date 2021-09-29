@@ -45,7 +45,7 @@ def spider_closed(
 
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_logs.insert_one({
-        'crawling_start_time': crawling_start_time.isoformat(),
+        'crawling_start_time': crawling_start_time,
         'record_type': 'spider_reports',
         'domain_name': domain_name,
         'spider_name': name,
