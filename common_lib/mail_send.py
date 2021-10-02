@@ -3,6 +3,13 @@ import sys
 import smtplib
 from email import message
 import logging
+from logging import Logger
+
+function_name: str = sys._getframe().f_code.co_name
+logger: Logger = logging.getLogger(function_name)
+
+
+logger: Logger = logging.getLogger('prefect.mail_send')
 
 
 def mail_send(title: str, msg: str, ) -> None:
@@ -13,6 +20,8 @@ def mail_send(title: str, msg: str, ) -> None:
     # (参考情報)
     # https://qiita.com/aj2727/items/81e5d67cbcbf7396e392
     # Pythonでメールを送信（Outlook）
+
+    global logger
 
     # 接続設定情報
     smtp_host = 'smtp.live.com'
@@ -47,6 +56,4 @@ def mail_send(title: str, msg: str, ) -> None:
     server.send_message(mail)
     server.quit()
 
-    function_name:str = sys._getframe().f_code.co_name
-    logger = logging.getLogger(function_name)
-    logger.info('=== メール通知完了 title = ',title)
+    logger.info('=== メール通知完了 title = ' + title)
