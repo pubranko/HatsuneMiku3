@@ -47,7 +47,7 @@ def spider_closed(
     crawler_logs.insert_one({
         'crawling_start_time': crawling_start_time,
         'record_type': 'spider_reports',
-        'domain_name': domain_name,
+        'domain': spider.allowed_domains[0],
         'spider_name': name,
         'stats': stats_edit,
         'crawl_urls_list': spider.crawl_urls_list,
