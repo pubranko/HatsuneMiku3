@@ -23,7 +23,7 @@ def check_and_save(kwargs: dict):
     start_time: datetime = kwargs['start_time']
     scraped_from_response: ScrapedFromResponse = kwargs['scraped_from_response']
     news_clip_master: NewsClipMaster = kwargs['news_clip_master']
-    crawler_response: CrawlerResponseModel = kwargs['CrawlerResponseModel']
+    crawler_response: CrawlerResponseModel = kwargs['crawler_response']
 
     domain: str = kwargs['domain']
     scrapying_start_time_from: datetime = kwargs['scrapying_start_time_from']

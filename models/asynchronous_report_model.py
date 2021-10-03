@@ -1,7 +1,7 @@
 from models.mongo_model import MongoModel
 
 
-class AsynchronousReport(object):
+class AsynchronousReportModel(object):
     '''
     非同期レポートコレクション用モデル
     '''
@@ -11,7 +11,6 @@ class AsynchronousReport(object):
         self.mongo = mongo
 
     def insert_one(self, item: dict):
-        print('item 確認', item)
         self.mongo.crawler_db['asynchronous_report'].insert_one(item)
 
     def find_one(self, filter=None, projection=None):
