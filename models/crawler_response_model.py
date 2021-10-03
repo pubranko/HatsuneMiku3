@@ -22,7 +22,7 @@ class CrawlerResponseModel(object):
         return self.mongo.crawler_db['crawler_response'].find(projection=projection,filter=filter,sort=sort)
 
     def update(self, filter, record: dict) -> None:
-        self.mongo.crawler_db['scraped_from_response'].update(
+        self.mongo.crawler_db['crawler_response'].update(
             filter, record, upsert=True)
 
     def news_clip_master_register_result(self, url: str, response_time: datetime,news_clip_master_register:str) -> None:
