@@ -63,11 +63,11 @@ flow.run(parameters=dict(
     ],
     spider_kwargs={
         'debug': 'Yes',
-        'lastmod_period_minutes': '45,',
+        'lastmod_period_minutes': '60,',
         'pages': '2,3',
         # 'continued':'Yes',
         # 'direct_crawl_urls':[],
         # 'crawl_point_non_update':'Yes',
     },
-    following_processing_execution='Yes'
+    following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
 ))

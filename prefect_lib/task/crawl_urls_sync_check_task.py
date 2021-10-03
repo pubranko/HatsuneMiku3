@@ -31,7 +31,7 @@ class CrawlUrlsSyncCheckTask(ExtensionsTask):
         logger.info('=== CrawlUrlsSyncCheckTask run kwargs : ' + str(kwargs))
 
         #scrapying_run.exec(kwargs)
-        crawl_urls_sync_check_run.full_check(kwargs)
+        crawl_urls_sync_check_run.check(kwargs)
 
         # 終了処理
         self.closed()
