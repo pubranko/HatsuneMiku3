@@ -15,8 +15,8 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
-from models.scraped_from_response_model import ScrapedFromResponse
-from models.news_clip_master_model import NewsClipMaster
+from models.scraped_from_response_model import ScrapedFromResponseModel
+from models.news_clip_master_model import NewsClipMasterModel
 from models.controller_model import ControllerModel
 
 
@@ -93,11 +93,12 @@ class ScrapyCrawlingTask(ExtensionsTask):
         if kwargs['following_processing_execution'] == 'Yes':
             # 必要な引数設定
             kwargs['start_time'] = self.start_time
-            mongo: MongoModel = self.mongo
-            kwargs['crawler_response'] = CrawlerResponseModel(mongo)
-            kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
-            kwargs['news_clip_master'] = NewsClipMaster(mongo)
-            kwargs['controller'] = ControllerModel(self.mongo)
+            kwargs['mongo'] = self.mongo
+            # mongo: MongoModel = self.mongo
+            # kwargs['crawler_response'] = CrawlerResponseModel(mongo)
+            # kwargs['scraped_from_response'] = ScrapedFromResponseModel(mongo)
+            # kwargs['news_clip_master'] = NewsClipMasterModel(mongo)
+            # kwargs['controller'] = ControllerModel(self.mongo)
             kwargs['domain'] = None
             kwargs['crawling_start_time_from'] = self.start_time
             kwargs['crawling_start_time_to'] = self.start_time

@@ -8,6 +8,8 @@ from models.mongo_model import MongoModel
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from bs4.element import ResultSet
+from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
+from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 
 
 class ExtensionsCrawlSpider(CrawlSpider):
@@ -43,6 +45,11 @@ class ExtensionsCrawlSpider(CrawlSpider):
     splash_mode: bool = False
 
     crawl_urls_list: list = []
+
+    # パラメータによる抽出処理のためのクラス
+    crawling_continued: LastmodContinuedSkipCheck
+    lastmod_pefiod: LastmodPeriodMinutesSkipCheck
+
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
