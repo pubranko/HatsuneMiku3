@@ -12,10 +12,10 @@ class ControllerModel(object):
         self.mongo = mongo
 
     def find_one(self, key):
-        return self.mongo.crawler_db['controller'].find_one(key)
+        return self.mongo.mongo_db['controller'].find_one(key)
 
     def update(self, filter, record: dict) -> None:
-        self.mongo.crawler_db['controller'].update(
+        self.mongo.mongo_db['controller'].update(
             filter, record, upsert=True)
 
     def crawl_point_get(self, domain_name: str, spider_name: str) -> dict:
