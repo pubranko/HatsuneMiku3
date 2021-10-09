@@ -4,7 +4,9 @@ import logging
 from typing import Any, Tuple
 from logging import Logger
 from datetime import datetime
+from dateutil import tz
 from pymongo.cursor import Cursor
+import pysolr
 path = os.getcwd()
 sys.path.append(path)
 from common_lib.timezone_recovery import timezone_recovery
@@ -21,10 +23,12 @@ logger: Logger = logging.getLogger('prefect.run.crawl_urls_sync_check_run')
 
 def check(kwargs: dict):
     '''
-    crawl結果、crawler_response、news_clip_master、solrのnews_clipが同期しているかチェックする。
+    ①crawl対象のurlとcrawler_responseの同期チェック
+    ②crawler_responseとnews_clip_masterの同期チェック
+    ③news_clip_masterとsolrのnews_clipの同期チェック
     '''
     def crawler_response_sync_check() -> Tuple[list, list, dict]:
-        '''crawl結果とcrawler_responseが同期しているかチェックする。'''
+        '''①crawl対象のurlとcrawler_responseの同期チェック'''
 
         # スパイダーレポートより、クロール対象となったurlのリストを取得し一覧にする。
         conditions: list = []
@@ -116,7 +120,7 @@ def check(kwargs: dict):
         return response_sync_list, response_async_list, response_async_domain_aggregate
 
     def news_clip_master_sync_check() -> Tuple[list, list, dict]:
-        '''crawler_responseとnews_clip_masterが同期しているかチェックする。'''
+        '''②crawler_responseとnews_clip_masterの同期チェック'''
         mastar_conditions: list = []
         master_sync_list: list = []
         master_async_list: list = []
@@ -153,8 +157,14 @@ def check(kwargs: dict):
             # ※通常1件しかないはずだが、障害によりリカバリした場合などは複数件存在する可能性がある。
             for master_record in master_records:
                 # レスポンスにあるのにマスターへの登録処理が行われていない。
-                master_sync_list.append(
-                    (master_record['url'], timezone_recovery(master_record['response_time'])))
+                _ = {
+                    'url': master_record['url'],
+                    #'response_time': timezone_recovery(master_record['response_time']),
+                    'response_time': master_record['response_time'],
+                    'domain': master_record['domain'],
+                }
+
+                master_sync_list.append(_)
 
         # スクレイピングミス分のurlがあれば、非同期レポートへ保存
         if len(master_async_list) > 0:
@@ -171,6 +181,66 @@ def check(kwargs: dict):
             logger.info('=== 同期チェック結果(response -> master) : OK')
 
         return master_sync_list, master_async_list, master_async_domain_aggregate
+
+    def solr_news_clip_sync_check() -> Tuple[list, list, dict]:
+        '''③news_clip_masterとsolrのnews_clipの同期チェック'''
+        solr_conditions: list = []
+        solr_sync_list: list = []
+        solr_async_list: list = []
+        solr_async_domain_aggregate: dict = {}
+        solr_filter: Any = ''
+
+
+        UTC = tz.gettz("UTC")
+
+        # news_clip_masterで同期しているリストを順に読み込み、solr_news_clipに登録されているか確認する。
+        for master_sync in master_sync_list:
+            solr_query:list = [
+                'url:' ,solr_news_clip.escape_convert(master_sync['url']),
+                ' and ',
+                'response_time:',solr_news_clip.escape_convert(master_sync['response_time'].isoformat() + 'Z'),
+            ]
+            field:list = [
+                'url',
+                'response_time',
+                #'domain',
+            ]
+
+            solr_records_temp: Any = solr_news_clip.search_query(search_query=solr_query,field=field)
+
+            # news_clip_master側に存在しないcrawler_responseがある場合
+            if solr_records_temp:
+                solr_records:pysolr.Results = solr_records_temp
+                # crawler_responseとnews_clip_masterで同期している場合、同期リストへ保存
+                # ※通常1件しかないはずだが、障害によりリカバリした場合などは複数件存在する可能性がある。
+                for solr_record in solr_records:
+                    # レスポンスにあるのにマスターへの登録処理が行われていない。
+                    solr_sync_list.append(
+                        (solr_record['url'], solr_record['response_time']))
+            else:
+                solr_async_list.append(master_sync['url'])
+
+                # 非同期ドメイン集計カウントアップ
+                if master_sync['domain'] in solr_async_domain_aggregate:
+                    solr_async_domain_aggregate[master_sync['domain']] += 1
+                else:
+                    solr_async_domain_aggregate[master_sync['domain']] = 1
+
+        # スクレイピングミス分のurlがあれば、非同期レポートへ保存
+        if len(solr_async_list) > 0:
+            asynchronous_report_model.insert_one({
+                'record_type': 'solr_news_clip_async',
+                'start_time': start_time,
+                'domain': domain,
+                'start_time_from': start_time_from,
+                'start_time_to': start_time_to,
+                'async_list': solr_async_list,
+            })
+            logger.error('=== 同期チェック結果(master -> solr) : NG')
+        else:
+            logger.info('=== 同期チェック結果(master -> solr) : OK')
+
+        return solr_sync_list, solr_async_list, solr_async_domain_aggregate
 
     #################################################################
     global logger
@@ -191,20 +261,12 @@ def check(kwargs: dict):
     response_sync_list, response_async_list, response_async_domain_aggregate = crawler_response_sync_check()
     # crawler_responseとnews_clip_masterが同期しているかチェックする。
     master_sync_list, master_async_list, master_async_domain_aggregate = news_clip_master_sync_check()
+    solr_sync_list, solr_async_list, solr_async_domain_aggregate = solr_news_clip_sync_check()
 
     title: str = '【クローラー同期チェック：非同期発生】' + start_time.isoformat()
     message: str = ''
     # クロールミス分のurlがあれば
     if len(response_async_list) > 0:
-        # 非同期レポートへ保存
-        asynchronous_report_model.insert_one({
-            'record_type': 'news_crawl_async',
-            'start_time': start_time,
-            'domain': domain,
-            'start_time_from': start_time_from,
-            'start_time_to': start_time_to,
-            'async_list': response_async_list,
-        })
         # メール通知用メッセージ追記
         message = message + '以下のドメインでクローラーで対象となったにもかかわらず、crawler_responseに登録されていないケースがあります。\n'
         for item in response_async_domain_aggregate.items():
@@ -213,18 +275,17 @@ def check(kwargs: dict):
 
     # スクレイピングミス分のurlがあれば
     if len(master_async_list) > 0:
-        # 非同期レポートへ保存
-        asynchronous_report_model.insert_one({
-            'record_type': 'news_clip_master_async',
-            'start_time': start_time,
-            'domain': domain,
-            'start_time_from': start_time_from,
-            'start_time_to': start_time_to,
-            'async_list': master_async_list,
-        })
         # メール通知用メッセージ追記
         message = message + '以下のドメインでcrawler_responseにあるにもかかわらず、news_clip_master側に登録されていないケースがあります。\n'
         for item in master_async_domain_aggregate.items():
+            if item[1] > 0:
+                message = message + item[0] + ' : ' + str(item[1]) + ' 件\n'
+
+    # solrへの送信ミス分のurlがあれば
+    if len(solr_async_list) > 0:
+        # メール通知用メッセージ追記
+        message = message + '以下のドメインでnews_clip_masterにあるにもかかわらず、solr_news_clip側に登録されていないケースがあります。\n'
+        for item in solr_async_domain_aggregate.items():
             if item[1] > 0:
                 message = message + item[0] + ' : ' + str(item[1]) + ' 件\n'
 
