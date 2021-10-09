@@ -2,7 +2,7 @@ from models.mongo_model import MongoModel
 from models.mongo_common_model import MongoCommonModel
 
 
-class NewsClipMaster(MongoCommonModel):
+class NewsClipMasterModel(MongoCommonModel):
     '''
     news_clip_masterコレクション用モデル
     '''

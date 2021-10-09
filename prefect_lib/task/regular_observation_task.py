@@ -9,8 +9,8 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
-from models.scraped_from_response_model import ScrapedFromResponse
-from models.news_clip_master_model import NewsClipMaster
+from models.scraped_from_response_model import ScrapedFromResponseModel
+from models.news_clip_master_model import NewsClipMasterModel
 from models.controller_model import ControllerModel
 from common_lib.directory_search import directory_search
 
@@ -27,11 +27,12 @@ class RegularObservationTask(ExtensionsTask):
         kwargs: dict = {}
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger
-        mongo: MongoModel = self.mongo
-        kwargs['crawler_response'] = CrawlerResponseModel(mongo)
-        kwargs['scraped_from_response'] = ScrapedFromResponse(mongo)
-        kwargs['news_clip_master'] = NewsClipMaster(mongo)
-        kwargs['controller'] = ControllerModel(self.mongo)
+        kwargs['mongo'] = self.mongo
+        # mongo: MongoModel = self.mongo
+        # kwargs['crawler_response'] = CrawlerResponseModel(mongo)
+        # kwargs['scraped_from_response'] = ScrapedFromResponseModel(mongo)
+        # kwargs['news_clip_master'] = NewsClipMasterModel(mongo)
+        # kwargs['controller'] = ControllerModel(self.mongo)
 
         kwargs['domain'] = None
         kwargs['crawling_start_time_from'] = self.start_time
@@ -43,7 +44,7 @@ class RegularObservationTask(ExtensionsTask):
         kwargs['scraped_save_start_time_to'] = self.start_time
 
         spiders_info = directory_search()
-        controller: ControllerModel = kwargs['controller']
+        controller: ControllerModel = ControllerModel(self.mongo)
         spider_name_set: set = controller.regular_observation_spider_name_set_get()
 
         # 定期観測の対象・対象外spiderを振り分け

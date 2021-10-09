@@ -8,7 +8,8 @@ from dateutil.parser import parse
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
-from models.news_clip_master_model import NewsClipMaster
+from models.mongo_model import MongoModel
+from models.news_clip_master_model import NewsClipMasterModel
 from models.solr_news_clip_model import SolrNewsClip
 from prefect_lib.settings import TIMEZONE
 from common_lib.timezone_recovery import timezone_recovery
@@ -20,7 +21,9 @@ def check_and_save(kwargs:dict):
     '''あとで'''
     global logger
     start_time: datetime = kwargs['start_time']
-    news_clip_master: NewsClipMaster = kwargs['news_clip_master']
+    mongo: MongoModel = kwargs['mongo']
+    news_clip_master: NewsClipMasterModel = NewsClipMasterModel(mongo)
+    #news_clip_master: NewsClipMasterModel = kwargs['news_clip_master']
 
     domain: str = kwargs['domain']
     scraped_save_start_time_from: datetime = kwargs['scraped_save_start_time_from']

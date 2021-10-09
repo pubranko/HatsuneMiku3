@@ -8,6 +8,7 @@ from scrapy.utils.project import get_project_settings
 from scrapy.utils.log import configure_logging
 path = os.getcwd()
 sys.path.append(path)
+from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
 
 
@@ -41,9 +42,9 @@ def direct_crawl_run(kwargs: dict):
     configure_logging(install_root_handler=False)
 
     process.crawl(kwargs['class_instans'],
-                  dict(crawling_start_time=start_time,
+                  crawling_start_time=start_time,
                   direct_crawl_urls=urls,
-                  crawl_point_non_update='Yes'))
+                  crawl_point_non_update='Yes')
     process.start()
 
 
@@ -56,7 +57,9 @@ def continued_run(kwargs: dict):
     '''
     logger: Logger = kwargs['logger']
     start_time: datetime = kwargs['start_time']
-    controller: ControllerModel = kwargs['controller']
+    mongo: MongoModel = kwargs['mongo']
+    controller: ControllerModel = ControllerModel(mongo)
+    #controller: ControllerModel = kwargs['controller']
     spiders_info: list = kwargs['spiders_info']
 
     stop_domain: list = controller.crawling_stop_domain_list_get()
@@ -86,7 +89,6 @@ def continued_run(kwargs: dict):
 @scrapy_deco
 def first_run(kwargs: dict):
     '''
-
     '''
     start_time: datetime = kwargs['start_time']
     spiders_info: list = kwargs['spiders_info']
@@ -107,7 +109,6 @@ def first_run(kwargs: dict):
 @scrapy_deco
 def custom_crawl_run(kwargs: dict):
     '''
-    クロールするurlを直接指定。
     '''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)

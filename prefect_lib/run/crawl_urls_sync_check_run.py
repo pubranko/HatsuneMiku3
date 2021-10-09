@@ -14,7 +14,7 @@ from common_lib.mail_send import mail_send
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
 from models.crawler_response_model import CrawlerResponseModel
-from models.news_clip_master_model import NewsClipMaster
+from models.news_clip_master_model import NewsClipMasterModel
 from models.solr_news_clip_model import SolrNewsClip
 from models.asynchronous_report_model import AsynchronousReportModel
 
@@ -253,7 +253,7 @@ def check(kwargs: dict):
     mongo: MongoModel = kwargs['mongo']
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_response = CrawlerResponseModel(mongo)
-    news_clip_master = NewsClipMaster(mongo)
+    news_clip_master = NewsClipMasterModel(mongo)
     solr_news_clip = SolrNewsClip(mongo)
     asynchronous_report_model = AsynchronousReportModel(mongo)
 
