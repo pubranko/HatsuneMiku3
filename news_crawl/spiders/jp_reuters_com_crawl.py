@@ -63,6 +63,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             yield SplashRequest(
                 url=url,
                 callback=self.parse_start_response_splash,
+                meta={'max_retry_times':20},
                 endpoint='execute',
                 cache_args=['lua_source'],
                 args={

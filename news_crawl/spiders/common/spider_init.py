@@ -1,5 +1,8 @@
-from datetime import datetime
+from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を回避するため
+import logging
 from logging import LoggerAdapter
+from typing import Union, Any, TYPE_CHECKING
+from datetime import datetime
 from scrapy.exceptions import CloseSpider
 from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
@@ -12,12 +15,21 @@ from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMin
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from common_lib.resource_check import resource_check
 
+if TYPE_CHECKING:  # 型チェック時のみインポート
+    from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
+    from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
+    #from news_crawl.spiders.extensions_class.extensions_xml_feed import ExtensionsXmlFeedSpider
 
-def spider_init(spider,*args, **kwargs):
+
+def spider_init(
+    spider: Union[ExtensionsSitemapSpider, ExtensionsCrawlSpider],
+    *args, **kwargs
+):
     '''spider共通の初期処理'''
     domain_name: str = spider._domain_name
     name: str = spider.name
-    logger: LoggerAdapter = spider.logger
+    logger = logging.getLogger(spider.name)
+    #logger: LoggerAdapter = spider.logger
     crawling_start_time: datetime
 
     logger.info(
@@ -43,8 +55,10 @@ def spider_init(spider,*args, **kwargs):
     spider.crawl_urls_list = []
 
     # 同一ドメインへの多重クローリングを防止
-    spider.crawling_domain_control = CrawlingDomainDuplicatePrevention()
-    duplicate_check = spider.crawling_domain_control.execution(
+    # spider.crawling_domain_control = CrawlingDomainDuplicatePrevention()
+    # duplicate_check = spider.crawling_domain_control.execution(
+    crawling_domain_control = CrawlingDomainDuplicatePrevention()
+    duplicate_check = crawling_domain_control.execution(
         domain_name)
     if not duplicate_check:
         raise CloseSpider('同一ドメインへの多重クローリングとなるため中止')

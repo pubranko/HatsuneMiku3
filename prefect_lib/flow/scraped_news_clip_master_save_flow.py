@@ -38,7 +38,7 @@ with Flow(
 flow.run(parameters=dict(
     #domain='kyodo.co.jp',
     #domain='epochtimes.jp',
-    #scrapying_start_time_from=datetime(2021, 8, 21, 0, 0, 0).astimezone(TIMEZONE),
+    scrapying_start_time_from=datetime(2021, 10, 9, 17, 0, 0).astimezone(TIMEZONE),
     #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
     #scrapying_start_time_from=datetime(2021, 9, 25, 15, 26, 37, 344148).astimezone(TIMEZONE),
     #scrapying_start_time_to=datetime(2021, 9, 25, 15, 26, 37, 344148).astimezone(TIMEZONE),
