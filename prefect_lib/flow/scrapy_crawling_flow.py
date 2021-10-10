@@ -39,8 +39,8 @@ flow.run(parameters=dict(
     ],
     spider_kwargs={
         'debug': 'Yes',
-        'lastmod_period_minutes': '15,',
-        'pages': '2,2',
+        'lastmod_period_minutes': '60,',
+        'pages': '1,2',
         # 'continued':'Yes',
         # 'direct_crawl_urls':[],
         # 'crawl_point_non_update':'Yes',
