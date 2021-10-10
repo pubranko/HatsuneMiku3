@@ -43,6 +43,24 @@ def spider_closed(
         key: str = str(item[0]).replace('.', '_')
         stats_edit[key] = item[1]
 
+    # ログに保管するときはsource_urlごとの配列内にlocとlastmodを格納するよう構造変換
+    temp: dict = {}
+    source_urls:list = []
+    for record in spider.crawl_urls_list:
+        if record['source_url'] in temp.keys():
+            temp[record['source_url']].append({
+                'loc': record['loc'],
+                'lastmod': record['lastmod']})
+        else:
+            temp[record['source_url']] = [{
+                'loc': record['loc'],
+                'lastmod': record['lastmod'], }]
+    for key,value in temp.items():
+        source_urls.append({
+            'source_url':key,
+            'items':value,
+        })
+
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_logs.insert_one({
         'crawling_start_time': crawling_start_time,
@@ -50,7 +68,7 @@ def spider_closed(
         'domain': spider.allowed_domains[0],
         'spider_name': name,
         'stats': stats_edit,
-        'crawl_urls_list': spider.crawl_urls_list,
+        'crawl_urls_list': source_urls,
     })
 
     mongo.close()
