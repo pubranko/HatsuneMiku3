@@ -75,12 +75,10 @@ def check(kwargs: dict):
             # crawl_urls_listからをクロール対象となったurlを抽出
             loc_crawl_urls: list = []
             for temp in log_record['crawl_urls_list']:
-                loc_crawl_urls = [item['loc'] for item in temp['items']]
+                loc_crawl_urls.extend([item['loc'] for item in temp['items']])
 
             # スパイダーレポートよりクロール対象となったurlを順に読み込み、crawler_responseに登録されていることを確認する。
-            #for crawl_urls_list in log_record['crawl_urls_list']:
             for crawl_url in loc_crawl_urls:
-                #conditions.append({'url': crawl_urls_list['loc']})
                 conditions.append({'url': crawl_url})
                 master_filter: Any = {'$and': conditions}
                 response_records: Cursor = crawler_response.find(
@@ -90,7 +88,6 @@ def check(kwargs: dict):
 
                 # crawler_response側に存在しないクロール対象urlがある場合
                 if response_records.count() == 0:
-                    #response_async_list.append(crawl_urls_list['loc'])
                     response_async_list.append(crawl_url)
                     # 非同期ドメイン集計カウントアップ
                     response_async_domain_aggregate[log_record['domain']] += 1
@@ -121,9 +118,13 @@ def check(kwargs: dict):
                 'start_time_to': start_time_to,
                 'async_list': response_async_list,
             })
-            logger.error('=== 同期チェック結果(crawler -> response) : NG')
+            counter = 'エラー(%s)/正常(%s)' % (len(response_async_list),
+                                          len(response_sync_list))
+            logger.error(
+                '=== 同期チェック結果(crawler -> response) : NG(%s)' % counter)
         else:
-            logger.info('=== 同期チェック(crawler -> response)結果 : OK')
+            logger.info('=== 同期チェック(crawler -> response)結果 : OK(件数 : %s)' %
+                        len(response_sync_list))
 
         return response_sync_list, response_async_list, response_async_domain_aggregate
 
@@ -184,10 +185,12 @@ def check(kwargs: dict):
                 'start_time_to': start_time_to,
                 'async_list': master_async_list,
             })
-            logger.error('=== 同期チェック結果(response -> master) : NG')
+            counter = 'エラー(%s)/正常(%s)' % (len(master_async_list),
+                                          len(master_sync_list))
+            logger.error('=== 同期チェック結果(response -> master) : NG(%s)' % counter)
         else:
-            logger.info('=== 同期チェック結果(response -> master) : OK')
-
+            logger.info('=== 同期チェック結果(response -> master) : OK(件数 : %s)' %
+                        len(master_sync_list))
         return master_sync_list, master_async_list, master_async_domain_aggregate
 
     def solr_news_clip_sync_check() -> Tuple[list, list, dict]:
@@ -245,9 +248,12 @@ def check(kwargs: dict):
                 'start_time_to': start_time_to,
                 'async_list': solr_async_list,
             })
-            logger.error('=== 同期チェック結果(master -> solr) : NG')
+            counter = 'エラー(%s)/正常(%s)' % (len(solr_async_list),
+                                          len(solr_sync_list))
+            logger.error('=== 同期チェック結果(master -> solr) : NG(%s)' % counter)
         else:
-            logger.info('=== 同期チェック結果(master -> solr) : OK')
+            logger.info('=== 同期チェック結果(master -> solr) : OK(件数 : %s)' %
+                        len(solr_sync_list))
 
         return solr_sync_list, solr_async_list, solr_async_domain_aggregate
 

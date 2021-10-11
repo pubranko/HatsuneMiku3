@@ -19,14 +19,14 @@ def solr_del():
 
     #publish_date :[2019-01-01T00:00:00Z TO 2019-01-31T23:59:59Z]
     #'2021-08-21T09:06:18+09:00 TO 2021-08-21T09:06:19+09:00'
-    solr.delete_query(
-        #'response_time:[2021-08-21T00:06:18Z TO 2021-08-21T00:06:19Z]',
-        'response_time:[2021-08-20T00:06:18Z TO *]',
-    )
+    # solr.delete_query(
+    #     #'response_time:[2021-08-21T00:06:18Z TO 2021-08-21T00:06:19Z]',
+    #     'response_time:[2021-08-20T00:06:18Z TO *]',
+    # )
 
-    # solr.delete_id(delete_id_list=[
-    #     "1baf825c-d8cb-4eab-aa54-f1b8891e8d3d",
-    # ])
+    solr.delete_id(delete_id_list=[
+        "95c9a0ff-ef31-4e01-b061-9294daf6de35",
+    ])
 
     solr.commit()
 
