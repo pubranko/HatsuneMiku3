@@ -8,7 +8,7 @@ class MongoCommonModel(object):
     各コレクション別のクラスでは当クラスを継承することで共通の関数を定義する必要がなくなる。
     '''
     mongo: MongoModel
-    collection_name:str = 'sample'
+    collection_name: str = 'sample'
 
     def __init__(self, mongo: MongoModel):
         self.mongo = mongo
@@ -16,13 +16,16 @@ class MongoCommonModel(object):
     def find_one(self, projection=None, filter=None):
         return self.mongo.mongo_db[self.collection_name].find_one(projection=projection, filter=filter)
 
-    def find(self, projection=None, filter=None, sort=None):
-        return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter,sort=sort)
+    def find(self, projection=None, filter=None, sort=None, index=None):
+        if not index is None:
+            self.mongo.mongo_db[self.collection_name].create_index(index)
+        return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter, sort=sort)
+        # return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter,sort=sort,allow_disk_use=True)
 
     def insert_one(self, item):
         self.mongo.mongo_db[self.collection_name].insert_one(item)
 
-    def insert(self, items:list):
+    def insert(self, items: list):
         '''つかってないかも、、、'''
         self.mongo.mongo_db[self.collection_name].insert(items)
 

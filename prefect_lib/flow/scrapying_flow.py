@@ -30,17 +30,21 @@ with Flow(
     crawling_start_time_to = DateTimeParameter(
         'crawling_start_time_to', required=False)
     urls = Parameter('urls', required=False)()
+    following_processing_execution = Parameter(
+        'following_processing_execution', default='No')()
     task = ScrapyingTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(domain=domain,
                   crawling_start_time_from=crawling_start_time_from,
                   crawling_start_time_to=crawling_start_time_to,
-                  urls=urls)
+                  urls=urls,
+                  following_processing_execution=following_processing_execution,)
 
 # domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
     #domain='sankei.com',
-    crawling_start_time_from=datetime(2021, 10, 9, 17, 0, 0, 286000).astimezone(TIMEZONE),
+    crawling_start_time_from=datetime(2021, 10, 15, 13, 0, 0, 286000).astimezone(TIMEZONE),
     #crawling_start_time_to=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
     #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
+    following_processing_execution='Yes',    # 後続処理実行(news_clip_masterへの登録,solrへの登録)
 ))

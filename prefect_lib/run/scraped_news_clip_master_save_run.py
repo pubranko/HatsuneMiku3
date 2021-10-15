@@ -61,6 +61,7 @@ def check_and_save(kwargs: dict):
         records: Cursor = scraped_from_response.find(
             filter=filter,
             sort=[('response_time',ASCENDING)],
+            index=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
