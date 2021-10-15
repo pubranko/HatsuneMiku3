@@ -13,17 +13,12 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask
 
-from models.mongo_model import MongoModel
-from models.crawler_response_model import CrawlerResponseModel
-from models.scraped_from_response_model import ScrapedFromResponseModel
-from models.news_clip_master_model import NewsClipMasterModel
-from models.controller_model import ControllerModel
-
 
 class ScrapyCrawlingTask(ExtensionsTask):
     '''
     クローリング用タスク
     '''
+
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
         logger: Logger = self.logger
@@ -31,7 +26,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
         logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
 
         error_spider_names: list = []
-        spider_run_list:list = []
+        spider_run_list: list = []
 
         spiders_info: list = directory_search()
         spiders_info_name_list = [x['spider_name'] for x in spiders_info]
@@ -43,31 +38,31 @@ class ScrapyCrawlingTask(ExtensionsTask):
             if spider_name in spiders_info_name_list:
                 # クラスインスタンスリストへ追加
                 i = spiders_info_name_list.index(spider_name)
-                spider_run = {'spider_name' : spider_name,
-                            'class_instans' : spiders_info[i]['class_instans'],
-                            'start_time' : self.start_time,
-                }
-                if  'lastmod_period_minutes' in kwargs['spider_kwargs']:
+                spider_run = {'spider_name': spider_name,
+                              'class_instans': spiders_info[i]['class_instans'],
+                              'start_time': self.start_time,
+                              }
+                if 'lastmod_period_minutes' in kwargs['spider_kwargs']:
                     spider_run['lastmod_period_minutes'] = kwargs['spider_kwargs']['lastmod_period_minutes']
                 else:
                     spider_run['lastmod_period_minutes'] = None
-                if  'pages' in kwargs['spider_kwargs']:
+                if 'pages' in kwargs['spider_kwargs']:
                     spider_run['pages'] = kwargs['spider_kwargs']['pages']
                 else:
                     spider_run['pages'] = None
-                if  'continued' in kwargs['spider_kwargs']:
+                if 'continued' in kwargs['spider_kwargs']:
                     spider_run['continued'] = kwargs['spider_kwargs']['continued']
                 else:
                     spider_run['continued'] = None
-                if  'direct_crawl_urls' in kwargs['spider_kwargs']:
+                if 'direct_crawl_urls' in kwargs['spider_kwargs']:
                     spider_run['direct_crawl_urls'] = kwargs['spider_kwargs']['direct_crawl_urls']
                 else:
                     spider_run['direct_crawl_urls'] = None
-                if  'debug' in kwargs['spider_kwargs']:
+                if 'debug' in kwargs['spider_kwargs']:
                     spider_run['debug'] = kwargs['spider_kwargs']['debug']
                 else:
                     spider_run['debug'] = None
-                if  'crawl_point_non_update' in kwargs['spider_kwargs']:
+                if 'crawl_point_non_update' in kwargs['spider_kwargs']:
                     spider_run['crawl_point_non_update'] = kwargs['spider_kwargs']['crawl_point_non_update']
                 else:
                     spider_run['crawl_point_non_update'] = None
@@ -94,11 +89,6 @@ class ScrapyCrawlingTask(ExtensionsTask):
             # 必要な引数設定
             kwargs['start_time'] = self.start_time
             kwargs['mongo'] = self.mongo
-            # mongo: MongoModel = self.mongo
-            # kwargs['crawler_response'] = CrawlerResponseModel(mongo)
-            # kwargs['scraped_from_response'] = ScrapedFromResponseModel(mongo)
-            # kwargs['news_clip_master'] = NewsClipMasterModel(mongo)
-            # kwargs['controller'] = ControllerModel(self.mongo)
             kwargs['domain'] = None
             kwargs['crawling_start_time_from'] = self.start_time
             kwargs['crawling_start_time_to'] = self.start_time

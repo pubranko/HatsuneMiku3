@@ -17,7 +17,7 @@ class MongoCommonModel(object):
         return self.mongo.mongo_db[self.collection_name].find_one(projection=projection, filter=filter)
 
     def find(self, projection=None, filter=None, sort=None):
-        return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter, sort=sort)
+        return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter,sort=sort)
 
     def insert_one(self, item):
         self.mongo.mongo_db[self.collection_name].insert_one(item)

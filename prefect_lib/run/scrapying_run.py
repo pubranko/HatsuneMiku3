@@ -5,6 +5,7 @@ from typing import Any
 from logging import Logger
 from datetime import datetime
 from importlib import import_module
+from pymongo import ASCENDING
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
@@ -27,9 +28,6 @@ def exec(kwargs: dict):
     scraped_from_response: ScrapedFromResponseModel = ScrapedFromResponseModel(
         mongo)
     controller: ControllerModel = ControllerModel(mongo)
-    # crawler_response: CrawlerResponseModel = kwargs['crawler_response']
-    # scraped_from_response: ScrapedFromResponseModel = kwargs['scraped_from_response']
-    # controller:ControllerModel = kwargs['controller']
     domain: str = kwargs['domain']
     crawling_start_time_from: datetime = kwargs['crawling_start_time_from']
     crawling_start_time_to: datetime = kwargs['crawling_start_time_to']
@@ -61,7 +59,6 @@ def exec(kwargs: dict):
     record_count = crawler_response.find(
         projection=None,
         filter=filter,
-        sort=None
     ).count()
     logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
 
@@ -76,7 +73,7 @@ def exec(kwargs: dict):
         records: Cursor = crawler_response.find(
             projection=None,
             filter=filter,
-            sort=None
+            sort=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
