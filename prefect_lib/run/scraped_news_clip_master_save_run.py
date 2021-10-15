@@ -1,10 +1,10 @@
-from configparser import DuplicateOptionError
 import os
 import sys
 import logging
 from typing import Any
 from logging import Logger
 from datetime import datetime
+from pymongo import ASCENDING
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
@@ -12,7 +12,6 @@ from models.mongo_model import MongoModel
 from models.scraped_from_response_model import ScrapedFromResponseModel
 from models.crawler_response_model import CrawlerResponseModel
 from models.news_clip_master_model import NewsClipMasterModel
-from common_lib.timezone_recovery import timezone_recovery
 from prefect_lib.common_module.scraped_record_error_check import scraped_record_error_check
 
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
@@ -26,9 +25,6 @@ def check_and_save(kwargs: dict):
     scraped_from_response: ScrapedFromResponseModel = ScrapedFromResponseModel(mongo)
     news_clip_master: NewsClipMasterModel = NewsClipMasterModel(mongo)
     crawler_response: CrawlerResponseModel = CrawlerResponseModel(mongo)
-    # scraped_from_response: ScrapedFromResponseModel = kwargs['scraped_from_response']
-    # news_clip_master: NewsClipMasterModel = kwargs['news_clip_master']
-    # crawler_response: CrawlerResponseModel = kwargs['crawler_response']
 
     domain: str = kwargs['domain']
     scrapying_start_time_from: datetime = kwargs['scrapying_start_time_from']
@@ -64,6 +60,7 @@ def check_and_save(kwargs: dict):
     for skip in skip_list:
         records: Cursor = scraped_from_response.find(
             filter=filter,
+            sort=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
