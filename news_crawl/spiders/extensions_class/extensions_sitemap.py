@@ -113,7 +113,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                             args={
                                 'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
                                 'wait': 1.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
-                                'resource_timeout': 30.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                                'resource_timeout': 10.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
                                 'images': 0,  # 画像はダウンロードしない(0)
                             })
                         else:

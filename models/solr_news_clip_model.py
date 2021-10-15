@@ -37,7 +37,6 @@ class SolrNewsClip(object):
 
     def search_query(
         self,
-        # search_query: str,
         search_query: list,
         skip: int = 0,
         limit: int = 100,

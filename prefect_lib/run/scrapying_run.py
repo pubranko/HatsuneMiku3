@@ -62,7 +62,7 @@ def exec(kwargs: dict):
     ).count()
     logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
 
-    # 100件単位でスクレイピング処理を実施
+    # 件数制限でスクレイピング処理を実施
     limit: int = 100
     skip_list = list(range(0, record_count, limit))
 
@@ -74,6 +74,7 @@ def exec(kwargs: dict):
             projection=None,
             filter=filter,
             sort=[('response_time',ASCENDING)],
+            index=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
