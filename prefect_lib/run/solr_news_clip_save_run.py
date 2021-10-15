@@ -4,14 +4,13 @@ import logging
 from typing import Any
 from logging import Logger
 from datetime import datetime
-from dateutil.parser import parse
+from pymongo import ASCENDING
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
 from models.mongo_model import MongoModel
 from models.news_clip_master_model import NewsClipMasterModel
 from models.solr_news_clip_model import SolrNewsClip
-from prefect_lib.settings import TIMEZONE
 from common_lib.timezone_recovery import timezone_recovery
 
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
@@ -23,7 +22,6 @@ def check_and_save(kwargs:dict):
     start_time: datetime = kwargs['start_time']
     mongo: MongoModel = kwargs['mongo']
     news_clip_master: NewsClipMasterModel = NewsClipMasterModel(mongo)
-    #news_clip_master: NewsClipMasterModel = kwargs['news_clip_master']
 
     domain: str = kwargs['domain']
     scraped_save_start_time_from: datetime = kwargs['scraped_save_start_time_from']
@@ -60,14 +58,13 @@ def check_and_save(kwargs:dict):
     for skip in skip_list:
         master_records: Cursor = news_clip_master.find(
             filter=filter,
+            sort=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for master_record in master_records:
-
             _ = 'url:' + solr_news_clip.escape_convert(master_record['url'])
             query: list = [_]
             solr_results: Any = solr_news_clip.search_query(query)
-
             solr_recodes_count = solr_results.raw_response['response']['numFound']
 
             new_record: dict = {
@@ -80,16 +77,9 @@ def check_and_save(kwargs:dict):
             }
             if solr_recodes_count:
                 for solr_recode in solr_results.docs:
-                    # master_publish_date = timezone_recovery(
-                    #     master_record['publish_date'])
-                    # solr_publish_date: datetime = parse(
-                    #     solr_recode['publish_date']).astimezone(TIMEZONE)
-
                     # 重複チェック
                     if master_record['title'] == solr_recode['title'] and \
                             master_record['article'] == solr_recode['article']: # and \
-                            #master_publish_date == solr_publish_date:
-
                         logger.info('=== solrに登録済みのためスキップ: ' +
                                     str(new_record['url']))
                     else:
