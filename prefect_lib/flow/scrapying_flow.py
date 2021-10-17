@@ -46,5 +46,5 @@ flow.run(parameters=dict(
     crawling_start_time_from=datetime(2021, 10, 15, 13, 0, 0, 286000).astimezone(TIMEZONE),
     #crawling_start_time_to=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
     #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
-    following_processing_execution='Yes',    # 後続処理実行(news_clip_masterへの登録,solrへの登録)
+    #following_processing_execution='Yes',    # 後続処理実行(news_clip_masterへの登録,solrへの登録)
 ))
