@@ -59,7 +59,6 @@ def check_and_save(kwargs:dict):
         master_records: Cursor = news_clip_master.find(
             filter=filter,
             sort=[('response_time',ASCENDING)],
-            index=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for master_record in master_records:
