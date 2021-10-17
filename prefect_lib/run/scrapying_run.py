@@ -74,7 +74,6 @@ def exec(kwargs: dict):
             projection=None,
             filter=filter,
             sort=[('response_time',ASCENDING)],
-            index=[('response_time',ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:

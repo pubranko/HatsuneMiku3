@@ -1,7 +1,6 @@
 from pymongo import collection
 from models.mongo_model import MongoModel
 
-
 class MongoCommonModel(object):
     '''
     mongoDBへの共通アクセス処理。
@@ -16,11 +15,9 @@ class MongoCommonModel(object):
     def find_one(self, projection=None, filter=None):
         return self.mongo.mongo_db[self.collection_name].find_one(projection=projection, filter=filter)
 
-    def find(self, projection=None, filter=None, sort=None, index=None):
-        if not index is None:
-            self.mongo.mongo_db[self.collection_name].create_index(index)
+    #def find(self, projection=None, filter=None, sort=None, index=None):
+    def find(self, projection=None, filter=None, sort=None):
         return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter, sort=sort)
-        # return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter,sort=sort,allow_disk_use=True)
 
     def insert_one(self, item):
         self.mongo.mongo_db[self.collection_name].insert_one(item)
