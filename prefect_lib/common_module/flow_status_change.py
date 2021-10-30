@@ -14,5 +14,3 @@ def flow_status_change(obj: Flow, old_state, new_state):
 
     if not isinstance(new_state, Running):
         pass  # 成否に関係なく終わったときに動く処理
-
-    print('=== flow_status_change : ',new_state)
