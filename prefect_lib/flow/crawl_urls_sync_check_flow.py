@@ -13,8 +13,7 @@ from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.common_module.flow_status_change import flow_status_change
 
-start_time = datetime.now().astimezone(
-    TIMEZONE)
+start_time = datetime.now().astimezone(TIMEZONE)
 log_file_path = os.path.join(
     'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
 logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
