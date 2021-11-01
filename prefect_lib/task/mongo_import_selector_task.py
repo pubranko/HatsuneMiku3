@@ -19,8 +19,6 @@ class MongoImportSelector(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
-        print('run動いた')
-
         logger: Logger = self.logger
         logger.info('=== MongoExportSelector run kwargs : ' + str(kwargs))
 
@@ -30,14 +28,11 @@ class MongoImportSelector(ExtensionsTask):
         from_when: datetime = kwargs['from_when']
         to_when: datetime = kwargs['to_when']
 
-        crawler_response: CrawlerResponseModel = CrawlerResponseModel(
-            self.mongo)
-
         # インポート元ファイルの一覧を作成
         import_files_info: list = []
         file_list: list = os.listdir('backup_files')
         for file in file_list:
-            temp: list = file.rsplit('-',1)
+            temp: list = file.rsplit('-', 1)
             import_files_info.append({
                 'file': file,
                 'collection_name': temp[0],
@@ -64,31 +59,23 @@ class MongoImportSelector(ExtensionsTask):
 
             if select_flg:
                 select_files_info.append(import_file_info)
-        print(select_files_info)
 
-        # ファイルからオブジェクトを復元
-        collection_records:list = []
+        # ファイルからオブジェクトを復元しリストに保存。ただし"_id"は削除する。
+        collection_records: list = []
         for select_file in select_files_info:
-            #
             file_path: str = os.path.join(
                 'backup_files', select_file['file'])
 
             with open(file_path, 'rb') as file:
-                #file.write(pickle.dumps(record_list))
-                file_data = pickle.loads(file.read())
-                print(type(file_data))
-                print(len(file_data))
-                #collection_records.extend([rec for rec in file_data])
-                collection_records.extend(file_data)
-            # for b in a:
-            #     #print(b.keys())
-            #     print(b['url'])
+                documents: list = pickle.loads(file.read())
+                for document in documents:
+                    del document['_id']
+                    collection_records.append(document)
 
-        print('=== collection_records ',len(collection_records))
-
-        # for record in collection_records:
-        #     print(record['url'])
-
+        # 一括で保存する。
+        crawler_response: CrawlerResponseModel = CrawlerResponseModel(
+            self.mongo)
+        crawler_response.insert(collection_records)
 
         # 終了処理
         self.closed()
