@@ -23,7 +23,6 @@ class MongoCommonModel(object):
         self.mongo.mongo_db[self.collection_name].insert_one(item)
 
     def insert(self, items: list):
-        '''つかってないかも、、、'''
         self.mongo.mongo_db[self.collection_name].insert(items)
 
     def update(self, filter, record: dict) -> None:
