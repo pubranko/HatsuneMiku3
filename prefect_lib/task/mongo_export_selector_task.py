@@ -111,7 +111,7 @@ class MongoExportSelectorTask(ExtensionsTask):
 
             # ファイル名 ＝ コレクション名_現在日時
             file_path: str = os.path.join(
-                'backup_files', collection_name + '-(' + str(kwargs['backup_yyyymm']) + ')-' + self.start_time.strftime('%Y%m%d_%H%M%S'))
+                'backup_files', collection_name + '@(' + str(kwargs['backup_yyyymm']) + ')@' + self.start_time.strftime('%Y%m%d_%H%M%S'))
 
             if collection_name == 'crawler_response':
                 conditions_field = 'crawling_start_time'
