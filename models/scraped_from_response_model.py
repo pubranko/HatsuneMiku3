@@ -1,3 +1,4 @@
+import os
 from models.mongo_model import MongoModel
 from models.mongo_common_model import MongoCommonModel
 
@@ -7,7 +8,8 @@ class ScrapedFromResponseModel(MongoCommonModel):
     scraped_from_responseコレクション用モデル
     '''
     mongo: MongoModel
-    collection_name: str = 'scraped_from_response'
+    #collection_name: str = 'scraped_from_response'
+    collection_name: str = os.environ['MONGO_SCRAPED_FROM_RESPONSE']
 
     def __init__(self, mongo: MongoModel):
         super().__init__(mongo)

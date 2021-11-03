@@ -1,22 +1,24 @@
+import os
 from models.mongo_model import MongoModel
 from typing import Any
+from models.mongo_common_model import MongoCommonModel
 
 
-class ControllerModel(object):
+class ControllerModel(MongoCommonModel):
     '''
     controllerコレクション用モデル
     '''
     mongo: MongoModel
+    #collection_name: str = 'controller'
+    collection_name: str = os.environ['MONGO_CONTROLLER']
 
-    def __init__(self, mongo: MongoModel):
-        self.mongo = mongo
-
-    def find_one(self, key):
-        return self.mongo.mongo_db['controller'].find_one(key)
-
-    def update(self, filter, record: dict) -> None:
-        self.mongo.mongo_db['controller'].update(
-            filter, record, upsert=True)
+    # def __init__(self, mongo: MongoModel):
+    #     self.mongo = mongo
+    # def find_one(self, key):
+    #     return self.mongo.mongo_db['controller'].find_one(key)
+    # def update(self, filter, record: dict) -> None:
+    #     self.mongo.mongo_db['controller'].update(
+    #         filter, record, upsert=True)
 
     def crawl_point_get(self, domain_name: str, spider_name: str) -> dict:
         '''
@@ -24,7 +26,7 @@ class ControllerModel(object):
         まだ存在しない場合、空のdictを返す。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'domain': domain_name}, {'document_type': 'crawl_point'}]})
+            filter={'$and': [{'domain': domain_name}, {'document_type': 'crawl_point'}]})
 
         next_point_record: dict = {}
         # レコードが存在し、かつ、同じスパイダーでクロール実績がある場合
@@ -37,7 +39,7 @@ class ControllerModel(object):
     def crawl_point_update(self, domain_name: str, spider_name: str, next_point_info: dict) -> None:
         '''次回のクロールポイント情報(lastmod,urlなど)を更新する'''
         record: Any = self.find_one(
-            key={'$and': [{'domain': domain_name}, {'document_type': 'crawl_point'}]})
+            filter={'$and': [{'domain': domain_name}, {'document_type': 'crawl_point'}]})
         if record == None:  # ドメインに対して初クロールの場合
             record = {
                 'document_type': 'crawl_point',
@@ -54,7 +56,7 @@ class ControllerModel(object):
         stop_controllerからクローリング停止ドメインリストを取得して返す
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'stop_controller'}]})
+            filter={'$and': [{'document_type': 'stop_controller'}]})
 
         if record == None:
             return []
@@ -68,7 +70,7 @@ class ControllerModel(object):
         stop_controllerのクローリング停止ドメインリストを更新する。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'stop_controller'}]})
+            filter={'$and': [{'document_type': 'stop_controller'}]})
 
         if record == None:  # 初回の場合
             record = {
@@ -85,7 +87,7 @@ class ControllerModel(object):
         stop_controllerからスクレイピング停止ドメインリストを取得して返す。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'stop_controller'}]})
+            filter={'$and': [{'document_type': 'stop_controller'}]})
 
         if record == None:
             return []
@@ -99,7 +101,7 @@ class ControllerModel(object):
         stop_controllerのスクレイピング停止ドメインリストを更新する。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'stop_controller'}]})
+            filter={'$and': [{'document_type': 'stop_controller'}]})
 
         if record == None:  # 初回の場合
             record = {
@@ -111,13 +113,12 @@ class ControllerModel(object):
 
         self.update({'document_type': 'stop_controller'}, record,)
 
-
     def regular_observation_spider_name_set_get(self,) -> set:
         '''
         定期観測対象のスパイダーのセットを返す。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'regular_observation_controller'}]})
+            filter={'$and': [{'document_type': 'regular_observation_controller'}]})
 
         if record == None:
             return set([])
@@ -129,7 +130,7 @@ class ControllerModel(object):
         定期観測対象のスパイダーリストを更新する。
         '''
         record: Any = self.find_one(
-            key={'$and': [{'document_type': 'regular_observation_controller'}]})
+            filter={'$and': [{'document_type': 'regular_observation_controller'}]})
 
         if record == None:  # 初回の場合
             record = {
@@ -139,5 +140,5 @@ class ControllerModel(object):
         else:
             record['spiders_name_set'] = list(spiders_name_set)
 
-        self.update({'document_type': 'regular_observation_controller'}, record,)
-
+        self.update(
+            {'document_type': 'regular_observation_controller'}, record,)

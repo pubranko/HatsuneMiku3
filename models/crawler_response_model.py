@@ -1,3 +1,4 @@
+import os
 from typing import Any
 from datetime import datetime
 from models.mongo_model import MongoModel
@@ -9,7 +10,8 @@ class CrawlerResponseModel(MongoCommonModel):
     crawler_responseコレクション用モデル
     '''
     mongo: MongoModel
-    collection_name: str = 'crawler_response'
+    #collection_name: str = 'crawler_response'
+    collection_name: str = os.environ['MONGO_CRAWLER_RESPONSE']
 
     def __init__(self, mongo: MongoModel):
         super().__init__(mongo)

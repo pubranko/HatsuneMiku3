@@ -113,9 +113,11 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'news_crawl_async',
                 'start_time': start_time,
-                'domain': domain,
-                'start_time_from': start_time_from,
-                'start_time_to': start_time_to,
+                'parameter':{
+                    'domain': domain,
+                    'start_time_from': start_time_from,
+                    'start_time_to': start_time_to,
+                },
                 'async_list': response_async_list,
             })
             counter = 'エラー(%s)/正常(%s)' % (len(response_async_list),
@@ -172,7 +174,6 @@ def check(kwargs: dict):
                     'response_time': master_record['response_time'],
                     'domain': master_record['domain'],
                 }
-
                 master_sync_list.append(_)
 
         # スクレイピングミス分のurlがあれば、非同期レポートへ保存
@@ -180,9 +181,11 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'news_clip_master_async',
                 'start_time': start_time,
-                'domain': domain,
-                'start_time_from': start_time_from,
-                'start_time_to': start_time_to,
+                'parameter':{
+                    'domain': domain,
+                    'start_time_from': start_time_from,
+                    'start_time_to': start_time_to,
+                },
                 'async_list': master_async_list,
             })
             counter = 'エラー(%s)/正常(%s)' % (len(master_async_list),
@@ -243,9 +246,11 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'solr_news_clip_async',
                 'start_time': start_time,
-                'domain': domain,
-                'start_time_from': start_time_from,
-                'start_time_to': start_time_to,
+                'parameter':{
+                    'domain': domain,
+                    'start_time_from': start_time_from,
+                    'start_time_to': start_time_to,
+                },
                 'async_list': solr_async_list,
             })
             counter = 'エラー(%s)/正常(%s)' % (len(solr_async_list),
