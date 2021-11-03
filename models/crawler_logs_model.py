@@ -1,3 +1,4 @@
+import os
 from models.mongo_model import MongoModel
 from models.mongo_common_model import MongoCommonModel
 
@@ -7,7 +8,8 @@ class CrawlerLogsModel(MongoCommonModel):
     crawler_logsコレクション用モデル
     '''
     mongo: MongoModel
-    collection_name: str = 'crawler_logs'
+    #collection_name: str = 'crawler_logs'
+    collection_name: str = os.environ['MONGO_CRAWLER_LOGS']
 
 # class CrawlerLogsModel(object):
 #     '''

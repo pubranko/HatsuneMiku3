@@ -21,8 +21,13 @@ def environ_check() -> None:
         os.environ['MONGO_USE_DB']
         os.environ['MONGO_USER']
         os.environ['MONGO_PASS']
+        # 各コレクション
         os.environ['MONGO_CRAWLER_RESPONSE']
-        os.environ['MONGO_CONTROLLER']
+        os.environ['MONGO_SCRAPED_FROM_RESPONSE']
+        os.environ['MONGO_NEWS_CLIP_MASTER']
         os.environ['MONGO_CRAWLER_LOGS']
+        os.environ['MONGO_CONTROLLER']
+        os.environ['MONGO_ASYNCHRONOUS_REPORT']
+
     except:
         raise CloseSpider('環境変数エラー：不足している環境変数があります。')

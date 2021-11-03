@@ -9,7 +9,7 @@ from prefect.engine import signals
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.task.mongo_import_selector_task import MongoImportSelector
+from prefect_lib.task.mongo_import_selector_task import MongoImportSelectorTask
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.common_module.flow_status_change import flow_status_change
 
@@ -23,22 +23,30 @@ with Flow(
     name='Mongo import selector flow',
     state_handlers=[flow_status_change],
 ) as flow:
-    collections = Parameter(
-        'collections', required=True,)
+    collections_name = Parameter(
+        'collections_name', required=True,)
     from_when = DateTimeParameter(
         'from_when', required=False,)
     to_when = DateTimeParameter(
         'to_when', required=False,)
 
-    task = MongoImportSelector(
+    task = MongoImportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(collections=collections,
+    result = task(collections_name=collections_name,
                   from_when=from_when, to_when=to_when)
 
 flow.run(parameters=dict(
-    collections=[],
+    collections_name=[
+        # 'crawler_response',
+        # 'scraped_from_response',
+        # 'news_clip_master',
+        # 'crawler_logs',
+        # 'asynchronous_report',
+        # 'controller',
+    ],
+
     # collections=['crawler_response'],
     # collections=['a'],
     #from_when=datetime(2021, 10, 28, 22, 47, 52).astimezone(TIMEZONE),
-    to_when=datetime(2021, 10, 28, 22, 46, 56).astimezone(TIMEZONE),
+    #to_when=datetime(2021, 10, 28, 22, 46, 56).astimezone(TIMEZONE),
 ))

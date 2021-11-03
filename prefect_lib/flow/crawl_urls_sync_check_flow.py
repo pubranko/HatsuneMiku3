@@ -21,7 +21,6 @@ logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
 
 with Flow(
     name='Crawl urls sync check flow',
-    #state_handlers=[status_change],
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=False)()
