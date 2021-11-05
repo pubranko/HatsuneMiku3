@@ -53,7 +53,9 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             str(self.pages['start_page']) + '&pageSize=10'
         self.start_urls.append(url)
         # https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10  →  https://jp.reuters.com/news/archive を抽出
-        self.base_url = str(url).split('?')[0]
+        #self.base_url = str(url).split('?')[0]
+        _ = str(url).split('?')[0]
+        self.base_url = _.replace('.','_')  #keyにドット(.)があるとエラーMongoDBがエラーとなるためアンダースコアに置き換え
 
         self.url_continued = UrlsContinuedSkipCheck(self._crawl_point, self.base_url, self.kwargs_save)
 
@@ -135,11 +137,3 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                 'urls': self.all_urls_list[0:10],
                 'crawling_start_time': self._crawling_start_time
             }
-
-'''
-splash:init_cookies,
-splash:add_cookie,
-splash:get_cookies,
-splash:clear_cookies
-splash:delete_cookies
-'''

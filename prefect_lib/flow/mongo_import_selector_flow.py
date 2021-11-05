@@ -42,11 +42,8 @@ flow.run(parameters=dict(
         # 'news_clip_master',
         # 'crawler_logs',
         # 'asynchronous_report',
-        # 'controller',
+        'controller',
     ],
-
-    # collections=['crawler_response'],
-    # collections=['a'],
-    #from_when=datetime(2021, 10, 28, 22, 47, 52).astimezone(TIMEZONE),
+    from_when=datetime(2021, 11, 5, 0, 0, 0).astimezone(TIMEZONE),
     #to_when=datetime(2021, 10, 28, 22, 46, 56).astimezone(TIMEZONE),
 ))
