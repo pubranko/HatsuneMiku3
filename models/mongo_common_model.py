@@ -29,6 +29,10 @@ class MongoCommonModel(object):
         self.mongo.mongo_db[self.collection_name].update(
             filter, record, upsert=True)
 
+    def delete_many(self, filter) -> int:
+        result = self.mongo.mongo_db[self.collection_name].delete_many(filter=filter)
+        return int(result.deleted_count)
+
     def aggregate(self, aggregate_key: str):
         '''渡された集計keyによる集計結果を返す。'''
         pipeline = [

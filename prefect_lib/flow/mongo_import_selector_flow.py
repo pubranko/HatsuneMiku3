@@ -25,25 +25,25 @@ with Flow(
 ) as flow:
     collections_name = Parameter(
         'collections_name', required=True,)
-    from_when = DateTimeParameter(
-        'from_when', required=False,)
-    to_when = DateTimeParameter(
-        'to_when', required=False,)
+    time_stamp_from = DateTimeParameter(
+        'time_stamp_from', required=False,)
+    time_stamp_to = DateTimeParameter(
+        'time_stamp_to', required=False,)
 
     task = MongoImportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
-                  from_when=from_when, to_when=to_when)
+                  time_stamp_from=time_stamp_from, time_stamp_to=time_stamp_to)
 
 flow.run(parameters=dict(
     collections_name=[
-        # 'crawler_response',
-        # 'scraped_from_response',
-        # 'news_clip_master',
-        # 'crawler_logs',
-        # 'asynchronous_report',
+        'crawler_response',
+        'scraped_from_response',
+        'news_clip_master',
+        'crawler_logs',
+        'asynchronous_report',
         'controller',
     ],
-    from_when=datetime(2021, 11, 5, 0, 0, 0).astimezone(TIMEZONE),
-    #to_when=datetime(2021, 10, 28, 22, 46, 56).astimezone(TIMEZONE),
+    time_stamp_from=datetime(2021, 11, 3, 0, 0, 0).astimezone(TIMEZONE),
+    time_stamp_to=datetime(2021, 11, 3, 23, 59, 59).astimezone(TIMEZONE),
 ))
