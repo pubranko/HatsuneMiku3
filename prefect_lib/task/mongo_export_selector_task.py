@@ -52,6 +52,8 @@ class MongoExportSelectorTask(ExtensionsTask):
         #####################################################
         def export_time_filter(
             collection_name: str,
+            start_time_from: datetime,
+            start_time_to: datetime,
             conditions_field: str,
             sort_parameter: list,
             collection: Union[CrawlerResponseModel, ScrapedFromResponseModel,
@@ -100,7 +102,7 @@ class MongoExportSelectorTask(ExtensionsTask):
         logger.info('=== MongoExportSelector run kwargs : ' + str(kwargs))
 
         collections_name: list = kwargs['collections_name']
-        # 月初、月末
+        # エクスポート基準年月の月初、月末を求める。
         _ = str(kwargs['backup_yyyymm']).split('-')
         start_time_from: datetime = datetime(
             int(_[0]), int(_[1]), 1, 0, 0, 0).astimezone(TIMEZONE)
@@ -118,35 +120,35 @@ class MongoExportSelectorTask(ExtensionsTask):
                 collection = CrawlerResponseModel(self.mongo)
                 sort_parameter = [('response_time', ASCENDING)]
                 export_time_filter(
-                    collection_name, conditions_field, sort_parameter, collection, file_path)
+                    collection_name, start_time_from, start_time_to, conditions_field, sort_parameter, collection, file_path)
 
             elif collection_name == 'scraped_from_response':
                 conditions_field = 'scrapying_start_time'
                 collection = ScrapedFromResponseModel(self.mongo)
                 sort_parameter = []
                 export_time_filter(
-                    collection_name, conditions_field, sort_parameter, collection, file_path)
+                    collection_name, start_time_from, start_time_to, conditions_field, sort_parameter, collection, file_path)
 
             elif collection_name == 'news_clip_master':
                 conditions_field = 'scraped_save_start_time'
                 collection = NewsClipMasterModel(self.mongo)
                 sort_parameter = [('response_time', ASCENDING)]
                 export_time_filter(
-                    collection_name, conditions_field, sort_parameter, collection, file_path)
+                    collection_name, start_time_from, start_time_to, conditions_field, sort_parameter, collection, file_path)
 
             elif collection_name == 'crawler_logs':
                 conditions_field = 'start_time'
                 collection = CrawlerLogsModel(self.mongo)
                 sort_parameter = []
                 export_time_filter(
-                    collection_name, conditions_field, sort_parameter, collection, file_path)
+                    collection_name, start_time_from, start_time_to, conditions_field, sort_parameter, collection, file_path)
 
             elif collection_name == 'asynchronous_report':
                 conditions_field = 'start_time'
                 collection = AsynchronousReportModel(self.mongo)
                 sort_parameter = []
                 export_time_filter(
-                    collection_name, conditions_field, sort_parameter, collection, file_path)
+                    collection_name, start_time_from, start_time_to, conditions_field, sort_parameter, collection, file_path)
 
             elif collection_name == 'controller':
                 collection = ControllerModel(self.mongo)
