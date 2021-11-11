@@ -155,6 +155,9 @@ class MongoExportSelectorTask(ExtensionsTask):
                 export_non_filter(
                     collection_name, collection, file_path)
 
+            # 誤削除防止のため、ファイルの権限を参照に限定
+            os.chmod(file_path,0o444)
+
         # 終了処理
         self.closed()
         # return ''
