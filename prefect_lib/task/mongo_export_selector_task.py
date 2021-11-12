@@ -87,6 +87,8 @@ class MongoExportSelectorTask(ExtensionsTask):
             skip_list = list(range(0, record_count, limit))
 
             # ファイルにリストオブジェクトを追記していく
+            with open(file_path, 'ab') as file:
+                pass #空ファイル作成
             for skip in skip_list:
                 records: Cursor = collection.find(
                     filter=filter,
