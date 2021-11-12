@@ -34,8 +34,8 @@ with Flow(
 
 flow.run(parameters=dict(
     spider_names=[
-        #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
-        'jp_reuters_com_crawl',
+        'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
+        #'jp_reuters_com_crawl',
         #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
     ],
     spider_kwargs={

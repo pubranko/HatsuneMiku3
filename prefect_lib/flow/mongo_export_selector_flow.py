@@ -37,11 +37,11 @@ with Flow(
 flow.run(parameters=dict(
     # collections=['asynchronous_report','controller','crawler_logs','crawler_response','news_clip_master','scraped_from_response'],
     collections_name=[
-        # 'crawler_response',
-        # 'scraped_from_response',
-        # 'news_clip_master',
-        # 'crawler_logs',
-        # 'asynchronous_report',
+        'crawler_response',
+        'scraped_from_response',
+        'news_clip_master',
+        'crawler_logs',
+        'asynchronous_report',
         'controller',
     ],
     backup_yyyymm='2021-11',
