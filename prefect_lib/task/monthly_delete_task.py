@@ -31,7 +31,8 @@ class MonthlyDeleteTask(ExtensionsTask):
         def delete_id_filter(
             collection_name: str,
             id_list: list,
-            collection: Union[CrawlerResponseModel, CrawlerLogsModel, AsynchronousReportModel],
+            collection: Union[CrawlerResponseModel, ScrapedFromResponseModel, ControllerModel,
+                              NewsClipMasterModel, CrawlerLogsModel, AsynchronousReportModel]
         ):
 
             # conditions: list = []
@@ -50,14 +51,20 @@ class MonthlyDeleteTask(ExtensionsTask):
         number_of_months_elapsed: int = kwargs['number_of_months_elapsed']
         delete_time = datetime.now().astimezone(TIMEZONE) - \
             relativedelta(month=number_of_months_elapsed)
-        delete_time_from: datetime = delete_time + relativedelta(day=1,hour=0,minute=0,second=0,microsecond=0)
-        delete_time_to: datetime = delete_time + relativedelta(day=99,hour=23,minute=59,second=59,microsecond=999999)
+        delete_time_from: datetime = delete_time + \
+            relativedelta(day=1, hour=0, minute=0, second=0, microsecond=0)
+        delete_time_to: datetime = delete_time + \
+            relativedelta(day=99, hour=23, minute=59,
+                          second=59, microsecond=999999)
 
-        print('=== delete_time ',delete_time,delete_time_from,delete_time_to)
+        print('=== delete_time ', delete_time,
+              delete_time_from, delete_time_to)
 
         # エクスポート済みファイルの一覧を作成
         export_files_info: list = []
-        file_list: list = os.listdir('backup_files')
+        file_dir: list = os.listdir('backup_files')
+        file_list = [f for f in file_dir if os.path.isfile(
+            os.path.join(path, f))]
         for file in file_list:
             # file名のサンプル => crawler_logs@(2021-10)@20211112_153210
             temp: list = file.split('@', )
@@ -80,7 +87,7 @@ class MonthlyDeleteTask(ExtensionsTask):
             if len(collections_name):
                 if not export_file_info['collection_name'] in collections_name:
                     select_flg = False
-                    print('コレクションで除外',export_file_info['collection_name'])
+                    print('コレクションで除外', export_file_info['collection_name'])
 
             # バックアップのタイムスタンプの期間指定がある場合、その期間外は対象外とする。
             if delete_time_from > export_file_info['reference_month']:
@@ -117,7 +124,7 @@ class MonthlyDeleteTask(ExtensionsTask):
                     collection = AsynchronousReportModel(self.mongo)
 
                 if collection:
-                    print('=== id_list : ',id_list)
+                    print('=== id_list : ', id_list)
                     # インポート対象期間のデータがあれば削除する。
                     delete_id_filter(
                         select_file['collection_name'], id_list, collection)

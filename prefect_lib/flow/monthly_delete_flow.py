@@ -30,6 +30,13 @@ with Flow(
         ])
     number_of_months_elapsed = Parameter(
         'number_of_months_elapsed', required=True, default=3)
+
+    time_stamp_from = DateTimeParameter(
+        'time_stamp_from', required=False,)
+    time_stamp_to = DateTimeParameter(
+        'time_stamp_to', required=False,)
+
+
     task = MonthlyDeleteTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name, number_of_months_elapsed=number_of_months_elapsed)
@@ -39,6 +46,14 @@ flow.run(parameters=dict(
         'crawler_response',
         # 'crawler_logs',
         # 'asynchronous_report',
+
+        # 'scraped_from_response',
+        # 'news_clip_master',
+        # 'controller',
     ],
     number_of_months_elapsed=0,
+    backup_files_folder='backup_files',
+    time_stamp_from=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
+    #time_stamp_to=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
+
 ))

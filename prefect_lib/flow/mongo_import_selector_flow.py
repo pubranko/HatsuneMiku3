@@ -25,25 +25,30 @@ with Flow(
 ) as flow:
     collections_name = Parameter(
         'collections_name', required=True,)
-    time_stamp_from = DateTimeParameter(
-        'time_stamp_from', required=False,)
-    time_stamp_to = DateTimeParameter(
-        'time_stamp_to', required=False,)
+    backup_dir_from = Parameter(
+        'backup_dir_from', required=True,)
+    backup_dir_to = Parameter(
+        'backup_dir_to', required=True,)
+    # time_stamp_from = DateTimeParameter(
+    #     'time_stamp_from', required=False,)
+    # time_stamp_to = DateTimeParameter(
+    #     'time_stamp_to', required=False,)
 
     task = MongoImportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
-                  time_stamp_from=time_stamp_from, time_stamp_to=time_stamp_to)
+                  backup_dir_from=backup_dir_from,
+                  backup_dir_to=backup_dir_to)
 
 flow.run(parameters=dict(
     collections_name=[
-        'crawler_response',
+        # 'crawler_response',
         # 'scraped_from_response',
         # 'news_clip_master',
         # 'crawler_logs',
         # 'asynchronous_report',
         # 'controller',
     ],
-    time_stamp_from=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
-    #time_stamp_to=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
+    backup_dir_from='2021-11',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    backup_dir_to='2021-11',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
 ))
