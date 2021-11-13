@@ -28,21 +28,24 @@ with Flow(
         default=[
             'asynchronous_report', 'controller', 'crawler_logs', 'crawler_response', 'news_clip_master'
         ])
-    backup_yyyymm = Parameter(
-        'backup_yyyymm', required=True,)
+    base_month = Parameter('base_month', required=True,)
+    backup_dir = Parameter('backup_dir', required=True,)
     task = MongoExportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(collections_name=collections_name, backup_yyyymm=backup_yyyymm)
+    result = task(collections_name=collections_name,
+                  base_month=base_month, backup_dir=backup_dir,)
 
 flow.run(parameters=dict(
     # collections=['asynchronous_report','controller','crawler_logs','crawler_response','news_clip_master','scraped_from_response'],
     collections_name=[
         'crawler_response',
-        'scraped_from_response',
+        'scraped_from_response',  # 通常運用では不要なバックアップとなるがテスト用に実装している。
         'news_clip_master',
         'crawler_logs',
         'asynchronous_report',
         'controller',
     ],
-    backup_yyyymm='2021-11',
+    base_month='2021-11',  # エクスポートを行うデータの基準年月
+    backup_dir='2021-11test1',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    # backup_dir=base_month,
 ))
