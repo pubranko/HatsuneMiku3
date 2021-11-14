@@ -3,7 +3,6 @@ import sys
 import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
-from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context
@@ -29,11 +28,6 @@ with Flow(
         'backup_dir_from', required=True,)
     backup_dir_to = Parameter(
         'backup_dir_to', required=True,)
-    # time_stamp_from = DateTimeParameter(
-    #     'time_stamp_from', required=False,)
-    # time_stamp_to = DateTimeParameter(
-    #     'time_stamp_to', required=False,)
-
     task = MongoImportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
