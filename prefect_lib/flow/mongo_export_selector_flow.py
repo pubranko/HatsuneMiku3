@@ -3,7 +3,6 @@ import sys
 import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
-from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context
@@ -28,8 +27,8 @@ with Flow(
         default=[
             'asynchronous_report', 'controller', 'crawler_logs', 'crawler_response', 'news_clip_master'
         ])
-    base_month = Parameter('base_month', required=True,)
-    backup_dir = Parameter('backup_dir', required=True,)
+    base_month = Parameter('base_month', required=False,)
+    backup_dir = Parameter('backup_dir', required=False,)
     task = MongoExportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
@@ -45,7 +44,7 @@ flow.run(parameters=dict(
         'asynchronous_report',
         'controller',
     ],
-    base_month='2021-11',  # エクスポートを行うデータの基準年月
-    backup_dir='2021-11test1',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    #base_month='2021-11',  # エクスポートを行うデータの基準年月
+    #backup_dir='2021-11test1',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
     # backup_dir=base_month,
 ))

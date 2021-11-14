@@ -3,6 +3,7 @@ import sys
 import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
+from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context
@@ -27,19 +28,32 @@ with Flow(
         default=[
             'asynchronous_report', 'crawler_logs', 'crawler_response',
         ])
-    base_month = Parameter('base_month', required=False,)
+    number_of_months_elapsed = Parameter(
+        'number_of_months_elapsed', required=True, default=3)
+
+    time_stamp_from = DateTimeParameter(
+        'time_stamp_from', required=False,)
+    time_stamp_to = DateTimeParameter(
+        'time_stamp_to', required=False,)
+
+
     task = MonthlyDeleteTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(collections_name=collections_name, base_month=base_month)
+    result = task(collections_name=collections_name, number_of_months_elapsed=number_of_months_elapsed)
 
 flow.run(parameters=dict(
     collections_name=[
         'crawler_response',
-        'crawler_logs',
-        'asynchronous_report',
-        'scraped_from_response',
-        'news_clip_master',
-        'controller',
+        # 'crawler_logs',
+        # 'asynchronous_report',
+
+        # 'scraped_from_response',
+        # 'news_clip_master',
+        # 'controller',
     ],
-    #base_month='2021-11',  # エクスポートを行うデータの基準年月
+    number_of_months_elapsed=0,
+    backup_files_folder='backup_files',
+    time_stamp_from=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
+    #time_stamp_to=datetime(2021, 11, 12, 18, 1, 42).astimezone(TIMEZONE),
+
 ))

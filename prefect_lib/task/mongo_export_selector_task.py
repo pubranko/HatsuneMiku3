@@ -3,7 +3,7 @@ import sys
 import pickle
 from typing import Any, Union
 from logging import Logger
-from datetime import datetime
+from datetime import datetime,date
 from dateutil.relativedelta import relativedelta
 from pymongo import ASCENDING
 from pymongo.cursor import Cursor
@@ -26,7 +26,7 @@ class MongoExportSelectorTask(ExtensionsTask):
     '''
 
     def run(self, **kwargs):
-        '''ここがprefectで起動するメイン処理'''
+        ''''''
 
         def export_non_filter(
             collection_name: str,
@@ -49,7 +49,6 @@ class MongoExportSelectorTask(ExtensionsTask):
             for skip in skip_list:
                 records: Cursor = collection.find().skip(skip).limit(limit)
                 record_list: list = [record for record in records]
-
                 with open(file_path, 'ab') as file:
                     file.write(pickle.dumps(record_list))
 
@@ -99,7 +98,6 @@ class MongoExportSelectorTask(ExtensionsTask):
                     sort=sort_parameter,
                 ).skip(skip).limit(limit)
                 record_list: list = [record for record in records]
-
                 with open(file_path, 'ab') as file:
                     file.write(pickle.dumps(record_list))
 
@@ -108,6 +106,14 @@ class MongoExportSelectorTask(ExtensionsTask):
         logger.info(f'=== MongoExportSelector run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']
+        # base_monthとbackup_dirの指定がなかった場合は自動補正
+        previous_month = date.today() - relativedelta(months=1)
+        _ = previous_month.strftime('%Y-%m')
+        if not kwargs['base_month']:
+            kwargs['base_month'] = _
+        if not kwargs['backup_dir']:
+            kwargs['backup_dir'] = _
+
         # エクスポート基準年月の月初、月末を求める。
         _ = str(kwargs['base_month']).split('-')
         start_time_from: datetime = datetime(

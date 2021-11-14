@@ -13,12 +13,7 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.task.extentions_task import ExtensionsTask
-from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel
-from models.news_clip_master_model import NewsClipMasterModel
-from models.crawler_logs_model import CrawlerLogsModel
-from models.controller_model import ControllerModel
-from models.asynchronous_report_model import AsynchronousReportModel
 
 
 class DailyClearTask(ExtensionsTask):

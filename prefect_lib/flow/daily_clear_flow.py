@@ -2,8 +2,7 @@ import os
 import sys
 import logging
 from datetime import datetime
-from prefect import Flow, task, Parameter
-from prefect.core.parameter import DateTimeParameter
+from prefect import Flow, task
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context
