@@ -29,27 +29,39 @@ with Flow(
         ])
     base_month = Parameter('base_month', required=False,)
     backup_dir = Parameter('backup_dir', required=False,)
+
+    export_period_from = Parameter('export_period_from', required=False,)
+    export_period_to = Parameter('export_period_to', required=False,)
+
+
     crawler_response__registered = Parameter(
         'crawler_response__registered', required=False,)
     task = MongoExportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
-                  base_month=base_month, backup_dir=backup_dir,
+                  base_month=base_month,
+                  backup_dir=backup_dir,
+                  export_period_from=export_period_from,
+                  export_period_to=export_period_to,
                   crawler_response__registered=crawler_response__registered,)
 
 flow.run(parameters=dict(
     # collections=['asynchronous_report','controller','crawler_logs','crawler_response','news_clip_master','scraped_from_response'],
     collections_name=[
         'crawler_response',
-        # 'scraped_from_response',  # 通常運用では不要なバックアップとなるがテスト用に実装している。
+        'scraped_from_response',  # 通常運用では不要なバックアップとなるがテスト用に実装している。
         'news_clip_master',
         'crawler_logs',
         'asynchronous_report',
         'controller',
     ],
     base_month='2021-11',  # エクスポートを行うデータの基準年月
-    backup_dir='2021-11test2',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    backup_dir='2021-11test3',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
     # backup_dir=base_month,
+
+    export_period_from='2021-11',  # 月次エクスポートを行うデータの基準年月
+    export_period_to='2021-11',  # 月次エクスポートを行うデータの基準年月
+
     crawler_response__registered=True,   # crawler_responseの場合、登録済みになったレコードのみエクスポートする場合True
     #crawler_response__registered=False,  # crawler_responseの場合、登録済み以外のレコードも含めてエクスポートする場合False
 ))
