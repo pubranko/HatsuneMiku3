@@ -60,22 +60,6 @@ class MongoExportSelectorTask(ExtensionsTask):
                 with open(file_path, 'ab') as file:
                     file.write(pickle.dumps(record_list))
 
-        def filter_setting(start_time_from: datetime, start_time_to: datetime, conditions_field: str, conditions: list) -> Any:
-            '''抽出期間の指定がある場合、フィルターへ設定する。'''
-            if start_time_from:
-                conditions.append(
-                    {conditions_field: {'$gte': start_time_from}})
-            if start_time_to:
-                conditions.append(
-                    {conditions_field: {'$lte': start_time_to}})
-
-            if conditions:
-                filter: Any = {'$and': conditions}
-            else:
-                filter = None
-
-            return filter
-
         #####################################################
         logger: Logger = self.logger
         logger.info(f'=== MongoExportSelector run kwargs : {str(kwargs)}')
@@ -113,54 +97,54 @@ class MongoExportSelectorTask(ExtensionsTask):
                 dir_path,
                 f"{self.start_time.strftime('%Y%m%d_%H%M%S')}-{collection_name}")
 
-            conditions_field: str = ''
             sort_parameter: list = []
             collection = None
-            filter = None
             conditions: list = []
 
             if collection_name == 'crawler_response':
-                conditions_field = 'crawling_start_time'
                 collection = CrawlerResponseModel(self.mongo)
                 sort_parameter = [('response_time', ASCENDING)]
                 if kwargs['crawler_response__registered']:
                     conditions.append(
+                        {'crawling_start_time': {'$gte': start_time_from}})
+                    conditions.append(
+                        {'crawling_start_time': {'$lte': start_time_to}})
+                    conditions.append(
                         {'news_clip_master_register': '登録完了'})  # crawler_responseの場合、登録完了のレコードのみ保存する。
-                filter = filter_setting(
-                    start_time_from, start_time_to, conditions_field, conditions)
 
             elif collection_name == 'scraped_from_response':
-                conditions_field = 'scrapying_start_time'
                 collection = ScrapedFromResponseModel(self.mongo)
                 sort_parameter = []
-                filter = filter_setting(
-                    start_time_from, start_time_to, conditions_field, [])
+                conditions.append(
+                    {'scrapying_start_time': {'$gte': start_time_from}})
+                conditions.append(
+                    {'scrapying_start_time': {'$lte': start_time_to}})
 
             elif collection_name == 'news_clip_master':
-                conditions_field = 'scraped_save_start_time'
                 collection = NewsClipMasterModel(self.mongo)
                 sort_parameter = [('response_time', ASCENDING)]
-                filter = filter_setting(
-                    start_time_from, start_time_to, conditions_field, [])
+                conditions.append(
+                    {'scraped_save_start_time': {'$gte': start_time_from}})
+                conditions.append(
+                    {'scraped_save_start_time': {'$lte': start_time_to}})
 
             elif collection_name == 'crawler_logs':
-                conditions_field = 'start_time'
                 collection = CrawlerLogsModel(self.mongo)
-                filter = filter_setting(
-                    start_time_from, start_time_to, conditions_field, [])
+                conditions.append({'start_time': {'$gte': start_time_from}})
+                conditions.append({'start_time': {'$lte': start_time_to}})
 
             elif collection_name == 'asynchronous_report':
-                conditions_field = 'start_time'
                 collection = AsynchronousReportModel(self.mongo)
-                filter = filter_setting(
-                    start_time_from, start_time_to, conditions_field, [])
+                conditions.append({'start_time': {'$gte': start_time_from}})
+                conditions.append({'start_time': {'$lte': start_time_to}})
 
             elif collection_name == 'controller':
                 collection = ControllerModel(self.mongo)
 
             if collection:
+                filter: Any = {'$and': conditions} if conditions else None
                 export_exec(collection_name, filter,
-                       sort_parameter, collection, file_path)
+                            sort_parameter, collection, file_path)
 
             # 誤更新防止のため、ファイルの権限を参照に限定
             os.chmod(file_path, 0o444)

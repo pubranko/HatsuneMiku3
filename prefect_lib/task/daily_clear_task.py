@@ -29,7 +29,6 @@ class DailyClearTask(ExtensionsTask):
         ###################################################################################
         logger: Logger = self.logger
         collections_name: list = ['scraped_from_response']
-        collection = ScrapedFromResponseModel(self.mongo)
 
         for collection_name in collections_name:
             collection = ScrapedFromResponseModel(self.mongo)

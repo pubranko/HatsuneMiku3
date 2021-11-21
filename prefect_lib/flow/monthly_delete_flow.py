@@ -27,10 +27,16 @@ with Flow(
         default=[
             'asynchronous_report', 'crawler_logs', 'crawler_response',
         ])
-    base_month = Parameter('base_month', required=False,)
+    #base_month = Parameter('base_month', required=False,)
+    delete_period_from = Parameter('delete_period_from', required=False,)
+    delete_period_to = Parameter('delete_period_to', required=False,)
     task = MonthlyDeleteTask(
         log_file_path=log_file_path, start_time=start_time)
-    result = task(collections_name=collections_name, base_month=base_month)
+    result = task(collections_name=collections_name,
+        #base_month=base_month,
+        delete_period_from=delete_period_from,
+        delete_period_to=delete_period_to,
+        )
 
 flow.run(parameters=dict(
     collections_name=[
@@ -41,5 +47,7 @@ flow.run(parameters=dict(
         'news_clip_master',
         'controller',
     ],
-    #base_month='2021-11',  # エクスポートを行うデータの基準年月
+    #base_month='2021-11',  # 月次削除を行うデータの基準年月
+    delete_period_from='2021-11',  # 月次削除を行うデータの基準年月
+    delete_period_to='2021-11',  # 月次削除を行うデータの基準年月
 ))

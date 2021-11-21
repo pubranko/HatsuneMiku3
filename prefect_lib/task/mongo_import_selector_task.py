@@ -45,16 +45,16 @@ class MongoImportSelectorTask(ExtensionsTask):
         # インポート元ファイルの一覧を作成
         import_files_info: list = []
 
-        # 頭がyyyy-mmで始まるディレクトリ内のファイル情報を取得する。
+        # 頭がyyyy-mmで始まるディレクトリ内のファイル情報を取得し、
+        # そのファイルのディレクトリ、基準年月、コレクション名、ファイルパスをリストに保存する。
+        # 参考）~/backup_files/2021-10/20211114_153856-asynchronous_report
         file_list: list = glob.glob(os.path.join(BACKUP_BASE_DIR, '**', '*'))
         for file in file_list:
             path_info = file.split(os.sep)
             if re.match(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[1]):
-
                 _ = str(path_info[1]).split('-')
                 base_monthly: date = date(
                     int(_[0]), int(_[1][0:2]), 1) + relativedelta(day=99)
-
                 _ = path_info[2].split('-')
                 collection_name: str = _[1]
 
@@ -93,10 +93,11 @@ class MongoImportSelectorTask(ExtensionsTask):
         logger.info(
             f'=== MongoImportSelectorTask run : インポート対象ファイル : {str(select_file_list)}')
 
+        # インポート対象ファイルがある場合、ファイルからオブジェクトを復元しインポートを実施する。
+        # その際、空ファイルを除き、"_id"を除去してインポートする。
         if len(select_files_info) > 0:
-            # ファイルからオブジェクトを復元しリストに保存。ただし"_id"は削除する。
-            # ただし空ファイルを除く。
             for select_file in select_files_info:
+                #ファイルからオブジェクトへ復元
                 collection_records: list = []
                 if os.path.getsize(select_file['file']):
                     with open(select_file['file'], 'rb') as file:
@@ -105,6 +106,7 @@ class MongoImportSelectorTask(ExtensionsTask):
                             del document['_id']
                             collection_records.append(document)
 
+                # 空ファイル以外はコレクションごとにインポートを実施
                 if len(collection_records):
                     collection = None
                     if select_file['collection_name'] == 'crawler_response':
@@ -123,6 +125,8 @@ class MongoImportSelectorTask(ExtensionsTask):
                     if collection:
                         # インポート
                         collection.insert(collection_records)
+                        logger.info(
+                            f'=== MongoImportSelectorTask run : コレクション({select_file["collection_name"]})  : {len(collection_records)}件')
 
                     # 処理の終わったファイルオブジェクトを削除
                     del collection_records

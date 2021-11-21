@@ -26,33 +26,14 @@ class MonthlyDeleteTask(ExtensionsTask):
     '''
 
     def run(self, **kwargs):
-        def delete_all(
+        def delete_exec(
             collection_name: str,
-            collection: Union[ControllerModel],
-        ):
-            '''コレクション内のデータを全て削除する。'''
-            delete_count = collection.delete_many({})
-            logger.info(
-                f'=== {collection_name} 削除対象件数 : {str(delete_count)}')
-
-        def delete_time_filter(
-            collection_name: str,
-            delete_time_from: datetime,
-            delete_time_to: datetime,
-            conditions_field: str,
-            collection: Union[CrawlerResponseModel, ScrapedFromResponseModel,
+            filter: Any,
+            collection: Union[CrawlerResponseModel, ScrapedFromResponseModel, ControllerModel,
                               NewsClipMasterModel, CrawlerLogsModel, AsynchronousReportModel],
         ):
-            '''指定された期間のデータを削除する。'''
-            conditions: list = []
-            conditions.append(
-                {conditions_field: {'$gte': delete_time_from}})
-            conditions.append(
-                {conditions_field: {'$lte': delete_time_to}})
-
-            filter: Any = {'$and': conditions}
-            logger.info(f'=== {collection_name} へのfilter: {str(filter)}')
-
+            logger.info(
+                f'=== {collection_name} 削除条件 : {filter}')
             delete_count = collection.delete_many(filter=filter)
             logger.info(
                 f'=== {collection_name} 削除対象件数 : {str(delete_count)}')
@@ -63,53 +44,90 @@ class MonthlyDeleteTask(ExtensionsTask):
 
         collections_name: list = kwargs['collections_name']
         # base_monthの指定がなかった場合は自動補正
-        if kwargs['base_month']:
-            base_yyyy: int = int(str(kwargs['base_month'])[0:4])
-            base_mm: int = int(str(kwargs['base_month'])[5:7])
-        else:
-            previous_month = date.today() - relativedelta(months=3) # ３ヶ月前
-            base_yyyy: int = int(previous_month.strftime('%Y'))
-            base_mm: int = int(previous_month.strftime('%m'))
+        # if kwargs['base_month']:
+        #     base_yyyy: int = int(str(kwargs['base_month'])[0:4])
+        #     base_mm: int = int(str(kwargs['base_month'])[5:7])
+        # else:
+        #     previous_month = date.today() - relativedelta(months=3)  # ３ヶ月前
+        #     base_yyyy: int = int(previous_month.strftime('%Y'))
+        #     base_mm: int = int(previous_month.strftime('%m'))
 
-        delete_time_from: datetime = datetime(
-            base_yyyy, base_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
-        delete_time_to: datetime = datetime(
-            base_yyyy, base_mm, 1, 23, 59, 59, 999999).astimezone(TIMEZONE) + relativedelta(day=99)
+        # delete_time_from: datetime = datetime(
+        #     base_yyyy, base_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
+        # delete_time_to: datetime = datetime(
+        #     base_yyyy, base_mm, 1, 23, 59, 59, 999999).astimezone(TIMEZONE) + relativedelta(day=99)
 
+        #
+        delete_time_from: datetime = datetime.min
+        delete_time_to: datetime = datetime.max
+        if kwargs['delete_period_from']:
+            from_yyyy: int = int(str(kwargs['delete_period_from'])[0:4])
+            from_mm: int = int(str(kwargs['delete_period_from'])[5:7])
+            delete_time_from: datetime = datetime(
+                from_yyyy, from_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
+        if kwargs['delete_period_to']:
+            to_yyyy: int = int(str(kwargs['delete_period_to'])[0:4])
+            to_mm: int = int(str(kwargs['delete_period_to'])[5:7])
+            delete_time_to: datetime = datetime(
+                to_yyyy, to_mm, 1, 23, 59, 59, 999999).astimezone(TIMEZONE) + relativedelta(day=99)
+
+        # 削除期間のfrom/toの両方指定がない（本番運用）
+        # 現在の３ヶ月前の１ヶ月分を削除期間とする。
+        if kwargs['delete_period_from'] == None and kwargs['delete_period_to'] == None:
+            previous_month = date.today() - relativedelta(months=3)  # ３ヶ月前
+            from_yyyy = int(previous_month.strftime('%Y'))
+            from_mm = int(previous_month.strftime('%m'))
+            to_yyyy = int(previous_month.strftime('%Y'))
+            to_mm = int(previous_month.strftime('%m'))
+            delete_time_from: datetime = datetime(
+                from_yyyy, from_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
+            delete_time_to: datetime = datetime(
+                to_yyyy, to_mm, 1, 23, 59, 59, 999999).astimezone(TIMEZONE) + relativedelta(day=99)
+
+        collection = None
         for collection_name in collections_name:
+            conditions: list = []
             if collection_name == 'crawler_response':
-                conditions_field = 'crawling_start_time'
                 collection = CrawlerResponseModel(self.mongo)
-                delete_time_filter(
-                    collection_name, delete_time_from, delete_time_to, conditions_field, collection)
+                conditions.append(
+                    {'crawling_start_time': {'$gte': delete_time_from}})
+                conditions.append(
+                    {'crawling_start_time': {'$lte': delete_time_to}})
 
             elif collection_name == 'scraped_from_response':
-                conditions_field = 'scrapying_start_time'
                 collection = ScrapedFromResponseModel(self.mongo)
-                delete_time_filter(
-                    collection_name, delete_time_from, delete_time_to, conditions_field, collection)
+                conditions.append(
+                    {'scrapying_start_time': {'$gte': delete_time_from}})
+                conditions.append(
+                    {'scrapying_start_time': {'$lte': delete_time_to}})
 
             elif collection_name == 'news_clip_master':
-                conditions_field = 'scraped_save_start_time'
                 collection = NewsClipMasterModel(self.mongo)
-                delete_time_filter(
-                    collection_name, delete_time_from, delete_time_to, conditions_field, collection)
+                conditions.append(
+                    {'scraped_save_start_time': {'$gte': delete_time_from}})
+                conditions.append(
+                    {'scraped_save_start_time': {'$lte': delete_time_to}})
 
             elif collection_name == 'crawler_logs':
-                conditions_field = 'start_time'
                 collection = CrawlerLogsModel(self.mongo)
-                delete_time_filter(
-                    collection_name, delete_time_from, delete_time_to, conditions_field, collection)
+                conditions.append(
+                    {'start_time': {'$gte': delete_time_from}})
+                conditions.append(
+                    {'start_time': {'$lte': delete_time_to}})
 
             elif collection_name == 'asynchronous_report':
-                conditions_field = 'start_time'
                 collection = AsynchronousReportModel(self.mongo)
-                delete_time_filter(
-                    collection_name, delete_time_from, delete_time_to, conditions_field, collection)
+                conditions.append(
+                    {'start_time': {'$gte': delete_time_from}})
+                conditions.append(
+                    {'start_time': {'$lte': delete_time_to}})
 
             elif collection_name == 'controller':
                 collection = ControllerModel(self.mongo)
-                delete_all(collection_name, collection)
+
+            if collection:
+                filter: Any = {'$and': conditions} if conditions else {}
+                delete_exec(collection_name, filter, collection)
 
         # 終了処理
         self.closed()
