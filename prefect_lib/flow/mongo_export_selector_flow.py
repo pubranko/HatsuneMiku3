@@ -27,8 +27,9 @@ with Flow(
         default=[
             'asynchronous_report', 'controller', 'crawler_logs', 'crawler_response', 'news_clip_master'
         ])
-    base_month = Parameter('base_month', required=False,)
-    backup_dir = Parameter('backup_dir', required=False,)
+    #base_month = Parameter('base_month', required=False,)
+    #backup_dir = Parameter('backup_dir', required=False,)
+    export_dir_extended_name = Parameter('export_dir_extended_name', required=False,)
 
     export_period_from = Parameter('export_period_from', required=False,)
     export_period_to = Parameter('export_period_to', required=False,)
@@ -39,11 +40,13 @@ with Flow(
     task = MongoExportSelectorTask(
         log_file_path=log_file_path, start_time=start_time)
     result = task(collections_name=collections_name,
-                  base_month=base_month,
-                  backup_dir=backup_dir,
+                  #base_month=base_month,
+                  #backup_dir=backup_dir,
                   export_period_from=export_period_from,
                   export_period_to=export_period_to,
-                  crawler_response__registered=crawler_response__registered,)
+                  export_dir_extended_name=export_dir_extended_name,
+                  crawler_response__registered=crawler_response__registered,
+                  )
 
 flow.run(parameters=dict(
     # collections=['asynchronous_report','controller','crawler_logs','crawler_response','news_clip_master','scraped_from_response'],
@@ -55,11 +58,11 @@ flow.run(parameters=dict(
         'asynchronous_report',
         'controller',
     ],
-    base_month='2021-11',  # エクスポートを行うデータの基準年月
-    backup_dir='2021-11test3',   # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    #base_month='2021-11',  # エクスポートを行うデータの基準年月
+    export_dir_extended_name='test3',   # export先のフォルダyyyy-mmの末尾に拡張した名前を付与する(testや臨時でエクスポートしたい時などに使う)
     # backup_dir=base_month,
 
-    export_period_from='2021-11',  # 月次エクスポートを行うデータの基準年月
+    export_period_from='2021-09',  # 月次エクスポートを行うデータの基準年月
     export_period_to='2021-11',  # 月次エクスポートを行うデータの基準年月
 
     crawler_response__registered=True,   # crawler_responseの場合、登録済みになったレコードのみエクスポートする場合True
