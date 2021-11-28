@@ -3,9 +3,12 @@ import sys
 import logging
 from logging import Logger, StreamHandler
 from datetime import datetime
+from typing import Any
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from scrapy.utils.log import configure_logging
+from twisted.internet import reactor
+from scrapy.crawler import CrawlerRunner
 path = os.getcwd()
 sys.path.append(path)
 from models.mongo_model import MongoModel
@@ -125,3 +128,27 @@ def custom_crawl_run(kwargs: dict):
                       crawl_point_non_update=spider_run['crawl_point_non_update'],
                       )
     process.start()
+
+@scrapy_deco
+def custom_runner_run(kwargs: dict):
+    '''
+    '''
+    runner = CrawlerRunner(settings=get_project_settings())
+    configure_logging(install_root_handler=True)
+    spider_run_list = kwargs['spider_run_list']
+
+    for spider_run in spider_run_list:
+        print('=== ',spider_run['class_instans'].name)
+        run:Any = runner.crawl(spider_run['class_instans'],
+                      crawling_start_time=spider_run['start_time'],
+                      lastmod_period_minutes=spider_run['lastmod_period_minutes'],
+                      pages=spider_run['pages'],
+                      continued=spider_run['continued'],
+                      direct_crawl_urls=spider_run['direct_crawl_urls'],
+                      debug=spider_run['debug'],
+                      crawl_point_non_update=spider_run['crawl_point_non_update'],
+                      )
+    run = runner.join()
+    reac:Any = reactor
+    run.addBoth(lambda _: reac.stop())
+    reac.run()

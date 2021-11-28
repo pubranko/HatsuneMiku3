@@ -13,7 +13,7 @@ class LastmodContinuedSkipCheck(object):
     '''
     crawl_point_save: dict = {}
     latest_lastmod: Any = None
-    latest_urls:Any = None
+    latest_urls: Any = None
     kwargs_save: dict = {}
 
     def __init__(self, crawl_point: dict, kwargs: dict) -> None:
@@ -21,7 +21,7 @@ class LastmodContinuedSkipCheck(object):
         '''
         self.kwargs_save = kwargs
 
-        if 'continued' in kwargs:
+        if 'continued' in kwargs and self.kwargs_save['continued'] == 'Yes':
             # lastmodがあるサイト用
             if 'latest_lastmod' in crawl_point:
                 self.crawl_point_save = crawl_point
@@ -32,12 +32,12 @@ class LastmodContinuedSkipCheck(object):
         '''
         '''
         crwal_flg: bool = False
-        if 'continued' in self.kwargs_save:
+        if 'continued' in self.kwargs_save and self.kwargs_save['continued'] == 'Yes':
             if lastmod < self.latest_lastmod:
                 crwal_flg = True
         return crwal_flg
 
-    def max_lastmod_dicision(self,in_the_page_max_lastmod:datetime) -> datetime:
+    def max_lastmod_dicision(self, in_the_page_max_lastmod: datetime) -> datetime:
         '''
         サイトマップ内の最大更新時間を引数として受け取る。
         受け取った引数とドメイン内の最大更新時間の記録と比較し、

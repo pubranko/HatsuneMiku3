@@ -18,12 +18,12 @@ class LastmodPeriodMinutesSkipCheck(object):
                 self.lastmod_period_minutes_from = start_time - \
                     timedelta(minutes=int(lastmod_period_minutes_list[0]))
                 spider.logger.info(
-                    '=== lastmod_period_minutesのfromより計算した時間: %s', self.lastmod_period_minutes_from.isoformat())
+                    f'=== lastmod_period_minutesのfromより計算した時間: {self.lastmod_period_minutes_from.isoformat()}')
             if not lastmod_period_minutes_list[1] == '':
                 self.lastmod_period_minutes_to = start_time - \
                     timedelta(minutes=int(lastmod_period_minutes_list[1]))
                 spider.logger.info(
-                    '=== lastmod_period_minutesのtoより計算した時間: %s', self.lastmod_period_minutes_to.isoformat())
+                    f'=== lastmod_period_minutesのtoより計算した時間: {self.lastmod_period_minutes_to.isoformat()}')
 
     def skip_check(self, lastmod: datetime) -> bool:
         '''lastmodの期間指定があり、期間外の場合はFalseを返す'''

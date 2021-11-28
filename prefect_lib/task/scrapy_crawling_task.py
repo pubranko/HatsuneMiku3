@@ -27,6 +27,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
         error_spider_names: list = []
         spider_run_list: list = []
+        spider_run_threads: list = []
 
         spiders_info: list = directory_search()
         spiders_info_name_list = [x['spider_name'] for x in spiders_info]
@@ -37,11 +38,12 @@ class ScrapyCrawlingTask(ExtensionsTask):
             # spidersディレクトリより取得した一覧に存在するかチェック
             if spider_name in spiders_info_name_list:
                 # クラスインスタンスリストへ追加
-                i = spiders_info_name_list.index(spider_name)
+                idx = spiders_info_name_list.index(spider_name)
                 spider_run = {'spider_name': spider_name,
-                              'class_instans': spiders_info[i]['class_instans'],
+                              'class_instans': spiders_info[idx]['class_instans'],
                               'start_time': self.start_time,
                               }
+                # spider引数を設定
                 if 'lastmod_period_minutes' in kwargs['spider_kwargs']:
                     spider_run['lastmod_period_minutes'] = kwargs['spider_kwargs']['lastmod_period_minutes']
                 else:
@@ -80,10 +82,9 @@ class ScrapyCrawlingTask(ExtensionsTask):
             kwargs['spider_run_list'] = spider_run_list
             thread = threading.Thread(
                 target=scrapy_crawling_run.custom_crawl_run(kwargs))
-
-        # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
-        thread.start()
-        thread.join()
+            # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
+            thread.start()
+            thread.join()
 
         if kwargs['following_processing_execution'] == 'Yes':
             # 必要な引数設定

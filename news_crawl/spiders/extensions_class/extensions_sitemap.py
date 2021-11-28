@@ -73,7 +73,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
     # パラメータによる抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
-    lastmod_pefiod: LastmodPeriodMinutesSkipCheck
+    lastmod_period: LastmodPeriodMinutesSkipCheck
     # seleniumモード
     selenium_mode: bool = False
     #sitemap_rules = [(r'.*', 'selenium_parse')]
@@ -195,14 +195,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 self.settings['TIMEZONE'])
 
             if entries.type == 'sitemapindex':
-                if self.lastmod_pefiod.skip_check(date_lastmod):
+                if self.lastmod_period.skip_check(date_lastmod):
                     crwal_flg = False
                 if self.crawling_continued.skip_check(date_lastmod):
                     crwal_flg = False
             else:
                 if url_pattern_skip_check(entry['loc'], self.kwargs_save):
                     crwal_flg = False
-                if self.lastmod_pefiod.skip_check(date_lastmod):
+                if self.lastmod_period.skip_check(date_lastmod):
                     crwal_flg = False
                 if self.crawling_continued.skip_check(date_lastmod):
                     crwal_flg = False
@@ -222,8 +222,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         # サイトマップインデックスをクロールする場合、その最大更新時間をドメイン単位の最大更新時間とする。
         # ただし、クロールするlastmodの範囲指定でTOが指定されている場合、その時間を最大更新時間とする。
         if not self.domain_lastmod:
-            if type(self.lastmod_pefiod.lastmod_period_minutes_to) == datetime:
-                self.domain_lastmod = self.lastmod_pefiod.lastmod_period_minutes_to
+            if type(self.lastmod_period.lastmod_period_minutes_to) == datetime:
+                self.domain_lastmod = self.lastmod_period.lastmod_period_minutes_to
             else:
                 self.domain_lastmod = self.crawling_continued.max_lastmod_dicision(
                     parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))

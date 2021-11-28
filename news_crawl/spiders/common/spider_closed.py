@@ -27,14 +27,14 @@ def spider_closed(
     crawling_start_time: datetime = spider._crawling_start_time
     kwargs: dict = spider.kwargs_save
 
-    if 'crawl_point_non_update' in kwargs:
+    if 'crawl_point_non_update' in kwargs and kwargs['crawl_point_non_update'] == 'Yes':
         logger.info(
             '=== closed : 次回クロールポイント情報の更新Skip')
     else:
         controller = ControllerModel(mongo)
         controller.crawl_point_update(domain_name, name, crawl_point)
         logger.info(
-            '=== closed : controllerに次回クロールポイント情報を保存 \n %s', crawl_point)
+            f'=== closed : controllerに次回クロールポイント情報を保存 \n {crawl_point}')
 
     resource_check()
 
@@ -72,4 +72,4 @@ def spider_closed(
     })
 
     mongo.close()
-    logger.info('=== Spider closed: %s', name)
+    logger.info(f'=== Spider closed: {name}')

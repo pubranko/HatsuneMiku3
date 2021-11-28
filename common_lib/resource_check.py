@@ -28,11 +28,9 @@ def resource_check() -> dict:
     logger.info('=== ＣＰＵ使用率 : ' + str(psutil.cpu_percent()) + '%')
     logger.info('=== メモリー使用状況')
     logger.info('=== used       / total      / available  / percent')
-    logger.info('=== %s / %s / %s / %s' % (str(memory.used),
-                 str(memory.total), str(memory.available), str(memory.percent)))
+    logger.info(f'=== {str(memory.used)} / {str(memory.total)} / {str(memory.available)} / {str(memory.percent)}')
     logger.info('=== スワップメモリー使用状況')
     logger.info('=== used       / total      / percent')
-    logger.info('=== %s   / %s / %s' % (str(swap_memory.used),
-                 str(swap_memory.total), str(swap_memory.percent)))
+    logger.info(f'=== {str(swap_memory.used)}   / {str(swap_memory.total)} / {str(swap_memory.percent)}')
 
     return resource

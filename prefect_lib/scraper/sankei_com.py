@@ -40,7 +40,6 @@ def exec(record: dict, kwargs: dict) -> dict:
     #body > div#fusion-app > div.grid div.grid > section > article.article-wrapper > div.article-body > p.article-text
     article_selecter: Any = soup.select('body  article.article-wrapper > div.article-body > p.article-text')
     if not article_selecter:
-        print('＠＠＠ ＠＠＠ 産経　article　type2')
         article_selecter: Any = soup.select(
             '.article-body > .article-text')
     if article_selecter:

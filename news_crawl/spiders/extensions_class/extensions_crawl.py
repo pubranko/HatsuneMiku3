@@ -48,7 +48,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
 
     # パラメータによる抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
-    lastmod_pefiod: LastmodPeriodMinutesSkipCheck
+    lastmod_period: LastmodPeriodMinutesSkipCheck
 
 
     def __init__(self, *args, **kwargs):
@@ -72,7 +72,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         pagination: ResultSet = self.pagination_check(response)
         if len(pagination) > 0:
             self.logger.info(
-                '=== parse_news 次のページあり → リクエストに追加 : %s', pagination[0].get('href'))
+                f"=== parse_news 次のページあり → リクエストに追加 : {pagination[0].get('href')}")
             yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news)
 
         _info = self.name + ':' + str(self._spider_version) + ' / ' \

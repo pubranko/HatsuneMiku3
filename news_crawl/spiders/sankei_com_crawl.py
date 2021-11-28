@@ -91,7 +91,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
             self.logger.info(
-                '=== parse_start_response : lastmod_recent_timeより計算した時間 %s', until_this_time.isoformat())
+                f'=== parse_start_response : lastmod_recent_timeより計算した時間 {until_this_time.isoformat()}')
 
         last_time: datetime = datetime.now()  # 型ヒントエラー回避用の初期値
         if 'continued' in self.kwargs_save:
@@ -106,7 +106,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         next_page_flg = False
         debug_urls_list = []
         self.logger.info(
-            '=== parse_start_response 現在解析中のpage=%s と URL = %s', page, driver.current_url)
+            f'=== parse_start_response 現在解析中のpage={page} と URL = {driver.current_url}')
         while page <= end_page:  # 条件はあとで考える
 
             # Javascript実行が終了するまで最大30秒間待つように指定
@@ -115,7 +115,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             elements = driver.find_elements_by_css_selector(
                 '#fusion-app > div > div > section > .story-card-feed .storycard .story-card-flex')
             self.logger.info(
-                '=== parse_start_response ページ内リンク件数 = %s', len(elements))
+                f'=== parse_start_response ページ内リンク件数 = {len(elements)}')
 
             urls_list = []
             element: WebElement
@@ -158,12 +158,12 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
                         {'loc': url, 'lastmod': lastmod_parse.isoformat()})
 
             self.logger.info(
-                '=== parse_start_response クロール対象リンク件数 = %s', len(urls_list))
+                f'=== parse_start_response クロール対象リンク件数 = {len(urls_list)}')
 
             # 次のページを読み込む必要がなくなった場合
             if next_page_flg:
                 self.logger.info(
-                    '=== parse_start_response 指定範囲のリンク取得完了 (%s)', driver.current_url)
+                    f'=== parse_start_response 指定範囲のリンク取得完了 ({driver.current_url})')
                 break
 
             # 次のページを読み込む

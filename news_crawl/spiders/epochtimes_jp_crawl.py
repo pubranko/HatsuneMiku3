@@ -72,7 +72,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         soup = bs4(response.text, 'html.parser')
 
         self.logger.info(
-            '=== parse_start_response 現在解析中のURL = %s', response.url)
+            f'=== parse_start_response 現在解析中のURL = {response.url}')
         # 現在の処理中のurlを３分割。（ヘッダー、ページ、フッター）
         pattern: Pattern = re.compile(
             r'https://www.epochtimes.jp/category/[0-9]{3}/')
@@ -101,7 +101,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         if not len(anchors) == 30:
             #self.layout_change_notice(response)
             self.logger.warning(
-                '=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( %s 件)', len(anchors))
+                f'=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( {len(anchors)} 件)')
 
         for anchor in anchors:
             full_path: str = 'https://www.epochtimes.jp/p' + anchor.get('href')
@@ -114,12 +114,12 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 # 前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
                 if len(last_time_urls) == 0:
                     self.logger.info(
-                        '=== parse_start_response 前回の続きまで再取得完了 (%s)', response.url)
+                        f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})')
                     end_flg = True
                     break
 
         self.logger.info(
-            '=== parse_start_response リンク件数 = %s', len(urls_list))
+            f'=== parse_start_response リンク件数 = {len(urls_list)}')
 
         start_request_debug_file_generate(
             self.name, response.url, urls_list, self.kwargs_save)
@@ -141,7 +141,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         if end_flg == False:
             url_next: str = url_header + str(now_page + 1) + url_footer
             self.logger.info(
-                '=== parse_start_response 次のページのURL = %s', url_next)
+                f'=== parse_start_response 次のページのURL = {url_next}')
 
             #yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response, errback=self.errback_handle)
             yield scrapy.Request(response.urljoin(url_next), callback=self.parse_start_response,)

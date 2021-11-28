@@ -55,7 +55,7 @@ class NewsCrawlSpiderMiddleware:
             yield r
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
+        spider.logger.info(f'Spider opened: {spider.name}')
 
 
 class NewsCrawlDownloaderMiddleware:
@@ -88,8 +88,8 @@ class NewsCrawlDownloaderMiddleware:
 
     def process_response(self, request: Request, response: Response, spider):
         # Called with the response returned from the downloader.
-        print('=== ミドルウェア：process_response url : ', response.url)
-        print(request.__dict__.keys())
+        # print('=== ミドルウェア：process_response url : ', response.url)
+        # print(request.__dict__.keys())
         #print(print(vars(response)))
 
         # Must either;
@@ -109,4 +109,4 @@ class NewsCrawlDownloaderMiddleware:
         pass
 
     def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
+        spider.logger.info(f'Spider opened: {spider.name}')
