@@ -13,6 +13,8 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
     _domain_name: str = 'sankei_com'        # 各種処理で使用するドメイン名の一元管理
     _spider_version: float = 1.0
 
+    sitemap_follow = ['https://feed.etf.sankei.com/global/sitemap']
+
     # seleniumモードON。callbackをselenium用parseに変更。
     # selenium_mode: bool = True
     # sitemap_rules = [(r'.*', 'selenium_parse')]

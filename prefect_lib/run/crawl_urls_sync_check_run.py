@@ -120,13 +120,11 @@ def check(kwargs: dict):
                 },
                 'async_list': response_async_list,
             })
-            counter = 'エラー(%s)/正常(%s)' % (len(response_async_list),
-                                          len(response_sync_list))
+            counter = f'エラー({len(response_async_list)})/正常({len(response_sync_list)})'
             logger.error(
-                '=== 同期チェック結果(crawler -> response) : NG(%s)' % counter)
+                f'=== 同期チェック結果(crawler -> response) : NG({counter})')
         else:
-            logger.info('=== 同期チェック(crawler -> response)結果 : OK(件数 : %s)' %
-                        len(response_sync_list))
+            logger.info(f'=== 同期チェック(crawler -> response)結果 : OK(件数 : {len(response_sync_list)})')
 
         return response_sync_list, response_async_list, response_async_domain_aggregate
 
@@ -188,12 +186,10 @@ def check(kwargs: dict):
                 },
                 'async_list': master_async_list,
             })
-            counter = 'エラー(%s)/正常(%s)' % (len(master_async_list),
-                                          len(master_sync_list))
-            logger.error('=== 同期チェック結果(response -> master) : NG(%s)' % counter)
+            counter = f'エラー({len(master_async_list)})/正常({len(master_sync_list)})'
+            logger.error(f'=== 同期チェック結果(response -> master) : NG({counter})')
         else:
-            logger.info('=== 同期チェック結果(response -> master) : OK(件数 : %s)' %
-                        len(master_sync_list))
+            logger.info(f'=== 同期チェック結果(response -> master) : OK(件数 : {len(master_sync_list)})')
         return master_sync_list, master_async_list, master_async_domain_aggregate
 
     def solr_news_clip_sync_check() -> Tuple[list, list, dict]:
@@ -253,12 +249,10 @@ def check(kwargs: dict):
                 },
                 'async_list': solr_async_list,
             })
-            counter = 'エラー(%s)/正常(%s)' % (len(solr_async_list),
-                                          len(solr_sync_list))
-            logger.error('=== 同期チェック結果(master -> solr) : NG(%s)' % counter)
+            counter = f'エラー({len(solr_async_list)})/正常({len(solr_sync_list)})'
+            logger.error(f'=== 同期チェック結果(master -> solr) : NG({counter})')
         else:
-            logger.info('=== 同期チェック結果(master -> solr) : OK(件数 : %s)' %
-                        len(solr_sync_list))
+            logger.info('=== 同期チェック結果(master -> solr) : OK(件数 : {len(solr_sync_list)})')
 
         return solr_sync_list, solr_async_list, solr_async_domain_aggregate
 

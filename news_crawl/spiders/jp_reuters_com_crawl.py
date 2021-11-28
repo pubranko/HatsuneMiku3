@@ -81,17 +81,17 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         取得したレスポンスよりDBへ書き込み
         '''
         self.logger.info(
-            '=== parse_start_response 現在解析中のURL = %s', response.url)
+            f'=== parse_start_response 現在解析中のURL = {response.url}')
 
         #ページ内の対象urlを抽出
         links: list = response.css(
             '.story-content a[href]::attr(href)').getall()
         self.logger.info(
-            '=== ページ内の記事件数 = %s', len(links))
+            f'=== ページ内の記事件数 = {len(links)}')
         # ページ内記事は通常10件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
         if not len(links) == 10:
             self.logger.warning(
-                '=== parse_start_response 1ページ内で取得できた件数が想定の10件と異なる。確認要。 ( %s 件)', len(links))
+                f'=== parse_start_response 1ページ内で取得できた件数が想定の10件と異なる。確認要。 ( {len(links)} 件)')
 
         for link in links:
             url: str = urllib.parse.unquote(response.urljoin(link))
@@ -104,7 +104,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
         if self.url_continued.crwal_flg == False:
             self.logger.info(
-                '=== parse_start_response 前回の続きまで再取得完了 (%s)', response.url)
+                f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})', )
             self.page = self.end_page + 1
 
         start_request_debug_file_generate(

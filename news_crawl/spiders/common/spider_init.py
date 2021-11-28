@@ -89,16 +89,16 @@ def spider_init(
     spider._crawling_start_time = crawling_start_time
 
     logger.info(
-        '=== __init__ : 開始時間(%s)' % (crawling_start_time.isoformat()))
+        f'=== __init__ : 開始時間({crawling_start_time.isoformat()})')
     logger.info(
-        '=== __init__ : 引数(%s)' % (kwargs))
+        f'=== __init__ : 引数({kwargs})')
     logger.info(
-        '=== __init__ : 今回向けクロールポイント情報 \n %s', spider._crawl_point)
+        f'=== __init__ : 今回向けクロールポイント情報 \n {spider._crawl_point}')
 
     start_request_debug_file_init(spider, spider.kwargs_save)
 
     # チェック用クラスの初期化＆スパイダーのクラス変数に保存
-    spider.lastmod_pefiod = LastmodPeriodMinutesSkipCheck(
+    spider.lastmod_period = LastmodPeriodMinutesSkipCheck(
         spider, spider._crawling_start_time, kwargs)
     spider.crawling_continued = LastmodContinuedSkipCheck(
         spider._crawl_point, kwargs)

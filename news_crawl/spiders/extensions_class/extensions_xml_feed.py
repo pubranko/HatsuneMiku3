@@ -84,7 +84,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             self.name, response.url, self._entries, self.kwargs_save)
 
         self.logger.info(
-            '=== parse_nodes : XMLの解析完了 : 件数 = %s ,url = %s ', self._xml_extract_count, response.url)
+            f'=== parse_nodes : XMLの解析完了 : 件数 = {self._xml_extract_count} ,url = {response.url}')
         # サイトマップごとの最大更新時間を記録(controllerコレクションへ保存する内容)
         self._crawl_point[response.url] = {
             'latest_lastmod': self._max_lstmod,
