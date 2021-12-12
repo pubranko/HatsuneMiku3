@@ -1,11 +1,12 @@
 import os
 import io
 import sys
-import tkinter
 import json
+import tkinter
 from pprint import pprint
-from tkinter import ttk
+from tkinter import Variable, ttk
 from tkinter.constants import ANCHOR, CENTER, COMMAND
+from tkinter import scrolledtext
 import tkcalendar
 from functools import partial
 from typing import Any, Generator
@@ -194,48 +195,55 @@ class LogViewer(tkinter.Frame):
         # print(self.time_from.get())
 
     def log_view(self, mongo_id):
-        print('log_view ', mongo_id)
+
+        record = self.log_get(mongo_id)
         # サブ画面
         log_window = tkinter.Toplevel()
         log_window.title("log view")
         # log_window.geometry("900x500")
 
-        main_frame = tkinter.Frame(log_window)
-        main_frame.pack(padx=20, pady=10)
-        canvas = tkinter.Canvas(
-            main_frame, width=280, bg="white", bd=0, height=200, highlightthickness=0)
-        canvas.grid(row=0, column=0)
+        #scrolledtext.ScrolledText(log_window)
+        tt = tkinter.StringVar(value='test')
+        tkinter.Entry()
+        textEntry = tkinter.StringVar()
+        scrolled_text = scrolledtext.ScrolledText(
+            log_window,
+            #textvariable = textEntry,
+            )
+        scrolled_text.setvar('test test')
+        #scrolled_text.
+        #scrolled_text.insert(1,"山田太郎")
+        scrolled_text.insert(1.0,"山田太郎")    #1行目のゼロ文字目へ挿入
+        scrolled_text.grid(row=1,column=1)
 
-        scrollbar = tkinter.Scrollbar(
-            main_frame, orient=tkinter.VERTICAL, command=canvas.yview)
-        scrollbar.grid(row=0, column=1, sticky=tkinter.NS)
-        canvas["yscrollcommand"] = scrollbar.set
+        # Treeviewの生成
+        column = ('key', 'value')
+        self.tree = ttk.Treeview(
+            log_window, columns=column,
+            # selectmode='browse'
+        )
+        # 列の設定を定義
+        self.tree.column('#0', width=0, stretch=False)
+        self.tree.column('key', anchor='w')
+        self.tree.column('value', anchor='w', width=900)
+        # 列の見出し設定
+        self.tree.heading('#0', text='')
+        self.tree.heading('key', text='key')
+        self.tree.heading('value', text='value')
 
-        canvas2 = tkinter.Canvas(canvas,)
+        for idx, (key, value) in enumerate(record.items()):
+            pass
 
-        record = self.log_get(mongo_id)
-        #del record['logs']
-        # print(record)
-        #_ = pprint(record)
-        #temp = record['_id']
-        # print('temp',type(temp))
-        # print(temp)
-        #record['_id'] = str(temp)
+            self.tree.insert(parent='', index='end', iid=str(idx * 10), values=(
+                key))
+            self.tree.insert(parent='', index='end', iid=str(idx * 10 + 1), values=(
+                '',value))
 
-        file_like = io.StringIO('')
-        # pprint(record)
-        pprint(record, stream=file_like)
-        # file_like.close()
-        # print(file_like)
-        # print(file_like.getvalue())
-        # ts = file_like.getvalue().split(r'\n')
-        # for t in ts:
-        #     print(t)
-        # pprint(record)
-        #log = tkinter.Message(log_window,text=str(record))
-        log = tkinter.Message(canvas, text=file_like.getvalue(), width=2700)
-        #log = tkinter.Message(canvas, text=str(pprint(record)))
-        log.grid(row=0, column=0)
+        self.tree.grid(row=0, column=0)
+
+        #tree.bind("<<TreeviewSelect>>", lambda:print(''))
+        #tree.bind("<<TreeviewSelect>>", lambda:print(''))
+        #self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
     def log_list_get(self, page: int, record_count: int) -> Cursor:
         # 件数制限で順に取得
