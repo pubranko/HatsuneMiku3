@@ -2,8 +2,8 @@ import os
 import io
 import sys
 import json
-import tkinter
 from pprint import pprint
+import tkinter
 from tkinter import Variable, ttk
 from tkinter.constants import ANCHOR, CENTER, COMMAND
 from tkinter import scrolledtext
@@ -202,44 +202,27 @@ class LogViewer(tkinter.Frame):
         log_window.title("log view")
         # log_window.geometry("900x500")
 
-        #scrolledtext.ScrolledText(log_window)
-        tt = tkinter.StringVar(value='test')
-        tkinter.Entry()
-        textEntry = tkinter.StringVar()
-        scrolled_text = scrolledtext.ScrolledText(
-            log_window,
-            #textvariable = textEntry,
-            )
-        scrolled_text.setvar('test test')
-        #scrolled_text.
-        #scrolled_text.insert(1,"山田太郎")
-        scrolled_text.insert(1.0,"山田太郎")    #1行目のゼロ文字目へ挿入
-        scrolled_text.grid(row=1,column=1)
-
-        # Treeviewの生成
-        column = ('key', 'value')
-        self.tree = ttk.Treeview(
-            log_window, columns=column,
-            # selectmode='browse'
-        )
-        # 列の設定を定義
-        self.tree.column('#0', width=0, stretch=False)
-        self.tree.column('key', anchor='w')
-        self.tree.column('value', anchor='w', width=900)
-        # 列の見出し設定
-        self.tree.heading('#0', text='')
-        self.tree.heading('key', text='key')
-        self.tree.heading('value', text='value')
-
+        # scrolled_text = scrolledtext.ScrolledText(
+        #     log_window, wrap=tkinter.WORD, width=200)
+        key_object:list = []
+        value_object:list = []
         for idx, (key, value) in enumerate(record.items()):
-            pass
+            # scrolled_text.insert(tkinter.END, str(key) + '\n')  # 1行目のゼロ文字目へ挿入
+            key_object.append(tkinter.Entry(log_window,))
+            key_object[idx].insert(tkinter.END, str(key))  # 1行目のゼロ文字目へ挿入
+            key_object[idx].grid(row=idx, column=0,sticky=tkinter.NW)
 
-            self.tree.insert(parent='', index='end', iid=str(idx * 10), values=(
-                key))
-            self.tree.insert(parent='', index='end', iid=str(idx * 10 + 1), values=(
-                '',value))
+            if key == 'logs':
+                #scrolled_text.insert(tkinter.END, str(key) + '\n')  # 1行目のゼロ文字目へ挿入
 
-        self.tree.grid(row=0, column=0)
+                value_object.append(scrolledtext.ScrolledText(
+                    log_window, wrap=tkinter.WORD, width=200))
+                value_object[idx].insert(tkinter.END, str(value))  # 1行目のゼロ文字目へ挿入
+                value_object[idx].grid(row=idx, column=1)
+            else:
+                value_object.append(tkinter.Entry(log_window))
+                value_object[idx].insert(tkinter.END, str(value))  # 1行目のゼロ文字目へ挿入
+                value_object[idx].grid(row=idx, column=1,sticky=tkinter.EW)
 
         #tree.bind("<<TreeviewSelect>>", lambda:print(''))
         #tree.bind("<<TreeviewSelect>>", lambda:print(''))
@@ -269,20 +252,8 @@ class LogViewer(tkinter.Frame):
 ##################################################
 ##################################################
 
-root: tkinter.Tk = tkinter.Tk()
-app = LogViewer(root=root)
-# root.geometry('500x300')
+if __name__ == "__main__":
+    root: tkinter.Tk = tkinter.Tk()
+    app = LogViewer(root=root)
 
-# log_list_get_button = tkinter.Button(root, text='ログ一覧表示')
-# log_list_get_button.pack()
-
-# log_lists = tkinter.Listbox()
-
-# サブウィンドウの作成
-# subwindow = tkinter.Toplevel()
-# subwindow.title('Sub window')
-# subwindow.config(bg='#123123')
-# subwindow.geometry('200x300+500+500')
-
-
-root.mainloop()
+    root.mainloop()
