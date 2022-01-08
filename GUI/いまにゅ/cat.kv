@@ -1,0 +1,30 @@
+ImageWidget:
+
+<ImageWidget>:
+    canvas.before:
+        Color:
+            rgba: 0.6, 0.6, 0.6, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        size: root.size
+
+        Image:
+            source: root.source
+
+        BoxLayout:
+            size_hint_y: 0.3
+            padding: 20,30,20,10
+            Button:
+                id: button1
+                text: "はじめの画像に戻る"
+                font_size: 30
+                on_press: root.buttonStarted()
+            Button:
+                id: button2
+                text: "ランダム表示"
+                font_size: 30
+                on_press: root.buttonRandom()

@@ -62,8 +62,7 @@ class LogViewer(tkinter.Frame):
         # start_time_from
         date_from_label = tkinter.LabelFrame(
             self,
-            text='start_time(from)'
-        )
+            text='start_time(from)')
         self.date_from = tkcalendar.DateEntry(date_from_label)
         self.time_from = tkinter.Entry(date_from_label, width=8,)
         date_from_label.grid(row=0, column=0, )
@@ -72,9 +71,7 @@ class LogViewer(tkinter.Frame):
 
         # start_time_to
         date_to_label = tkinter.LabelFrame(
-            self,
-            text='start_time(to)'
-        )
+            self, text='start_time(to)')
         self.date_to = tkcalendar.DateEntry(date_to_label)
         self.time_to = tkinter.Entry(date_to_label, width=8)
         date_to_label.grid(row=0, column=1)
@@ -100,7 +97,7 @@ class LogViewer(tkinter.Frame):
             sticky=tkinter.EW)
 
     def log_list_view(self):
-
+        '''抽出条件を満たすログのリストを表示'''
         conditions: list = []
         # if domain:
         #     conditions.append({'domain': domain})
@@ -114,6 +111,12 @@ class LogViewer(tkinter.Frame):
         #     conditions.append({'url': {'$in': urls}})
         # if len(stop_domain) > 0:
         #     conditions.append({'domain': {'$nin': stop_domain}})
+        print('self.date_from',type(self.date_to.get_date()))    #strだった
+        print('self.date_from',self.date_to.get_date())
+        print('self.time_from',self.time_to.get())
+        print('self.date_to',self.date_to.get())
+        print('self.time_to',self.time_to.get())
+        print('self.log_type.time_to',self.log_type.get())
 
         if conditions:
             self.filter: Any = {'$and': conditions}
@@ -121,17 +124,13 @@ class LogViewer(tkinter.Frame):
             self.filter = None
 
         # 対象件数を確認
-        record_count = self.crawler_log.find(
-            filter=self.filter,
-        ).count()
+        record_count = self.crawler_log.find(filter=self.filter,).count()
 
         records: Cursor = self.log_list_get(1, record_count)
 
         # ログリスト表示エリア
-        logs_frame = tkinter.Frame(self,
-                                   relief="ridge", bd=3,
-                                   padx=5, pady=5,
-                                   )
+        logs_frame = tkinter.Frame(
+            self, relief="ridge", bd=3, padx=5, pady=5,)
         logs_frame.grid(row=2, column=0, columnspan=4, sticky=tkinter.W)
 
         # 見出し
@@ -142,8 +141,8 @@ class LogViewer(tkinter.Frame):
                           relief='groove', width=0),
             tkinter.Label(logs_frame, text='record_type', relief='groove'),
             tkinter.Label(logs_frame, text='domain', relief='groove'),
-            tkinter.Label(logs_frame, text='', relief='groove'),  # 表示ボタン
-        ])
+            tkinter.Label(logs_frame, text='', relief='groove'), ])  # 表示ボタン
+
         #
         for idx, record in enumerate(records):
             # レコードの追加
@@ -157,80 +156,57 @@ class LogViewer(tkinter.Frame):
                 tkinter.Label(
                     logs_frame, text=record['domain'] if 'domain' in record else '', anchor=tkinter.W, relief='ridge'),
                 tkinter.Button(
-                    logs_frame, text=record['_id'], pady=0,
+                    logs_frame, text='詳細表示', pady=0,
                     command=partial(self.log_view, record['_id'])
                 )
             ])
 
-            # record['record_type']
-            # record['domain'] if 'domain' in record else ''
-
         for row_idx, col_items in enumerate(logs_table):
             for col_idx, col_item in enumerate(col_items):
                 col_item.grid(row=row_idx, column=col_idx, sticky=tkinter.EW)
-            # item[0].grid(row=idx, column=0, sticky=tkinter.EW)
-            # item[1].grid(row=idx, column=1, sticky=tkinter.EW)
-            # item[2].grid(row=idx, column=2, sticky=tkinter.EW)
-            # item[3].grid(row=idx, column=3, sticky=tkinter.EW)
-
-        # 続きの検索ボタン
-        # self.log_list_get_button = tkinter.Button(
-        #     logs_window, text="ログ一覧取得", command=lambda: self.temp_log_list_get())
-        # self.log_list_get_button.grid(
-        #     row=1, rowspan=1,
-        #     column=0, columnspan=1,
-        #     sticky=tkinter.EW,
-        # )
-
-        # チェックボックス
-        # check_btn_list = tkinter.BooleanVar()
-        # check_btn1 = tkinter.Checkbutton(
-        #     self, text='1', variable=check_btn_list)
-        # check_btn2 = tkinter.Checkbutton(
-        #     self, text='2', variable=check_btn_list)
-
-        # check_btn1.pack()
-        # check_btn2.pack()
-
-        # print(self.time_from.get())
 
     def log_view(self, mongo_id):
-
+        '''ログの明細を表示'''
         record = self.log_get(mongo_id)
         # サブ画面
         log_window = tkinter.Toplevel()
         log_window.title("log view")
         # log_window.geometry("900x500")
 
-        # scrolled_text = scrolledtext.ScrolledText(
-        #     log_window, wrap=tkinter.WORD, width=200)
-        key_object:list = []
-        value_object:list = []
+        key_object: list = []
+        value_object: list = []
         for idx, (key, value) in enumerate(record.items()):
-            # scrolled_text.insert(tkinter.END, str(key) + '\n')  # 1行目のゼロ文字目へ挿入
             key_object.append(tkinter.Entry(log_window,))
-            key_object[idx].insert(tkinter.END, str(key))  # 1行目のゼロ文字目へ挿入
-            key_object[idx].grid(row=idx, column=0,sticky=tkinter.NW)
+            k: tkinter.Entry = key_object[idx]
+            k.insert(tkinter.END, str(key))
+            k.grid(row=idx, column=0, sticky=tkinter.NW, ipadx=30)
 
+            # valueを種類に応じて表示
             if key == 'logs':
-                #scrolled_text.insert(tkinter.END, str(key) + '\n')  # 1行目のゼロ文字目へ挿入
-
+                # 改行含む場合
                 value_object.append(scrolledtext.ScrolledText(
                     log_window, wrap=tkinter.WORD, width=200))
-                value_object[idx].insert(tkinter.END, str(value))  # 1行目のゼロ文字目へ挿入
+                value_object[idx].insert(tkinter.END, str(value))
+                value_object[idx].grid(row=idx, column=1)
+            elif key in ['stats', 'crawl_urls_list']:
+                # 整形して表示したい場合
+                file_like = io.StringIO('')
+                pprint(value, stream=file_like)
+
+                value_object.append(scrolledtext.ScrolledText(
+                    log_window, wrap=tkinter.WORD, width=200, height=10))
+                value_object[idx].insert(
+                    tkinter.END, str(file_like.getvalue()))
                 value_object[idx].grid(row=idx, column=1)
             else:
                 value_object.append(tkinter.Entry(log_window))
-                value_object[idx].insert(tkinter.END, str(value))  # 1行目のゼロ文字目へ挿入
-                value_object[idx].grid(row=idx, column=1,sticky=tkinter.EW)
-
-        #tree.bind("<<TreeviewSelect>>", lambda:print(''))
-        #tree.bind("<<TreeviewSelect>>", lambda:print(''))
-        #self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+                value_object[idx].insert(tkinter.END, str(value))
+                value_object[idx].grid(
+                    row=idx, column=1, sticky=tkinter.EW, ipadx=500)
 
     def log_list_get(self, page: int, record_count: int) -> Cursor:
         # 件数制限で順に取得
-        limit: int = 20
+        limit: int = 10
         skip_list = list(range(0, record_count, limit))
 
         records: Cursor = self.crawler_log.find(
@@ -243,8 +219,6 @@ class LogViewer(tkinter.Frame):
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''
         record = self.crawler_log.find_one(filter={'_id': mondo_id},)
-        #print('log_get type ',type(record))
-        #print('log_get ',record)
         return record
 
 
