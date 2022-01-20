@@ -34,7 +34,6 @@ with Flow(
     export_period_from = Parameter('export_period_from', required=False,)
     export_period_to = Parameter('export_period_to', required=False,)
 
-
     crawler_response__registered = Parameter(
         'crawler_response__registered', required=False,)
     task = MongoExportSelectorTask(
@@ -63,7 +62,7 @@ flow.run(parameters=dict(
     # backup_dir=base_month,
 
     export_period_from='2021-09',  # 月次エクスポートを行うデータの基準年月
-    export_period_to='2021-11',  # 月次エクスポートを行うデータの基準年月
+    export_period_to='2021-09',  # 月次エクスポートを行うデータの基準年月
 
     crawler_response__registered=True,   # crawler_responseの場合、登録済みになったレコードのみエクスポートする場合True
     #crawler_response__registered=False,  # crawler_responseの場合、登録済み以外のレコードも含めてエクスポートする場合False

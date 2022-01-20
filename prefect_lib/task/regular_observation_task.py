@@ -8,7 +8,7 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from models.controller_model import ControllerModel
-from common_lib.directory_search import directory_search
+from common_lib.directory_search_spiders import directory_search_spiders
 
 
 class RegularObservationTask(ExtensionsTask):
@@ -33,7 +33,7 @@ class RegularObservationTask(ExtensionsTask):
         kwargs['scraped_save_start_time_from'] = self.start_time
         kwargs['scraped_save_start_time_to'] = self.start_time
 
-        spiders_info = directory_search()
+        spiders_info = directory_search_spiders()
         controller: ControllerModel = ControllerModel(self.mongo)
         spider_name_set: set = controller.regular_observation_spider_name_set_get()
 

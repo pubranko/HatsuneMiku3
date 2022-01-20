@@ -8,7 +8,7 @@ from prefect.engine.runner import ENDRUN
 import threading
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.directory_search import directory_search
+from common_lib.directory_search_spiders import directory_search_spiders
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -29,7 +29,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
         spider_run_list: list = []
         spider_run_threads: list = []
 
-        spiders_info: list = directory_search()
+        spiders_info: list = directory_search_spiders()
         spiders_info_name_list = [x['spider_name'] for x in spiders_info]
 
         # 引数で渡されたスパイダー名リストを順に処理(重複があった場合はsetで削除)

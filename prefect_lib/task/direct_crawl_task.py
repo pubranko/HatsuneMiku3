@@ -7,7 +7,7 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run
-from common_lib.directory_search import directory_search
+from common_lib.directory_search_spiders import directory_search_spiders
 
 
 
@@ -40,7 +40,7 @@ class DirectCrawlTask(ExtensionsTask):
         kwargs['urls'] = urls
 
         error_flg: bool = True
-        spiders_info: list = directory_search()
+        spiders_info: list = directory_search_spiders()
         for spider in spiders_info:
             if spider['spider_name'] == spider_name:
                 kwargs['class_instans'] = spider['class_instans']
