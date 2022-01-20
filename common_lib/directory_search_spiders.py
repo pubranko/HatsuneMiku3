@@ -9,7 +9,7 @@ path = os.getcwd()
 sys.path.append(path)
 
 
-def directory_search(directory_path: str = 'news_crawl/spiders') -> list:
+def directory_search_spiders(directory_path: str = 'news_crawl/spiders') -> list:
     '''
     引数に渡されたパス内にあるスパイダークラスを読み込み、リストにして返す。
     リスト内には、クラス名、インスタンス、クロール先のドメイン名、スパイダー名の辞書を格納。
@@ -68,6 +68,6 @@ def directory_search(directory_path: str = 'news_crawl/spiders') -> list:
 
 if __name__ == "__main__":
     # execute only if run as a script
-    class_list = directory_search()
+    class_list = directory_search_spiders()
     from pprint import pprint
     pprint(class_list)

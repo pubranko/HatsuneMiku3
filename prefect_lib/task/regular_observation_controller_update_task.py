@@ -9,7 +9,7 @@ from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
-from common_lib.directory_search import directory_search
+from common_lib.directory_search_spiders import directory_search_spiders
 
 
 class RegularObservationControllerUpdateTask(ExtensionsTask):
@@ -35,7 +35,7 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
         spiders_name_set = set(_.split(','))
 
         # 存在するスパイダーのリスト生成
-        spiders_info:list = directory_search()
+        spiders_info:list = directory_search_spiders()
         spiders_exist_set:set = set()
         for spider_info in spiders_info:
             spiders_exist_set.add(spider_info['spider_name'])
