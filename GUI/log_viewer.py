@@ -6,6 +6,7 @@ import tkinter.font
 from tkinter import scrolledtext
 from functools import partial
 from pydantic import ValidationError
+from datetime import datetime
 from pprint import pprint
 from typing import Any
 from pymongo.cursor import Cursor
@@ -13,6 +14,7 @@ from pymongo import DESCENDING
 path = os.getcwd()
 sys.path.append(path)
 from common_lib.directory_search_task import directory_search_task
+from common_lib.timezone_recovery import timezone_recovery
 from GUI.tkinter.log_viewer_validator import LogViewerValidator
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
@@ -39,7 +41,7 @@ class LogViewer(tkinter.Frame):
         self.max_page_count = tkinter.IntVar(value=0)
 
         # その他変数
-        self.number_of_lines: int = 10  #1ページに表示する明細数
+        self.number_of_lines: int = 10  # 1ページに表示する明細数
 
         # 初画面作成
         self.init_screen_create()
@@ -201,13 +203,15 @@ class LogViewer(tkinter.Frame):
                 # 見出し
                 self.logs_table.append([
                     tkinter.Label(self.logs_frame, text='No.',
-                                  relief='groove',width=4, ),
+                                  relief='groove', width=4, ),
                     tkinter.Label(self.logs_frame, text='mongo_id',
                                   relief='groove', width=25),
                     tkinter.Label(self.logs_frame, text='record_type',
                                   relief='groove', width=25),
                     tkinter.Label(self.logs_frame, text='domain',
                                   relief='groove', width=15),
+                    tkinter.Label(self.logs_frame, text='start_time',
+                                  relief='groove', width=20),
                     tkinter.Label(self.logs_frame, text='', relief='groove', width=5), ])  # 表示ボタン
                 # 明細
                 idx = 1
@@ -216,11 +220,13 @@ class LogViewer(tkinter.Frame):
                         tkinter.Label(self.logs_frame,
                                       text='', relief='ridge',),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge',anchor="w"),
+                                      text='', relief='ridge', anchor="w"),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge',anchor="w"),
+                                      text='', relief='ridge', anchor="w"),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge',anchor="w"),
+                                      text='', relief='ridge', anchor="w"),
+                        tkinter.Label(self.logs_frame,
+                                      text='', relief='ridge', anchor="w"),
                         tkinter.Button(self.logs_frame,
                                        text='', pady=0, command='', width=5)])
                     idx += 1
@@ -235,7 +241,8 @@ class LogViewer(tkinter.Frame):
                     self.logs_table[idx][2]['text'] = ''
                     self.logs_table[idx][3]['text'] = ''
                     self.logs_table[idx][4]['text'] = ''
-                    self.logs_table[idx][4]['command'] = ''
+                    self.logs_table[idx][5]['text'] = ''
+                    self.logs_table[idx][5]['command'] = ''
 
                     idx += 1
 
@@ -286,14 +293,18 @@ class LogViewer(tkinter.Frame):
         '''
         for idx, record in enumerate(records):
             # レコードの更新
-            self.logs_table[idx + 1][0]['text'] = str(idx + 1 + ((self.current_page.get()-1) * self.number_of_lines))
+            self.logs_table[idx + 1][0]['text'] = \
+                str(idx + 1 + ((self.current_page.get() - 1) * self.number_of_lines))
             self.logs_table[idx + 1][1]['text'] = record['_id']
             self.logs_table[idx + 1][2]['text'] = record['record_type']
-            self.logs_table[idx +
-                            1][3]['text'] = record['domain'] if 'domain' in record else ''
-            self.logs_table[idx + 1][4]['text'] = '詳細表示'
-            self.logs_table[idx + 1][4]['command'] = partial(
-                self.log_view, record['_id'])
+            self.logs_table[idx + 1][3]['text'] = \
+                record['domain'] if 'domain' in record else ''
+            start_time: datetime = timezone_recovery(record['start_time'])
+            self.logs_table[idx + 1][4]['text'] = \
+                start_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+            self.logs_table[idx + 1][5]['text'] = '詳細表示'
+            self.logs_table[idx + 1][5]['command'] = \
+                partial(self.log_view, record['_id'])
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。
@@ -307,7 +318,8 @@ class LogViewer(tkinter.Frame):
                 self.logs_table[idx + 1][2]['text'] = ''
                 self.logs_table[idx + 1][3]['text'] = ''
                 self.logs_table[idx + 1][4]['text'] = ''
-                self.logs_table[idx + 1][4]['command'] = ''
+                self.logs_table[idx + 1][5]['text'] = ''
+                self.logs_table[idx + 1][5]['command'] = ''
 
                 idx -= 1
 
@@ -327,7 +339,8 @@ class LogViewer(tkinter.Frame):
 
         for idx, (record_key, record_value) in enumerate(record.items()):
             item_name = tkinter.Entry(log_window,)
-            item_name.insert(tkinter.END, str(record_key))     # 末尾の続きに編集,,,ここは無くてもいいかも、、、
+            # 末尾の続きに編集,,,ここは無くてもいいかも、、、
+            item_name.insert(tkinter.END, str(record_key))
             item_name.grid(row=idx, column=0, sticky=tkinter.NW, ipadx=30)
 
             # valueを種類に応じて表示
