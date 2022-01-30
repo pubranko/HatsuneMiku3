@@ -1,65 +1,52 @@
 import os
 import io
 import sys
-import json
-from pprint import pprint
 import tkinter
 import tkinter.font
-from tkinter import Variable, ttk
-from tkinter.constants import ANCHOR, CENTER, COMMAND
 from tkinter import scrolledtext
-from pydantic import BaseModel, ValidationError, validator
 from functools import partial
-from typing import Any, Generator
+from pydantic import ValidationError
+from pprint import pprint
+from typing import Any
 from pymongo.cursor import Cursor
 from pymongo import DESCENDING
-from dateutil import parser
 path = os.getcwd()
 sys.path.append(path)
+from common_lib.directory_search_task import directory_search_task
 from GUI.tkinter.log_viewer_validator import LogViewerValidator
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
-from common_lib.timezone_recovery import timezone_recovery
-from common_lib.directory_search_task import directory_search_task
-
-
-'''
-ログフィルターの入力欄が必要
-    ドメイン
-    時間from〜to(日本時間)
-    ログの種類(record_type) spider_reports, ScrapyCrawlingTask, ScrapyingTask, ほか多数
-
-    一覧表示エリア ＆ 各明細それぞれの表示ボタン
-    ページ遷移用ボタン
-    フィルターにマッチしたログを一括でlogs/〜.logファイルへ保存するボタン
-
-    明細の表示(サブウィンドウ）
-    logs/~.logファイルに保存するボタン
-'''
 
 
 class LogViewer(tkinter.Frame):
-    ''''''
+    '''
+    crawler_logsコレクションの内容を参照する。
+    start_time、record_typeでの絞り込みが可能。
+    '''
 
     def __init__(self, root: tkinter.Tk):
         super().__init__(root, width=1000, height=600, borderwidth=1, relief='groove')
-
+        mongo = MongoModel()
+        self.crawler_log = CrawlerLogsModel(mongo)
+        # rootウィジェット作成
         root.title('Log Viewer')
         self.root = root
         self.pack()
+        self.pack_propagate(False)  # ウィジェットのサイズに合わせてフレームの自動調整を無効化
+        # ウィジェット変数定義
         self.current_page = tkinter.IntVar(value=1)
         self.record_count = tkinter.IntVar(value=0)
         self.max_page_count = tkinter.IntVar(value=0)
 
-        self.pack_propagate(False)
-        self.create_widgets()
+        # その他変数
+        self.number_of_lines: int = 10  #1ページに表示する明細数
 
-        mongo = MongoModel()
-        self.crawler_log = CrawlerLogsModel(mongo)
+        # 初画面作成
+        self.init_screen_create()
 
-    def create_widgets(self):
+    def init_screen_create(self):
         '''
-        初期画面表示
+        初画面作成
         '''
         # start_time_from
         date_from_label = tkinter.LabelFrame(
@@ -81,32 +68,30 @@ class LogViewer(tkinter.Frame):
 
         # record_type
         # prefectのTaskディレクトリより取得。
+        # その他個別にログに保管したtypeを追加。    ちょっとこれはあとで見直ししよう、、、直書きはよろしくない
         record_type_list = [str(x['class_name'])
                             for x in directory_search_task()]
-        # その他個別にログに保管したtypeを追加。
-        '''
-        ちょっとこれはあとで見直ししよう、、、直書きはよろしくない
-        '''
         record_type_list.extend(
             ['spider_reports', 'news_crawl_asy', 'news_clip_master_async', 'solr_news_clip_async', ])
-
         record_type_list.sort()
         self.record_type_label = tkinter.LabelFrame(
             self, text='record_type')
-
+        # 縦スクロールバー付きのリストボックス
         self.yscroll = tkinter.Scrollbar(
             self.record_type_label, orient=tkinter.VERTICAL)
         self.yscroll.pack(side=tkinter.RIGHT, fill=tkinter.Y)
         self.record_type = tkinter.Listbox(
             self.record_type_label,
-            selectmode=tkinter.EXTENDED,  # リストボックスを複数選択可能とする。
-            height=5,
+            selectmode=tkinter.EXTENDED,                    # リストボックスを複数選択可能とする。
+            height=5,                                       # 5行分の高さ
+            # 横幅はrecord_type_list内の最長の文字数に合わせる。
             width=max([len(x) for x in record_type_list]),
-            yscrollcommand=self.yscroll.set,
+            yscrollcommand=self.yscroll.set,                # 縦スクロールバーを付与
         )
+        # 生成したリストボックスにレコードを挿入
         for rec in record_type_list:
             self.record_type.insert(tkinter.END, rec)
-
+        # レコードタイプを
         self.record_type_label.grid(row=0, rowspan=3, column=1)
         self.record_type.pack()
 
@@ -116,15 +101,11 @@ class LogViewer(tkinter.Frame):
         self.log_list_get_button.grid(
             row=2, column=0, sticky=tkinter.EW)
 
-        # ページ関連
-
-        # 情報表示ボックス
+        # 情報、ページ関連表示ボックス
         self.info_box = tkinter.Frame(self)
         self.info_box.grid(row=3, column=0, columnspan=2)
-
         # ラベルとボタンの高さ調整のためフォントを操作
         font1 = tkinter.font.Font(family="Lucida Console", size=15,)
-
         # 総件数
         self.record_count_label_frame = tkinter.LabelFrame(
             self.info_box, text='総件数')
@@ -139,30 +120,31 @@ class LogViewer(tkinter.Frame):
         self.page_count_label = tkinter.Label(
             self.page_count_label_frame, textvariable=self.max_page_count, width=6, font=font1)
         self.page_count_label.pack()
-
         # ページセレクター(最初のページ、前ページ、現在のページ、次ページ、最後のページ)
         self.page_selecter_label_frame = tkinter.LabelFrame(
             self.info_box, text='ページ選択', height=2)
         self.page_selecter_label_frame.grid(row=0, column=2, columnspan=8)
         self.first_page_button = tkinter.Button(
-            self.page_selecter_label_frame, text='<<', width=2, state='disabled', command=lambda: self.pagenate('first'))
+            self.page_selecter_label_frame, text='<<', width=2, state='disabled', command=lambda: self.logs_edit('first'))
         self.first_page_button.grid(row=0, column=0)
         self.previous_page_button = tkinter.Button(
-            self.page_selecter_label_frame, text='<', width=2, state='disabled', command=lambda: self.pagenate('-1'))
+            self.page_selecter_label_frame, text='<', width=2, state='disabled', command=lambda: self.logs_edit('-1'))
         self.previous_page_button.grid(row=0, column=1)
         self.current_page_button = tkinter.Button(self.page_selecter_label_frame, text=str(
             self.current_page.get()), width=2, state='disabled', command='')
         self.current_page_button.grid(row=0, column=2)
         self.next_page_button = tkinter.Button(
-            self.page_selecter_label_frame, text='>', width=2, state='disabled', command=lambda: self.pagenate('1'))
+            self.page_selecter_label_frame, text='>', width=2, state='disabled', command=lambda: self.logs_edit('1'))
         self.next_page_button.grid(row=0, column=3)
         self.last_page_button = tkinter.Button(
-            self.page_selecter_label_frame, text='>>', width=2, state='disabled', command=lambda: self.pagenate('last'))
+            self.page_selecter_label_frame, text='>>', width=2, state='disabled', command=lambda: self.logs_edit('last'))
         self.last_page_button.grid(row=0, column=4)
 
     def log_list_view(self):
-        '''抽出条件を満たすログのリストを表示'''
+        '''抽出条件を満たすログのリストを作成'''
+
         try:
+            # 検索条件項目のバリデーションを実施
             condition_items = LogViewerValidator(
                 date_from=self.date_from.get(),
                 time_from=self.time_from.get(),
@@ -171,12 +153,15 @@ class LogViewer(tkinter.Frame):
                 record_type=[self.record_type.get(
                     i, i)[0] for i in self.record_type.curselection()],
             )
-            print(condition_items.dict())
+            print('検索条件 : ', condition_items.dict())
         except ValidationError as e:
-            print(e.json())  # エラー結果をjson形式で見れる。
-            print(e.errors())  # エラー結果をlist形式で見れる。
-            print(str(e))  # エラー結果をlist形式で見れる。
+            # print(e.json())  # エラー結果をjson形式で見れる。
+            print('エラー内容 : ', e.errors())  # エラー結果をlist形式で見れる。
+            # print(str(e))  # エラー結果をlist形式で見れる。
         else:
+            # バリデーションでエラーがなかった場合、以下の処理を実施
+
+            # 画面で指定された検索条件より、mongoDB検索用のフィルターを作成
             conditions: list = []
             if condition_items.date_from:
                 conditions.append(
@@ -193,64 +178,83 @@ class LogViewer(tkinter.Frame):
             else:
                 self.filter = None
 
-            print('self.filter : ', self.filter)
+            print('mongoDB検索フィルター : ', self.filter)
 
-            # 対象件数、ページ数を確認
+            # 検索対象の件数、ページ数を確認
             self.record_count.set(self.crawler_log.find(
                 filter=self.filter,).count())
             # 小数点以下切り上げ
-            self.max_page_count.set(-(-self.record_count.get() // 10))
+            self.max_page_count.set(-(-self.record_count.get() //
+                                    self.number_of_lines))
 
-            # 件数制限で順に取得
-            # とりあえず1ページ分だけ。
+            # 該当のログがある場合
             if self.record_count.get():
 
-                # ログリスト表示エリア
+                # ログリスト表示フレーム作成
                 self.logs_frame = tkinter.Frame(
                     self, relief="ridge", bd=3, padx=5, pady=5,)
                 self.logs_frame.grid(row=4, column=0, columnspan=4,
                                      sticky=tkinter.W)
 
-                # 見出し
+                # ログリストの見出しと行数分の空明細を作成。
                 self.logs_table: list = []
+                # 見出し
                 self.logs_table.append([
                     tkinter.Label(self.logs_frame, text='No.',
-                                  relief='groove'),
+                                  relief='groove',width=4, ),
                     tkinter.Label(self.logs_frame, text='mongo_id',
-                                  relief='groove', width=0),
+                                  relief='groove', width=25),
                     tkinter.Label(self.logs_frame, text='record_type',
-                                  relief='groove'),
+                                  relief='groove', width=25),
                     tkinter.Label(self.logs_frame, text='domain',
-                                  relief='groove'),
-                    tkinter.Label(self.logs_frame, text='', relief='groove'), ])  # 表示ボタン
-
-                # 空欄で10明細を作成。
+                                  relief='groove', width=15),
+                    tkinter.Label(self.logs_frame, text='', relief='groove', width=5), ])  # 表示ボタン
+                # 明細
                 idx = 1
-                while idx <= 10:
+                while idx <= self.number_of_lines:
                     self.logs_table.append([
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge'),
+                                      text='', relief='ridge',),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge'),
+                                      text='', relief='ridge',anchor="w"),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge'),
+                                      text='', relief='ridge',anchor="w"),
                         tkinter.Label(self.logs_frame,
-                                      text='', relief='ridge'),
-                        # tkinter.Label(self.logs_frame,
-                        #               text='', relief='ridge'),
+                                      text='', relief='ridge',anchor="w"),
                         tkinter.Button(self.logs_frame,
-                                       text='', pady=0, command='')
-                    ])
+                                       text='', pady=0, command='', width=5)])
+                    idx += 1
+                # 初回は1ページ目分より開始
+                self.logs_edit(page_adjustment='first')
+            else:
+                # 該当レコードがない場合は明細欄をクリア
+                idx = 1
+                while idx <= self.number_of_lines:
+                    self.logs_table[idx][0]['text'] = ''
+                    self.logs_table[idx][1]['text'] = ''
+                    self.logs_table[idx][2]['text'] = ''
+                    self.logs_table[idx][3]['text'] = ''
+                    self.logs_table[idx][4]['text'] = ''
+                    self.logs_table[idx][4]['command'] = ''
+
                     idx += 1
 
-                self.pagenate('first')
-                # self.logs_line_edit(self.logs_frame, self.logs_table, records)
+    def logs_edit(self, page_adjustment: str):
+        ''' '''
+        # ページ制御
+        self.pagenate(page_adjustment)
 
-    def pagenate(self, page_adjustment: str):
+        # 上記で指定したページのログを取得
+        records = self.logs_list_get(
+            self.current_page.get(), self.record_count.get())
+
+        # 上記で取得したログを明細ウィジェットへ編集
+        self.logs_detail_edit(self.logs_frame, self.logs_table, records)
+
+    def pagenate(self, page_adjustment):
         '''
         現在のページから他ページボタンの活性・非活性をコントロール
         '''
-
         if page_adjustment == 'first':
             current_page: int = 1
         elif page_adjustment == 'last':
@@ -276,29 +280,28 @@ class LogViewer(tkinter.Frame):
             self.next_page_button['state'] = 'normal'
             self.last_page_button['state'] = 'normal'
 
-        records = self.log_list_get(
-            self.current_page.get(), self.record_count.get())
-        self.logs_line_edit(self.logs_frame, self.logs_table, records)
-
-    def logs_line_edit(self, logs_frame, logs_table, records: Cursor):
-        # 各レコードを明細エリアへ編集
+    def logs_detail_edit(self, logs_frame, logs_table, records: Cursor):
+        '''
+        各レコードをログ明細エリアへ編集
+        '''
         for idx, record in enumerate(records):
             # レコードの更新
-            self.logs_table[idx + 1][0]['text'] = str(idx + 1)
+            self.logs_table[idx + 1][0]['text'] = str(idx + 1 + ((self.current_page.get()-1) * self.number_of_lines))
             self.logs_table[idx + 1][1]['text'] = record['_id']
             self.logs_table[idx + 1][2]['text'] = record['record_type']
-            self.logs_table[idx + 1][3]['text'] = record['domain'] if 'domain' in record else ''
+            self.logs_table[idx +
+                            1][3]['text'] = record['domain'] if 'domain' in record else ''
             self.logs_table[idx + 1][4]['text'] = '詳細表示'
             self.logs_table[idx + 1][4]['command'] = partial(
                 self.log_view, record['_id'])
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。
-        amari = self.current_page.get() * 10 - records.count()
-        idx = 11
+        amari = self.current_page.get() * self.number_of_lines - records.count()
+        idx = self.number_of_lines + 1
         if amari > 0:
-            idx = 9
-            while idx >= 10 - amari:
+            idx = self.number_of_lines - 1
+            while idx >= self.number_of_lines - amari:
                 self.logs_table[idx + 1][0]['text'] = ''
                 self.logs_table[idx + 1][1]['text'] = ''
                 self.logs_table[idx + 1][2]['text'] = ''
@@ -306,13 +309,6 @@ class LogViewer(tkinter.Frame):
                 self.logs_table[idx + 1][4]['text'] = ''
                 self.logs_table[idx + 1][4]['command'] = ''
 
-                # logs_table.append({
-                #     tkinter.Label(logs_frame, text='', relief='ridge'),
-                #     tkinter.Label(logs_frame, text='', relief='ridge'),
-                #     tkinter.Label(logs_frame, text='', relief='ridge'),
-                #     tkinter.Label(logs_frame, text='', relief='ridge'),
-                #     tkinter.Label(logs_frame, text='', relief='ridge'),
-                # })
                 idx -= 1
 
         # logs_tableよりログリスト表示エリアの明細へ設定
@@ -329,59 +325,50 @@ class LogViewer(tkinter.Frame):
         log_window.title("log view")
         # log_window.geometry("900x500")
 
-        key_object: list = []
-        value_object: list = []
-        for idx, (key, value) in enumerate(record.items()):
-            key_object.append(tkinter.Entry(log_window,))
-            k: tkinter.Entry = key_object[idx]
-            k.insert(tkinter.END, str(key))
-            k.grid(row=idx, column=0, sticky=tkinter.NW, ipadx=30)
+        for idx, (record_key, record_value) in enumerate(record.items()):
+            item_name = tkinter.Entry(log_window,)
+            item_name.insert(tkinter.END, str(record_key))     # 末尾の続きに編集,,,ここは無くてもいいかも、、、
+            item_name.grid(row=idx, column=0, sticky=tkinter.NW, ipadx=30)
 
             # valueを種類に応じて表示
-            if key == 'logs':
+            if record_key == 'logs':
                 # 改行含む場合
-                value_object.append(scrolledtext.ScrolledText(
-                    log_window, wrap=tkinter.WORD, width=200))
-                value_object[idx].insert(tkinter.END, str(value))
-                value_object[idx].grid(row=idx, column=1)
-            elif key in ['stats', 'crawl_urls_list']:
+                item_value = scrolledtext.ScrolledText(
+                    log_window, wrap=tkinter.WORD, width=200)
+                item_value.insert(tkinter.END, str(record_value))
+                item_value.grid(row=idx, column=1)
+            elif record_key in ['stats', 'crawl_urls_list']:
                 # 整形して表示したい場合
                 file_like = io.StringIO('')
-                pprint(value, stream=file_like)
+                pprint(record_value, stream=file_like)
 
-                value_object.append(scrolledtext.ScrolledText(
-                    log_window, wrap=tkinter.WORD, width=200, height=10))
-                value_object[idx].insert(
+                item_value = scrolledtext.ScrolledText(
+                    log_window, wrap=tkinter.WORD, width=200, height=self.number_of_lines)
+                item_value.insert(
                     tkinter.END, str(file_like.getvalue()))
-                value_object[idx].grid(row=idx, column=1)
+                item_value.grid(row=idx, column=1)
             else:
-                value_object.append(tkinter.Entry(log_window))
-                value_object[idx].insert(tkinter.END, str(value))
-                value_object[idx].grid(
+                item_value = tkinter.Entry(log_window)
+                item_value.insert(tkinter.END, str(record_value))
+                item_value.grid(
                     row=idx, column=1, sticky=tkinter.EW, ipadx=500)
 
-    def log_list_get(self, page: int, record_count: int) -> Cursor:
-        # 件数制限で順に取得
-        limit: int = 10
+    def logs_list_get(self, page: int, record_count: int) -> Cursor:
+        '''指定されたページに表示する分のログを取得して返す'''
+        limit: int = self.number_of_lines
         skip_list = list(range(0, record_count, limit))
 
-        records: Cursor = self.crawler_log.find(
+        return self.crawler_log.find(
             filter=self.filter,
             sort=[('start_time', DESCENDING)],
         ).skip(skip_list[page - 1]).limit(limit)
 
-        return records
-
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''
-        record = self.crawler_log.find_one(filter={'_id': mondo_id},)
-        return record
+        return self.crawler_log.find_one(filter={'_id': mondo_id},)
 
 
 ##################################################
-##################################################
-##################################################
-
 if __name__ == "__main__":
     root: tkinter.Tk = tkinter.Tk()
     app = LogViewer(root=root)
