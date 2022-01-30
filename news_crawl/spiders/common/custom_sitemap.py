@@ -34,14 +34,58 @@ class CustomSitemap:
                 name = tag.split('}', 1)[1] if '}' in tag else tag
 
                 # イレギラーなsitemapの解析には、各スパイダーのirregular_sitemap_parseを使用するようカスタマイズ
-                if self.spider.irregular_sitemap_parse_flg:
+                if self.spider.sitemap_type == 'irregular':
                     d = self.spider.irregular_sitemap_parse(d, el, name)
-                elif name == 'link':
-                    if 'href' in el.attrib:
-                        d.setdefault('alternate', []).append(
-                            el.get(key='href', default=None))
+                elif self.spider.sitemap_type == 'google_news_sitemap':
+                    '''
+                    googleのニュースサイトマップタイプ解析処理。
+                    lastmodがなく<news>タグ内の<publication_date>となっているため、カスタマイズを行う。
+                    '''
+                    if name == 'link':
+                        if 'href' in el.attrib:
+                            d.setdefault('alternate', []).append(
+                                el.get(key='href', default=None))
+                    elif name == 'loc':
+                        d[name] = el.text.strip() if el.text else ''
+                    elif name == 'lastmod':
+                        d[name] = el.text.strip() if el.text else ''
+                    elif name == 'news':
+                        publication_date: _Element = el.find('news:publication_date', namespaces={
+                                                                'news': 'http://www.google.com/schemas/sitemap-news/0.9'})
+                        d['lastmod'] = publication_date.text
+                    else:
+                        d[name] = el.text.strip() if el.text else ''
                 else:
-                    d[name] = el.text.strip() if el.text else ''
+                    if name == 'link':
+                        if 'href' in el.attrib:
+                            d.setdefault('alternate', []).append(
+                                el.get(key='href', default=None))
+                    else:
+                        d[name] = el.text.strip() if el.text else ''
 
             if 'loc' in d:
                 yield d
+
+
+    # def irregular_sitemap_parse(cls, d: dict, el: _Element, name: Any):
+    #     '''
+    #     asahi.com専用のサイトマップ解析処理。
+    #     lastmodがなくpublication_dateとなっているため、編集を行う。
+    #     '''
+    #     if name == 'link':
+    #         if 'href' in el.attrib:
+    #             d.setdefault('alternate', []).append(
+    #                 el.get(key='href', default=None))
+    #     elif name == 'loc':
+    #         d[name] = el.text.strip() if el.text else ''
+    #     elif name == 'lastmod':
+    #         d[name] = el.text.strip() if el.text else ''
+    #     elif name == 'news':
+    #         publication_date: _Element = el.find('news:publication_date', namespaces={
+    #                                                 'news': 'http://www.google.com/schemas/sitemap-news/0.9'})
+    #         d['lastmod'] = publication_date.text
+    #     else:
+    #         d[name] = el.text.strip() if el.text else ''
+
+    #     return d
+
