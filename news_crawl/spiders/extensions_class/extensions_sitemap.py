@@ -81,8 +81,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
     splash_mode: bool = False
     #sitemap_rules = [(r'.*', 'splash_parse')]
 
-    # イレギラーなサイトマップの場合、Trueにしてxml解析を各スパイダー用に切り替える。
-    irregular_sitemap_parse_flg: bool = False
+    # サイトマップタイプ
+    # nomal                 : 通常のscrapyのsitemapでクロールできるタイプ
+    # google_news_sitemap   : googleのニュースサイトマップ用にカスタマイズしたタイプ
+    # irregular             : イレギラーなサイト用
+    sitemap_type = 'nomal'
 
     # sitemap情報を保存
     crawl_urls_list: list = []
