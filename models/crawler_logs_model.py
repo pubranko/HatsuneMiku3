@@ -8,31 +8,17 @@ class CrawlerLogsModel(MongoCommonModel):
     crawler_logsコレクション用モデル
     '''
     mongo: MongoModel
-    #collection_name: str = 'crawler_logs'
     collection_name: str = os.environ['MONGO_CRAWLER_LOGS']
 
-# class CrawlerLogsModel(object):
-#     '''
-#     crawler_logsコレクション用モデル
-#     '''
-#     mongo: MongoModel
+    def __init__(self, mongo: MongoModel):
+        super().__init__(mongo)
 
-#     def __init__(self, mongo: MongoModel):
-#         self.mongo = mongo
-
-#     def insert_one(self, item):
-#         self.mongo.mongo_db['crawler_logs'].insert_one(item)
-
-#     def find_one(self, projection=None, filter=None):
-#         return self.mongo.mongo_db['crawler_logs'].find_one(projection=projection, filter=filter)
-
-#     def find(self, projection=None, filter=None, sort=None):
-#         return self.mongo.mongo_db['crawler_logs'].find(projection=projection, filter=filter, sort=sort)
-
-#     def aggregate(self, aggregate_key: str):
-#         '''渡された集計keyによる集計結果を返す。'''
-#         pipeline = [
-#             {'$unwind': '$' + aggregate_key},
-#             {'$group': {'_id': '$' + aggregate_key, 'count': {'$sum': 1}}},
-#         ]
-#         return self.mongo.mongo_db['crawler_logs'].aggregate(pipeline=pipeline)
+        # インデックスの有無を確認し、なければ作成する。
+        # ※sort使用時、indexがないとメモリ不足となるため。
+        create_index_flg:bool = True
+        for indexes in self.mongo.mongo_db[self.collection_name].list_indexes():
+            for idx in indexes['key']:
+                if idx == 'start_time':
+                    create_index_flg = False
+        if create_index_flg:
+            self.mongo.mongo_db[self.collection_name].create_index('start_time')
