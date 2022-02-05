@@ -24,7 +24,8 @@ def mail_send(title: str, msg: str, ) -> None:
     global logger
 
     # 接続設定情報
-    smtp_host = 'smtp.live.com'
+    #smtp_host = 'smtp.live.com'
+    smtp_host = 'smtp.office365.com'
     smtp_port = 587
     from_email = os.environ['EMAIL_FROM']
     to_email = os.environ['EMAIL_TO']
@@ -57,3 +58,9 @@ def mail_send(title: str, msg: str, ) -> None:
     server.quit()
 
     logger.info('=== メール通知完了 title = ' + title)
+
+if __name__ == '__main__':
+    mail_send(
+        title='test',
+        msg='手動で実行',
+    )
