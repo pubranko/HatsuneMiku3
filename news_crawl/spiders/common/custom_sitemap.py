@@ -52,6 +52,10 @@ class CustomSitemap:
                     elif name == 'news':
                         publication_date: _Element = el.find('news:publication_date', namespaces={
                                                                 'news': 'http://www.google.com/schemas/sitemap-news/0.9'})
+                        if publication_date == None:
+                            publication_date: _Element = el.find('news:publication_date', namespaces={
+                                                                    'news': 'https://www.google.com/schemas/sitemap-news/0.9'})
+
                         d['lastmod'] = publication_date.text
                     else:
                         d[name] = el.text.strip() if el.text else ''

@@ -7,13 +7,15 @@ class EpochtimesJpSitemapSpider(ExtensionsSitemapSpider):
     name = 'epochtimes_jp_sitemap'
     allowed_domains = ['epochtimes.jp']
     sitemap_urls: list = [
-        'https://www.epochtimes.jp/sitemap/sitemap-latest.xml', ]  # 最新
+        'https://www.epochtimes.jp/sitemap/sitemap-news.xml', ]  # 最新
     _domain_name: str = 'epochtimes_jp'        # 各種処理で使用するドメイン名の一元管理
     spider_version: float = 1.0
 
     # 大紀元のsitemapに記載されているurlは、リダイレクト前のurl。
     # リダイレクト後のurlへ変換してクロールするようカスタマイズ。
     _custom_url_flg: bool = True
+
+    sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     def _custom_url(self, _entry: dict) -> str:
         '''(オーバーライド)

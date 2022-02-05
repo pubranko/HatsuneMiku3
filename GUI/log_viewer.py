@@ -1,6 +1,7 @@
 import os
 import io
 import sys
+import re
 import tkinter
 import tkinter.font
 from tkinter import scrolledtext
@@ -40,16 +41,35 @@ class LogViewer(tkinter.Frame):
         self.record_count = tkinter.IntVar(value=0)
         self.max_page_count = tkinter.IntVar(value=0)
 
+        self.clipboard_value = tkinter.StringVar()
+        #self.master.bind('<Control-v>', self.get_data)
+        #self.master.bind('<Control-V>', self.get_data)
+        #self.master.bind('<Control-c>', self.set_data)
+        #self.master.bind('<Control-C>', self.set_data)
+
         # その他変数
         self.number_of_lines: int = 10  # 1ページに表示する明細数
 
         # 初画面作成
         self.init_screen_create()
 
+    def get_data(self, event=None):
+        '''クリップボード'''
+        try:
+            input_string = self.clipboard_get()
+            self.clipboard_value.set(input_string)
+        except:
+            print(sys.exc_info()[1])
+
+    def set_data(self, event=None):
+        output_string = self.clipboard_value.get()
+        self.clipboard_append(output_string)
+
     def init_screen_create(self):
         '''
         初画面作成
         '''
+        ### 初画面表示の項目を定義
         # start_time_from
         date_from_label = tkinter.LabelFrame(
             self, text='start_time(from)')
@@ -69,8 +89,8 @@ class LogViewer(tkinter.Frame):
         self.time_to.pack(side=tkinter.LEFT)
 
         # record_type
-        # prefectのTaskディレクトリより取得。
-        # その他個別にログに保管したtypeを追加。    ちょっとこれはあとで見直ししよう、、、直書きはよろしくない
+        #   prefectのTaskディレクトリより取得。
+        #   その他個別にログに保管したtypeを追加。    ちょっとこれはあとで見直ししよう、、、直書きはよろしくない
         record_type_list = [str(x['class_name'])
                             for x in directory_search_task()]
         record_type_list.extend(
@@ -103,7 +123,7 @@ class LogViewer(tkinter.Frame):
         self.log_list_get_button.grid(
             row=2, column=0, sticky=tkinter.EW)
 
-        # 情報、ページ関連表示ボックス
+        ### 情報、ページ関連表示ボックス
         self.info_box = tkinter.Frame(self)
         self.info_box.grid(row=3, column=0, columnspan=2)
         # ラベルとボタンの高さ調整のためフォントを操作
@@ -292,7 +312,8 @@ class LogViewer(tkinter.Frame):
         各レコードをログ明細エリアへ編集
         '''
         for idx, record in enumerate(records):
-            # レコードの更新
+
+            # レコードよりウィジェットへ設定
             self.logs_table[idx + 1][0]['text'] = \
                 str(idx + 1 + ((self.current_page.get() - 1) * self.number_of_lines))
             self.logs_table[idx + 1][1]['text'] = record['_id']
@@ -305,6 +326,35 @@ class LogViewer(tkinter.Frame):
             self.logs_table[idx + 1][5]['text'] = '詳細表示'
             self.logs_table[idx + 1][5]['command'] = \
                 partial(self.log_view, record['_id'])
+
+            ### ログにCRITICAL、ERROR、WARNINGが含まれていた場合、文字色を変える。
+            text_color:str = '#000000'  # 黒
+            if 'logs' in record:
+                # 改行含む場合
+                #CRITICAL > ERROR > WARNING > INFO > DEBUG
+                # 2021-08-08 12:31:04 [scrapy.core.engine] INFO: Spider closed (finished)
+                # クリティカルの場合、ログ形式とは限らない。raiseなどは別形式のため、後日検討要。
+                pattern_critical = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
+                pattern_error = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
+                pattern_warning = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING')
+
+                if pattern_critical.search(record['logs']):
+                    text_color:str = '#FF0000'  #赤
+                elif pattern_error.search(record['logs']):
+                    text_color:str = '#800000'  #茶色
+                elif pattern_warning.search(record['logs']):
+                    text_color:str = '#FF9933'  #オレンジ
+
+            self.logs_table[idx + 1][0]['fg'] = text_color
+            self.logs_table[idx + 1][1]['fg'] = text_color
+            self.logs_table[idx + 1][2]['fg'] = text_color
+            self.logs_table[idx + 1][3]['fg'] = text_color
+            self.logs_table[idx + 1][4]['fg'] = text_color
+            self.logs_table[idx + 1][5]['fg'] = text_color
+
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。

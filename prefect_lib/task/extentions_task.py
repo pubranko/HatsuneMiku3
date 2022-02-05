@@ -65,7 +65,7 @@ class ExtensionsTask(Task):
         # 2021-08-08 12:31:04 INFO [prefect.FlowRunner] : Flow run SUCCESS: all reference tasks succeeded
 
         title: str = ''
-        if pattern_critical.search(self.log_file):
+        if pattern_critical.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
             title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
         elif pattern_error.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
             title = '【' + self.name + ':エラー発生】' + self.start_time.isoformat()
