@@ -12,6 +12,7 @@ class LogViewerValidator(BaseModel):
     date_to: str = ''
     time_to: str = ''
     record_type: list = []
+    log_level_value: int = 9
 
     '''
     定義順にチェックされる。
@@ -50,7 +51,13 @@ class LogViewerValidator(BaseModel):
     @validator('record_type')
     def record_type_check(cls, value:list, values:dict) -> list:
         if value:
-            assert isinstance(value,list),'文字列型以外がエラー'
+            assert isinstance(value,list),'リスト型以外がエラー'
+        return value
+
+    @validator('log_level_value')
+    def log_level_value_check(cls, value:list, values:dict) -> list:
+        if value:
+            assert isinstance(value,int),'整数型以外がエラー'
         return value
 
     ###################################

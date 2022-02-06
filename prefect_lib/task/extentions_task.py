@@ -10,6 +10,8 @@ import prefect
 from prefect import Task, Parameter
 from prefect.engine import signals
 from prefect.utilities.context import Context
+path = os.getcwd()
+sys.path.append(path)
 from common_lib.mail_send import mail_send
 from common_lib.resource_check import resource_check
 from common_lib.environ_check import environ_check
@@ -56,16 +58,19 @@ class ExtensionsTask(Task):
         #CRITICAL > ERROR > WARNING > INFO > DEBUG
         # 2021-08-08 12:31:04 [scrapy.core.engine] INFO: Spider closed (finished)
         # クリティカルの場合、ログ形式とは限らない。raiseなどは別形式のため、後日検討要。
+        pattern_traceback = re.compile(r'Traceback.*:')
         pattern_critical = re.compile(
-            r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
+            r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
         pattern_error = re.compile(
-            r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
+            r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
         pattern_warning = re.compile(
-            r'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING ')
+            r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING ')
         # 2021-08-08 12:31:04 INFO [prefect.FlowRunner] : Flow run SUCCESS: all reference tasks succeeded
 
         title: str = ''
-        if pattern_critical.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
+        if pattern_traceback.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
+            title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
+        elif pattern_critical.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
             title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
         elif pattern_error.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
             title = '【' + self.name + ':エラー発生】' + self.start_time.isoformat()
