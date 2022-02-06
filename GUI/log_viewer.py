@@ -2,6 +2,7 @@ import os
 import io
 import sys
 import re
+import pyperclip
 import tkinter
 import tkinter.font
 from tkinter import scrolledtext
@@ -16,7 +17,7 @@ path = os.getcwd()
 sys.path.append(path)
 from common_lib.directory_search_task import directory_search_task
 from common_lib.timezone_recovery import timezone_recovery
-from GUI.tkinter.log_viewer_validator import LogViewerValidator
+from GUI.log_viewer_validator import LogViewerValidator
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
 
@@ -40,6 +41,7 @@ class LogViewer(tkinter.Frame):
         self.current_page = tkinter.IntVar(value=1)
         self.record_count = tkinter.IntVar(value=0)
         self.max_page_count = tkinter.IntVar(value=0)
+        self.log_level_value = tkinter.IntVar(value=9)
 
         self.clipboard_value = tkinter.StringVar()
         #self.master.bind('<Control-v>', self.get_data)
@@ -69,7 +71,7 @@ class LogViewer(tkinter.Frame):
         '''
         初画面作成
         '''
-        ### 初画面表示の項目を定義
+        # 初画面表示の項目を定義
         # start_time_from
         date_from_label = tkinter.LabelFrame(
             self, text='start_time(from)')
@@ -105,7 +107,7 @@ class LogViewer(tkinter.Frame):
         self.record_type = tkinter.Listbox(
             self.record_type_label,
             selectmode=tkinter.EXTENDED,                    # リストボックスを複数選択可能とする。
-            height=5,                                       # 5行分の高さ
+            height=9,                                       # 5行分の高さ
             # 横幅はrecord_type_list内の最長の文字数に合わせる。
             width=max([len(x) for x in record_type_list]),
             yscrollcommand=self.yscroll.set,                # 縦スクロールバーを付与
@@ -114,18 +116,38 @@ class LogViewer(tkinter.Frame):
         for rec in record_type_list:
             self.record_type.insert(tkinter.END, rec)
         # レコードタイプを
-        self.record_type_label.grid(row=0, rowspan=3, column=1)
+        self.record_type_label.grid(row=0, rowspan=4, column=1)
         self.record_type.pack()
+
+        # ログメッセージレベルフィルター
+        self.log_level_label = tkinter.LabelFrame(
+            self, text='ログレベルフィルター')
+
+        self.log_level_none = tkinter.Radiobutton(
+            self.log_level_label, text="指定なし", value=9, variable=self.log_level_value)
+        self.log_level_none.grid(row=0, column=0, sticky=tkinter.W)
+        self.log_level_critical = tkinter.Radiobutton(
+            self.log_level_label, text="critical", value=0, variable=self.log_level_value,)
+        self.log_level_critical.grid(row=1, column=0, sticky=tkinter.W)
+        self.log_level_error = tkinter.Radiobutton(
+            self.log_level_label, text="error", value=1, variable=self.log_level_value,)
+        self.log_level_error.grid(row=0, column=1, sticky=tkinter.W)
+        self.log_level_warning = tkinter.Radiobutton(
+            self.log_level_label, text="warning", value=2, variable=self.log_level_value,)
+        self.log_level_warning.grid(row=1, column=1, sticky=tkinter.W)
+
+        self.log_level_label.grid(
+            row=2, column=0, sticky=tkinter.EW)
 
         # ログ検索実行ボタン
         self.log_list_get_button = tkinter.Button(
             self, text="ログ一覧取得", command=self.log_list_view)
         self.log_list_get_button.grid(
-            row=2, column=0, sticky=tkinter.EW)
+            row=3, column=0, sticky=tkinter.EW)
 
-        ### 情報、ページ関連表示ボックス
+        # 情報、ページ関連表示ボックス
         self.info_box = tkinter.Frame(self)
-        self.info_box.grid(row=3, column=0, columnspan=2)
+        self.info_box.grid(row=4, column=0, columnspan=2)
         # ラベルとボタンの高さ調整のためフォントを操作
         font1 = tkinter.font.Font(family="Lucida Console", size=15,)
         # 総件数
@@ -174,6 +196,7 @@ class LogViewer(tkinter.Frame):
                 time_to=self.time_to.get(),
                 record_type=[self.record_type.get(
                     i, i)[0] for i in self.record_type.curselection()],
+                log_level_value=self.log_level_value.get(),
             )
             print('検索条件 : ', condition_items.dict())
         except ValidationError as e:
@@ -191,9 +214,33 @@ class LogViewer(tkinter.Frame):
             if condition_items.date_to:
                 conditions.append(
                     {'start_time': {'$lte': condition_items.datetime_to()}})
-            if len(condition_items.record_type):
+            if condition_items.log_level_value == 9:  # ログレベル指定なしの場合
+                if len(condition_items.record_type):
+                    conditions.append(
+                        {'record_type': {'$in': [condition_items.record_type]}})
+            else:
                 conditions.append(
-                    {'record_type': {'$in': [condition_items.record_type]}})
+                    {'record_type': {'$in': [str(x['class_name']) for x in directory_search_task()]}})
+
+                pattern_traceback = re.compile(
+                    r'Traceback \(most recent call last\)\:')
+                pattern_critical = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
+                pattern_error = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
+                pattern_warning = re.compile(
+                    r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING')
+                log_level_selecter:list = []
+                if condition_items.log_level_value == 0:
+                    log_level_selecter = [pattern_traceback, pattern_critical, ]
+                elif condition_items.log_level_value == 1:
+                    log_level_selecter = [pattern_traceback,
+                                pattern_critical, pattern_error]
+                elif condition_items.log_level_value == 2:
+                    log_level_selecter = [pattern_traceback, pattern_critical,
+                                pattern_error, pattern_warning]
+                if len(log_level_selecter):
+                    conditions.append({'logs': {'$in': log_level_selecter}})
 
             if conditions:
                 self.filter: Any = {'$and': conditions}
@@ -215,7 +262,7 @@ class LogViewer(tkinter.Frame):
                 # ログリスト表示フレーム作成
                 self.logs_frame = tkinter.Frame(
                     self, relief="ridge", bd=3, padx=5, pady=5,)
-                self.logs_frame.grid(row=4, column=0, columnspan=4,
+                self.logs_frame.grid(row=5, column=0, columnspan=4,
                                      sticky=tkinter.W)
 
                 # ログリストの見出しと行数分の空明細を作成。
@@ -327,13 +374,17 @@ class LogViewer(tkinter.Frame):
             self.logs_table[idx + 1][5]['command'] = \
                 partial(self.log_view, record['_id'])
 
-            ### ログにCRITICAL、ERROR、WARNINGが含まれていた場合、文字色を変える。
-            text_color:str = '#000000'  # 黒
+            # ログにCRITICAL、ERROR、WARNINGが含まれていた場合、文字色を変える。
+            text_color: str = '#000000'  # 黒
             if 'logs' in record:
                 # 改行含む場合
+                #raise Exception
                 #CRITICAL > ERROR > WARNING > INFO > DEBUG
                 # 2021-08-08 12:31:04 [scrapy.core.engine] INFO: Spider closed (finished)
                 # クリティカルの場合、ログ形式とは限らない。raiseなどは別形式のため、後日検討要。
+                # Traceback (most recent call last):
+                pattern_traceback = re.compile(
+                    r'Traceback \(most recent call last\)\:')
                 pattern_critical = re.compile(
                     r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
                 pattern_error = re.compile(
@@ -341,12 +392,14 @@ class LogViewer(tkinter.Frame):
                 pattern_warning = re.compile(
                     r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING')
 
-                if pattern_critical.search(record['logs']):
-                    text_color:str = '#FF0000'  #赤
+                if pattern_traceback.search(record['logs']):
+                    text_color: str = '#FF0000'  # 赤
+                elif pattern_critical.search(record['logs']):
+                    text_color: str = '#FF0000'  # 赤
                 elif pattern_error.search(record['logs']):
-                    text_color:str = '#800000'  #茶色
+                    text_color: str = '#800000'  # 茶色
                 elif pattern_warning.search(record['logs']):
-                    text_color:str = '#FF9933'  #オレンジ
+                    text_color: str = '#FF9933'  # オレンジ
 
             self.logs_table[idx + 1][0]['fg'] = text_color
             self.logs_table[idx + 1][1]['fg'] = text_color
@@ -354,7 +407,6 @@ class LogViewer(tkinter.Frame):
             self.logs_table[idx + 1][3]['fg'] = text_color
             self.logs_table[idx + 1][4]['fg'] = text_color
             self.logs_table[idx + 1][5]['fg'] = text_color
-
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。
@@ -381,40 +433,59 @@ class LogViewer(tkinter.Frame):
 
     def log_view(self, mongo_id):
         '''ログの詳細を表示'''
+        # ログを取得
         record = self.log_get(mongo_id)
-        # サブ画面
+        # ログ表示用サブ画面作成
         log_window = tkinter.Toplevel()
-        log_window.title("log view")
-        # log_window.geometry("900x500")
-
-        for idx, (record_key, record_value) in enumerate(record.items()):
+        log_window.title(f"log view({mongo_id})")
+        # 各項目の行の挿入位置のポインター:初期化
+        row_pointer = 0
+        for record_key, record_value in record.items():
+            # 項目名、コピーボタン
             item_name = tkinter.Entry(log_window,)
-            # 末尾の続きに編集,,,ここは無くてもいいかも、、、
             item_name.insert(tkinter.END, str(record_key))
-            item_name.grid(row=idx, column=0, sticky=tkinter.NW, ipadx=30)
+            item_name.grid(row=row_pointer, column=0,
+                           sticky=tkinter.NW, ipadx=30)
+            copy_button = tkinter.Button(log_window, text="コピー", command="",)
 
             # valueを種類に応じて表示
             if record_key == 'logs':
-                # 改行含む場合
+                # 項目名、コピーボタン
+                copy_button.grid(row=row_pointer + 1, column=0,
+                                 sticky=tkinter.NW, ipadx=30)
+                copy_button['command'] = lambda: pyperclip.copy(
+                    str(record_value))
+                # 項目値
                 item_value = scrolledtext.ScrolledText(
                     log_window, wrap=tkinter.WORD, width=200)
                 item_value.insert(tkinter.END, str(record_value))
-                item_value.grid(row=idx, column=1)
+                item_value.grid(row=row_pointer, rowspan=2, column=1)
+                # 次の行ポインターへ
+                row_pointer += 2
             elif record_key in ['stats', 'crawl_urls_list']:
-                # 整形して表示したい場合
+                # 文字列を改行付きに整形
                 file_like = io.StringIO('')
                 pprint(record_value, stream=file_like)
-
+                # 項目名、コピーボタン
+                copy_button.grid(row=row_pointer + 1, column=0,
+                                 sticky=tkinter.NW, ipadx=30)
+                copy_button['command'] = self.clipboard_copy(
+                    file_like.getvalue())
+                # 項目値
                 item_value = scrolledtext.ScrolledText(
                     log_window, wrap=tkinter.WORD, width=200, height=self.number_of_lines)
-                item_value.insert(
-                    tkinter.END, str(file_like.getvalue()))
-                item_value.grid(row=idx, column=1)
+                item_value.insert(tkinter.END, file_like.getvalue())
+                item_value.grid(row=row_pointer, rowspan=2, column=1)
+                # 次の行ポインターへ
+                row_pointer += 2
             else:
+                # 項目値
                 item_value = tkinter.Entry(log_window)
                 item_value.insert(tkinter.END, str(record_value))
-                item_value.grid(
-                    row=idx, column=1, sticky=tkinter.EW, ipadx=500)
+                item_value.grid(row=row_pointer, column=1,
+                                sticky=tkinter.EW, ipadx=500)
+                # 次の行ポインターへ
+                row_pointer += 1
 
     def logs_list_get(self, page: int, record_count: int) -> Cursor:
         '''指定されたページに表示する分のログを取得して返す'''
@@ -429,6 +500,16 @@ class LogViewer(tkinter.Frame):
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''
         return self.crawler_log.find_one(filter={'_id': mondo_id},)
+
+    def clipboard_copy(self, record_value_shaping: str):
+        '''
+        対象のウィジェットのテキストをクリップボードへコピーする。
+        ※これは少々ややこしかった。以下のサイトを参考にした。
+          https://memopy.hatenadiary.jp/entry/2017/06/11/220452
+        '''
+        def a(record_value_shaping):
+            pyperclip.copy(record_value_shaping)
+        return lambda: a(record_value_shaping)
 
 
 ##################################################
