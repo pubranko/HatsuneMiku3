@@ -27,7 +27,7 @@ class ExtensionsTask(Task):
     '''
     mongo = MongoModel()
     start_time: datetime
-    log_file: str  # 読み込んだログファイルオブジェクト
+    log_record: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
     prefect_context: Context = prefect.context
 
@@ -53,7 +53,9 @@ class ExtensionsTask(Task):
         '''クリティカル、エラー、ワーニングがあったらメールで通知'''
         # logファイルオープン
         with open(self.log_file_path) as f:
-            self.log_file = f.read()
+            self.log_record = f.read()
+        #self.log_file = open (self.log_file_path)
+        #self.log_record = self.log_file.read()
 
         #CRITICAL > ERROR > WARNING > INFO > DEBUG
         # 2021-08-08 12:31:04 [scrapy.core.engine] INFO: Spider closed (finished)
@@ -68,18 +70,18 @@ class ExtensionsTask(Task):
         # 2021-08-08 12:31:04 INFO [prefect.FlowRunner] : Flow run SUCCESS: all reference tasks succeeded
 
         title: str = ''
-        if pattern_traceback.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
+        if pattern_traceback.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
             title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
-        elif pattern_critical.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL']:
+        elif pattern_critical.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
             title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
-        elif pattern_error.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
+        elif pattern_error.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
             title = '【' + self.name + ':エラー発生】' + self.start_time.isoformat()
-        elif pattern_warning.search(self.log_file) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
+        elif pattern_warning.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
             title = '【' + self.name + ':ワーニング発生】' + self.start_time.isoformat()
 
         if not title == '':
             msg: str = '\n'.join([
-                '【ログ】', self.log_file,
+                '【ログ】', self.log_record,
             ])
             mail_send(title, msg,)
 
@@ -90,7 +92,7 @@ class ExtensionsTask(Task):
             'start_time': self.start_time,
             'flow_name': self.prefect_context['flow_name'],
             'record_type': self.name,
-            'logs': self.log_file,
+            'logs': self.log_record,
         })
 
     def closed(self):
@@ -100,6 +102,8 @@ class ExtensionsTask(Task):
         resource_check()
         self.log_save()
         self.mongo.close()
+        #elf.log_file_path
+        os.remove(self.log_file_path)
 
     def run(self,):
         '''(ここはオーバーライドすることを前提とする。)

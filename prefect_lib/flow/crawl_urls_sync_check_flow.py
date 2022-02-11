@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
 from prefect.core.parameter import DateTimeParameter
@@ -9,16 +8,17 @@ from prefect.utilities.context import Context
 from prefect.engine import signals
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 from prefect_lib.settings import TIMEZONE
+from prefect_lib.common_module.logging_setting import log_file_path
 from prefect_lib.common_module.flow_status_change import flow_status_change
+from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 
-start_time = datetime.now().astimezone(TIMEZONE)
-log_file_path = os.path.join(
-    'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
-                    format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
+'''
+以下の同期チェックを行う。
+①クロール時に対象としたurlと実際にクロールした結果のレスポンス(logs -> crawler_response)
+②レスポンスとスクレイピング後のニュースクリップマスター(crawler_response -> news_clip_master)
+③ニュースクリップマスターとニュースクリップ(news_clip_master -> news_clip(solr))
+'''
 with Flow(
     name='Crawl urls sync check flow',
     state_handlers=[flow_status_change],
@@ -29,7 +29,7 @@ with Flow(
     start_time_to = DateTimeParameter(
         'start_time_to', required=False)
     task = CrawlUrlsSyncCheckTask(
-        log_file_path=log_file_path, start_time=start_time)
+        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain,
                   start_time_from=start_time_from,
                   start_time_to=start_time_to)

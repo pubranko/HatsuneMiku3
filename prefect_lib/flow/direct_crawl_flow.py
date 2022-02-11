@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
 from prefect.tasks.control_flow.conditional import ifelse
@@ -8,16 +7,17 @@ from prefect.engine import signals
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.task.direct_crawl_task import DirectCrawlTask
 from prefect_lib.settings import TIMEZONE
+from prefect_lib.common_module.logging_setting import log_file_path
 from prefect_lib.common_module.flow_status_change import flow_status_change
+from prefect_lib.task.direct_crawl_task import DirectCrawlTask
 
-start_time = datetime.now().astimezone(TIMEZONE)
-log_file_path = os.path.join(
-    'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
-                    format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
+'''
+ダイレクトクロール
+・指定したurlへのみクロールを行う。
+・事前にstatic/direct_crawl_files配下のファイルにクロールしたいurlを登録する。
+・実行時にそのファイル名を指定する。
+'''
 with Flow(
     name='Direct crawl flow',
     state_handlers=[flow_status_change],
@@ -26,7 +26,7 @@ with Flow(
     spider_name = Parameter('spider_name', required=True)()
     file = Parameter('file', required=False)()
     task = DirectCrawlTask(
-        log_file_path=log_file_path, start_time=start_time)
+        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(spider_name=spider_name, file=file,)
 
 # scraped_save_start_time_*による絞り込みは任意
