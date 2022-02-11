@@ -1,23 +1,19 @@
 import os
 import sys
-import logging
 from datetime import datetime
 from prefect import Flow, task, Parameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.task.regular_observation_controller_update_task import RegularObservationControllerUpdateTask
 from prefect_lib.settings import TIMEZONE
+from prefect_lib.common_module.logging_setting import log_file_path
 from prefect_lib.common_module.flow_status_change import flow_status_change
+from prefect_lib.task.regular_observation_controller_update_task import RegularObservationControllerUpdateTask
 
-start_time = datetime.now().astimezone(
-    TIMEZONE)
-log_file_path = os.path.join(
-    'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
-                    format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
+'''
+定期観測対象のスパイダーの登録・削除を行う。
+'''
 with Flow(
     name='Regular observation controller update Flow',
     state_handlers=[flow_status_change],
@@ -28,7 +24,7 @@ with Flow(
     in_out = Parameter('in_out', required=True)()  # in:登録、out：削除
 
     task = RegularObservationControllerUpdateTask(
-        log_file_path=log_file_path, start_time=start_time)
+        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(spiders_name=spiders_name, in_out=in_out)
 
 # domain、crawling_start_time_*による絞り込みは任意

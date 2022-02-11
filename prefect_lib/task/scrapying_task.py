@@ -32,7 +32,6 @@ class ScrapyingTask(ExtensionsTask):
 
             scraped_news_clip_master_save_run.check_and_save(kwargs)
             solr_news_clip_save_run.check_and_save(kwargs)
-        self.closed()
 
         # 終了処理
         self.closed()

@@ -1,23 +1,21 @@
 import os
 import sys
 from datetime import datetime
-import logging
 from prefect import Flow, task, Parameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.task.stop_controller_update_task import StopControllerUpdateTask
 from prefect_lib.settings import TIMEZONE
+from prefect_lib.common_module.logging_setting import log_file_path
 from prefect_lib.common_module.flow_status_change import flow_status_change
+from prefect_lib.task.stop_controller_update_task import StopControllerUpdateTask
 
-start_time = datetime.now().astimezone(TIMEZONE)
-log_file_path = os.path.join(
-    'logs', os.path.splitext(os.path.basename(__file__))[0] + '.log')
-logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
-                    format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-
+'''
+クロール対象のドメインの登録・削除を行う。
+スクレイピング対象のドメインの登録・削除を行う。
+'''
 with Flow(
     name='Stop Controller Update Flow',
     state_handlers=[flow_status_change],
@@ -26,7 +24,7 @@ with Flow(
     in_out = Parameter('in_out', required=True)()   #in:登録、out：削除
     destination = Parameter('destination', required=True)()   #crawlingとscrapyingの選択
     task = StopControllerUpdateTask(
-        log_file_path=log_file_path, start_time=start_time)
+        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain, in_out=in_out,
                   destination=destination)
 
