@@ -96,7 +96,9 @@ class LogViewer(tkinter.Frame):
         record_type_list = [str(x['class_name'])
                             for x in directory_search_task()]
         record_type_list.extend(
-            ['spider_reports', 'news_crawl_asy', 'news_clip_master_async', 'solr_news_clip_async', ])
+            ['spider_reports', ])
+        # record_type_list.extend(
+        #     ['spider_reports', 'news_crawl_async', 'news_clip_master_async', 'solr_news_clip_async', ])
         record_type_list.sort()
         self.record_type_label = tkinter.LabelFrame(
             self, text='record_type')

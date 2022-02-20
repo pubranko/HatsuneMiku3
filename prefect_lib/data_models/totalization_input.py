@@ -10,12 +10,11 @@ from pydantic.main import ModelMetaclass
 from prefect_lib.settings import TIMEZONE
 
 
-class LogAnalysisReportModel(BaseModel):
+class TotalizationInput(BaseModel):
     '''
     start_time,report_term,base_date
     '''
     start_time: datetime = Field(..., title="開始時間")
-    report_term: str = Field(..., title="レポートタイプ")
     base_date: Optional[datetime] = None
 
     def __init__(self, **data: Any):
@@ -32,15 +31,6 @@ class LogAnalysisReportModel(BaseModel):
     def start_time_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, datetime), '日付型以外がエラー'
-        return value
-
-    @validator('report_term')
-    def report_term_check(cls, value: str, values: dict) -> str:
-        if value:
-            assert isinstance(value, str), '文字列型以外がエラー'
-            if value not in ['daily', 'weekly', 'monthly', 'yearly']:   # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
-                raise ValueError(
-                    'レポート期間の指定ミス。daily, weekly, monthly, yearlyで入力してください。')
         return value
 
     @validator('base_date')
@@ -61,21 +51,12 @@ class LogAnalysisReportModel(BaseModel):
         レポート期間(report_term)と基準日(base_date)を基に基準期間(base_date_from, base_date_to)を取得する。
         ※基準日(base_date)=基準期間to(base_date_to)となる。
         '''
-        start_time: datetime = self.start_time
-        #base_date = self.base_date
         if self.base_date:
-            base_date_to = self.base_date
+            base_date_from = self.base_date
         else:
-            base_date_to = start_time.replace(
-                hour=0, minute=0, second=0, microsecond=0)
+            base_date_from = self.start_time.replace(
+                hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=1)
 
-        if self.report_term == 'daily':
-            base_date_from = base_date_to - relativedelta(days=1)
-        elif self.report_term == 'weekly':
-            base_date_from = base_date_to - relativedelta(weeks=1)
-        elif self.report_term == 'monthly':
-            base_date_from = base_date_to - relativedelta(months=1)
-        else:
-            base_date_from = base_date_to - relativedelta(years=1)
+        base_date_to = base_date_from + relativedelta(days=1)
 
         return (base_date_from, base_date_to)

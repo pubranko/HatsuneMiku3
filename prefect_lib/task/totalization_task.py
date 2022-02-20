@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 import sys
-from typing import Any, Sequence
+from typing import Any, Sequence, Dict, List, Tuple, Union
 from datetime import datetime
 from pydantic import ValidationError
 from prefect.engine import state
@@ -18,13 +18,14 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from common_lib.timezone_recovery import timezone_recovery
 from common_lib.mail_send import mail_send
-from prefect_lib.data_models.log_analysis_report_model import LogAnalysisReportModel
-from models.mongo_model import MongoModel
+from prefect_lib.data_models.totalization_input import TotalizationInput
+from prefect_lib.data_models.asynchronous_report_totalization_data import AsynchronousReportTotalizationData
 from models.asynchronous_report_model import AsynchronousReportModel
 from models.crawler_logs_model import CrawlerLogsModel
+from models.log_totalization_model import LogTotalizationModel
 
 
-class LogAnalysisReportTask(ExtensionsTask):
+class TotalizationTask(ExtensionsTask):
     '''
     '''
 
@@ -37,9 +38,8 @@ class LogAnalysisReportTask(ExtensionsTask):
             f'=== LogAnalysisReportTask run kwargs : {kwargs}')
 
         try:
-            log_analysis_report = LogAnalysisReportModel(
+            totalization = TotalizationInput(
                 start_time=self.start_time,
-                report_term=kwargs['report_term'],
                 base_date=kwargs['base_date'],
             )
         except ValidationError as e:
@@ -47,18 +47,29 @@ class LogAnalysisReportTask(ExtensionsTask):
             # e.errors()エラー結果をdict形式で見れる。
             # str(e)エラー結果をlist形式で見れる。
             self.logger.error(
-                f'=== LogAnalysisReportTask run : {e.errors()}')
+                f'=== TotalizationTask run エラー内容: {e.errors()}')
             raise ENDRUN(state=state.Failed())
 
         self.logger.info(
-                f'=== LogAnalysisReportTask run 基準日from ~ to : {log_analysis_report.base_date_get()}')
+            f'=== TotalizationTask run 基準日from ~ to : {totalization.base_date_get()}')
 
         '''
         asynchronous_report
         crawler_logs
         '''
-        self.asynchronous_report_analysis(log_analysis_report)
-        self.crawler_logs_analysis(log_analysis_report)
+        ### 非同期リストの集計
+        asynchronous_report_data = AsynchronousReportTotalizationData()
+        self.asynchronous_report_totalization(
+            totalization, asynchronous_report_data)
+        print(asynchronous_report_data.data)
+
+        ### クローラーログの集計
+        # ここで
+        self.crawler_logs_totalization(totalization)
+
+
+        ### 集計結果を保存
+        log_totalization_model = LogTotalizationModel(self.mongo)   #集計結果保存用のモデル、まだまだ作成中
 
         # 各コレクション、solrの件数を取得して同期確認
         # ここで上記の解析結果よりレポートを作成する？
@@ -67,7 +78,12 @@ class LogAnalysisReportTask(ExtensionsTask):
         self.closed()
         # return ''
 
-    def asynchronous_report_analysis(self, log_analysis_report: LogAnalysisReportModel):
+    def asynchronous_report_totalization(
+            self, totalization: TotalizationInput,
+            asynchronous_report_data: AsynchronousReportTotalizationData) -> None:
+        '''
+        非同期レポートの集計を行う。
+        '''
         '''
         まずデータの有無。
         指定期間内に非同期データがあればレポート要。
@@ -78,7 +94,7 @@ class LogAnalysisReportTask(ExtensionsTask):
 
         asynchronous_report_model = AsynchronousReportModel(self.mongo)
 
-        base_date_from, base_date_to = log_analysis_report.base_date_get()
+        base_date_from, base_date_to = totalization.base_date_get()
 
         #
         conditions: list = []
@@ -87,55 +103,33 @@ class LogAnalysisReportTask(ExtensionsTask):
         conditions.append(
             {'start_time': {'$lt': base_date_to}})
 
-        log_filter: Any = {'$and': conditions}
+        filter: Any = {'$and': conditions}
 
         asynchronous_report_records: Cursor = asynchronous_report_model.find(
-            filter=log_filter,
-            projection={'_id': 0, 'parameter': 0}
-        )
+            filter=filter,
+            projection={'_id': 0, 'parameter': 0})
         self.logger.info(
             f'=== 非同期レポート件数({asynchronous_report_records.count()})')
 
-        # レコードタイプ別カウントエリア
-        by_record_type_count: dict[str, int] = {
-            'news_crawl_async': 0,
-            'news_clip_master_async': 0,
-            'solr_news_clip_async': 0,
-        }
-        # レコードタイプ別・ドメイン別カウントエリア
-        by_record_type_by_domain_count: dict[str, dict[str, int]] = {
-            'news_crawl_async': {},
-            'news_clip_master_async': {},
-            'solr_news_clip_async': {},
-        }
-
         for asynchronous_report_record in asynchronous_report_records:
-            # print(asynchronous_report_record)
+
+            # 新規のレコードタイプの場合初期化する。
+            if asynchronous_report_data.record_type_get(asynchronous_report_record
+                                                        ['record_type']) == {}:
+                asynchronous_report_data.record_type_set(
+                    asynchronous_report_record['record_type'])
 
             # レコードタイプ別に集計を行う。
-            by_record_type_count[asynchronous_report_record['record_type']] += 1
-            self.by_domain_asynchronous_report_count(
-                asynchronous_report_record['async_list'], by_record_type_by_domain_count[asynchronous_report_record['record_type']])
+            asynchronous_report_data.record_type_counter(
+                asynchronous_report_record['record_type'])
 
-        print(by_record_type_count)
-        print(by_record_type_by_domain_count)
+            # ドメイン別の集計を行う。
+            asynchronous_report_data.by_domain_counter(
+                asynchronous_report_record['record_type'],
+                asynchronous_report_record['async_list']
+            )
 
-        wb = Workbook()
-        ws = wb.active
-        ws['a1'] = 10
-        cell = ws['a1']
-        #cell.font = Font()
-
-        wb.save('test.xlsx')
-
-    def by_domain_asynchronous_report_count(self, async_list: list, by_domain_count: dict):
-        for url in async_list:
-            url_parse = urlparse(url)
-            if url_parse.netloc not in by_domain_count:
-                by_domain_count[url_parse.netloc] = 0
-            by_domain_count[url_parse.netloc] += 1
-
-    def crawler_logs_analysis(self, log_analysis_report: LogAnalysisReportModel):
+    def crawler_logs_totalization(self, totalization: TotalizationInput):
         '''
         ログレベルワーニング、エラー、クリティカルの発生件数
         record_type = spider_reports
@@ -144,7 +138,7 @@ class LogAnalysisReportTask(ExtensionsTask):
         '''
         crawler_logs = CrawlerLogsModel(self.mongo)
 
-        base_date_from, base_date_to = log_analysis_report.base_date_get()
+        base_date_from, base_date_to = totalization.base_date_get()
 
         #
         conditions: list = []
@@ -153,10 +147,10 @@ class LogAnalysisReportTask(ExtensionsTask):
         conditions.append(
             {'start_time': {'$lt': base_date_to}})
 
-        log_filter: Any = {'$and': conditions}
+        filter: Any = {'$and': conditions}
 
         crawler_logs_records: Cursor = crawler_logs.find(
-            filter=log_filter,
+            filter=filter,
             projection={'_id': 0, 'crawl_urls_list': 0}  # crawl_urls_listは不要
         )
         self.logger.info(
