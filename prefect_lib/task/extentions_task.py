@@ -30,6 +30,7 @@ class ExtensionsTask(Task):
     log_record: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
     prefect_context: Context = prefect.context
+    logger:Logger
 
     def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,6 +44,7 @@ class ExtensionsTask(Task):
         # 開始時間
         if start_time:
             self.start_time = start_time
+            self.logger.info('=== ExtensionsTask __init__ start_time : ' + str(start_time.isoformat()))
         else:
             raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
