@@ -10,7 +10,7 @@ from pydantic.main import ModelMetaclass
 from prefect_lib.settings import TIMEZONE
 
 
-class TotalizationInput(BaseModel):
+class StatsInfoCollectInput(BaseModel):
     '''
     start_time,report_term,base_date
     '''
