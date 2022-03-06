@@ -1,4 +1,4 @@
-from prefect import Flow
+from prefect.core.flow import Flow
 # ステータス一覧： Running,Success,Failed,Cancelled,TimedOut,TriggerFailed,ValidationFailed,Skipped,Mapped,Cached,Looped,Finished,Cancelling,Retrying,Resume,Queued,Submitted,ClientFailed,Paused,Scheduled,Pending
 from prefect.engine.state import Running, Success, Failed
 

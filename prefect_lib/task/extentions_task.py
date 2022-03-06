@@ -1,15 +1,15 @@
 # 単一プロセスでcrawlerprocessを使った例（クラスバージョン）
 import os
 import sys
-path = os.getcwd()
-sys.path.append(path)
 import re
+from typing import Any
 from logging import Logger
 from datetime import datetime
 import prefect
-from prefect import Task, Parameter
+from prefect.core.task import Task
 from prefect.engine import signals
 from prefect.utilities.context import Context
+from prefect.utilities import context as prefect_utilities_con
 path = os.getcwd()
 sys.path.append(path)
 from common_lib.mail_send import mail_send
@@ -29,7 +29,9 @@ class ExtensionsTask(Task):
     start_time: datetime
     log_record: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
-    prefect_context: Context = prefect.context
+    #prefect_context: Context = prefect.context
+    any:Any = prefect
+    prefect_context: Context = any.context
     logger:Logger
 
     def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):

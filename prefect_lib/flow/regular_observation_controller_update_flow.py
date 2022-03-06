@@ -1,7 +1,8 @@
 import os
 import sys
 from datetime import datetime
-from prefect import Flow, task, Parameter
+from prefect.core.flow import Flow
+from prefect.core.parameter import Parameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.utilities.context import Context
 path = os.getcwd()

@@ -1,7 +1,10 @@
 import os
 import sys
 from datetime import datetime
-from prefect import Flow, task, Parameter
+# from prefect import Flow
+# from prefect import Flow, task, Parameter
+from prefect.core.flow import Flow
+from prefect.core.parameter import Parameter
 from prefect.core.parameter import DateTimeParameter
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
@@ -11,7 +14,7 @@ sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.common_module.logging_setting import log_file_path
 from prefect_lib.common_module.flow_status_change import flow_status_change
-from prefect_lib.task.log_analysis_report_task import LogAnalysisReportTask
+from prefect_lib.task.stats_analysis_report_task import StatsAnalysisReportTask
 
 '''
 各種実行結果を解析しレポートとして出力する。
@@ -22,7 +25,7 @@ with Flow(
 ) as flow:
     report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
     base_date = DateTimeParameter('base_date', required=False,)
-    task = LogAnalysisReportTask(
+    task = StatsAnalysisReportTask(
         log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(report_term=report_term,
                   base_date=base_date,)
@@ -32,5 +35,5 @@ flow.run(parameters=dict(
     #report_term='weekly',
     #report_term='monthly',
     #report_term='yearly',
-    base_date=datetime(2022, 2, 12).astimezone(TIMEZONE),
+    base_date=datetime(2022, 2, 13).astimezone(TIMEZONE),
 ))
