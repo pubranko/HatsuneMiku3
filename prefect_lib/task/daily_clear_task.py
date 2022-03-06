@@ -22,7 +22,7 @@ class DailyClearTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''''''
-        def delete_non_filter(collection_name: str, collection: Union[ScrapedFromResponseModel],) -> None:
+        def delete_non_filter(collection_name: str, collection: ScrapedFromResponseModel,) -> None:
             delete_count: int = collection.delete_many(filter={})
             logger.info(f'=== DailyClearTask run delete_non_filter : 削除件数({collection_name}) : {delete_count}件')
 

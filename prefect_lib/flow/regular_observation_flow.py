@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import datetime
-from prefect import Flow, task
+from prefect.core.flow import Flow
 from prefect.tasks.control_flow.conditional import ifelse
 from prefect.engine import signals
 from prefect.utilities.context import Context

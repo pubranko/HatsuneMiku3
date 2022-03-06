@@ -30,7 +30,7 @@ class StatsInfoCollectData:
         self.robots_response_status_dataframe = pd.DataFrame({
             'record_type': [],
             'start_time': [],
-            'time_period_hour':[],
+            'time_period_hour': [],
             'spider_name': [],
             'robots_response_status': [],
             'count': [],
@@ -39,7 +39,7 @@ class StatsInfoCollectData:
         self.downloader_response_status_dataframe = pd.DataFrame({
             'record_type': [],
             'start_time': [],
-            'time_period_hour':[],
+            'time_period_hour': [],
             'spider_name': [],
             'downloader_response_status': [],
             'count': [],
@@ -48,7 +48,7 @@ class StatsInfoCollectData:
         self.spider_stats_datafram = pd.DataFrame({
             'record_type': [],
             'start_time': [],
-            'time_period_hour':[],
+            'time_period_hour': [],
             'spider_name': [],
             'log_count/CRITICAL': [],
             'log_count/ERROR': [],
@@ -65,8 +65,10 @@ class StatsInfoCollectData:
         })
 
     def spider_stats_store(self, start_time: datetime, spider_name: str, stats: dict,) -> None:
-        '''pandasのデータフレームを作成する。'''
-
+        '''
+        pandasのデータフレームを作成する。
+        ※pandasのappendは処理効率が悪い。後日処理方法を見直し予定。
+        '''
         for key, value in stats.items():
             # 例）robotstxt/response_status_count/403、robotstxt/response_status_count/200 など
             # 例）downloader/response_status_count/200、downloader/response_status_count/404 など
@@ -74,7 +76,7 @@ class StatsInfoCollectData:
                 self.robots_response_status_dataframe = self.robots_response_status_dataframe.append({
                     'record_type': 'robots_response_status',
                     'start_time': start_time,
-                    'time_period_hour':start_time.strftime('%H'),
+                    'time_period_hour': start_time.strftime('%H'),
                     'spider_name': spider_name,
                     'robots_response_status': str(key).replace('robotstxt/response_status_count/', ''),
                     'count': value,
@@ -83,7 +85,7 @@ class StatsInfoCollectData:
                 self.downloader_response_status_dataframe = self.downloader_response_status_dataframe.append({
                     'record_type': 'downloader_response_status',
                     'start_time': start_time,
-                    'time_period_hour':start_time.strftime('%H'),
+                    'time_period_hour': start_time.strftime('%H'),
                     'spider_name': spider_name,
                     'downloader_response_status': str(key).replace('downloader/response_status_count/', ''),
                     'count': value,
@@ -92,7 +94,7 @@ class StatsInfoCollectData:
         self.spider_stats_datafram = self.spider_stats_datafram.append({
             'record_type': 'spider_stats',
             'start_time': start_time,
-            'time_period_hour':start_time.strftime('%H'),
+            'time_period_hour': start_time.strftime('%H'),
             'spider_name': spider_name,
             'log_count/CRITICAL': stats['log_count/CRITICAL'] if 'log_count/CRITICAL' in stats else 0,
             'log_count/ERROR': stats['log_count/ERROR'] if 'log_count/ERROR' in stats else 0,
@@ -107,6 +109,18 @@ class StatsInfoCollectData:
             'item_scraped_count': stats['item_scraped_count'] if 'item_scraped_count' in stats else 0,
             'finish_reason': stats['finish_reason'] if 'finish_reason' in stats else 0,
         }, ignore_index=True)
+
+    def dataframe_recovery(self, stats_info_collect_record: dict) -> None:
+        '''pandasのデータフレームを復元する。'''
+        if stats_info_collect_record['record_type'] == 'robots_response_status':
+            self.robots_response_status_dataframe = self.robots_response_status_dataframe.append(
+                stats_info_collect_record, ignore_index=True)
+        elif stats_info_collect_record['record_type'] == 'downloader_response_status':
+            self.downloader_response_status_dataframe = self.downloader_response_status_dataframe.append(
+                stats_info_collect_record, ignore_index=True)
+        elif stats_info_collect_record['record_type'] == 'spider_stats':
+            self.spider_stats_datafram = self.spider_stats_datafram.append(
+                stats_info_collect_record, ignore_index=True)
 
     # ログ１件より生成するデータイメージ。基準日とスパイダー名がkeyになる。
     # temp = {
