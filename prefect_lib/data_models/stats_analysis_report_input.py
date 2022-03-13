@@ -1,4 +1,6 @@
+from __future__ import annotations
 from calendar import month
+from copy import deepcopy
 import re
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -15,7 +17,8 @@ class StatsAnalysisReportInput(BaseModel):
     start_time,report_term,base_date
     '''
     start_time: datetime = Field(..., title="開始時間")
-    report_term: str = Field(..., title="レポートタイプ")
+    report_term: str = Field(..., title="レポート期間")
+    totalling_term: str = Field(..., title="集計期間")
     base_date: Optional[datetime] = None
 
     def __init__(self, **data: Any):
@@ -38,7 +41,18 @@ class StatsAnalysisReportInput(BaseModel):
     def report_term_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, str), '文字列型以外がエラー'
-            if value not in ['daily', 'weekly', 'monthly', 'yearly']:   # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
+            # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
+            if value not in ['daily', 'weekly', 'monthly', 'yearly']:
+                raise ValueError(
+                    'レポート期間の指定ミス。daily, weekly, monthly, yearlyで入力してください。')
+        return value
+
+    @validator('totalling_term')
+    def totalling_term_check(cls, value: str, values: dict) -> str:
+        if value:
+            assert isinstance(value, str), '文字列型以外がエラー'
+            # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
+            if value not in ['daily', 'weekly', 'monthly', 'yearly']:
                 raise ValueError(
                     'レポート期間の指定ミス。daily, weekly, monthly, yearlyで入力してください。')
         return value
@@ -79,3 +93,29 @@ class StatsAnalysisReportInput(BaseModel):
             base_date_from = base_date_to - relativedelta(years=1)
 
         return (base_date_from, base_date_to)
+
+    def datetime_term_list(self) -> list[tuple[datetime, datetime]]:
+        '''
+        レポート期間を集計期間単位で区切ったタプルを作成する。それをリストに格納して返す。
+        [(from, to), (from, to),,,]
+        '''
+        term_list: list[tuple[datetime, datetime]] = []
+        base_date_from, base_date_to = self.base_date_get()
+
+        if self.totalling_term == 'daily':
+            term = relativedelta(days=1)
+        elif self.totalling_term == 'weekly':
+            term = relativedelta(weeks=1)
+        elif self.totalling_term == 'monthly':
+            term = relativedelta(months=1)
+        else:
+            term = relativedelta(years=1)
+
+        calc_date_from = deepcopy(base_date_to) - term
+        calc_date_to = deepcopy(base_date_to)
+        while calc_date_from >= base_date_from:
+            term_list.append((calc_date_from, calc_date_to))
+            calc_date_from = calc_date_from - term
+            calc_date_to = calc_date_to - term
+
+        return term_list
