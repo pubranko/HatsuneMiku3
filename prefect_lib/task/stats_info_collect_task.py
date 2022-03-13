@@ -59,20 +59,21 @@ class StatsInfoCollectTask(ExtensionsTask):
 
         # クローラーログの集計
         crawler_logs_data = StatsInfoCollectData()
-        self.crawler_logs_stats_info_collect(stats_info_collect_input, crawler_logs_data)
+        self.crawler_logs_stats_info_collect(
+            stats_info_collect_input, crawler_logs_data)
 
-        ### 集計結果を保存
+        # 集計結果を保存
         stats_info_collect_model = StatsInfoCollectModel(
             self.mongo)
         # レコードタイプ = spider_stats
-        stats_info_collect_model.all_update(
-            crawler_logs_data.spider_stats_datafram.to_dict(orient='records'))
+        stats_info_collect_model.stats_update(
+            crawler_logs_data.spider_df.to_dict(orient='records'))
         # レコードタイプ = robots_response_status
-        stats_info_collect_model.all_update(
-            crawler_logs_data.robots_response_status_dataframe.to_dict(orient='records'))
+        stats_info_collect_model.stats_update(
+            crawler_logs_data.robots_df.to_dict(orient='records'), 'robots_response_status')
         # レコードタイプ = downloader_response_status
-        stats_info_collect_model.all_update(
-            crawler_logs_data.downloader_response_status_dataframe.to_dict(orient='records'))
+        stats_info_collect_model.stats_update(
+            crawler_logs_data.downloader_df.to_dict(orient='records'), 'downloader_response_status')
 
         # 終了処理
         self.closed()

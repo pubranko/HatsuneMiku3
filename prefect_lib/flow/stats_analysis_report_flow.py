@@ -24,16 +24,19 @@ with Flow(
     state_handlers=[flow_status_change],
 ) as flow:
     report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
+    totalling_term = Parameter('totalling_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
     base_date = DateTimeParameter('base_date', required=False,)
     task = StatsAnalysisReportTask(
         log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(report_term=report_term,
+                  totalling_term=totalling_term,
                   base_date=base_date,)
 
 flow.run(parameters=dict(
-    report_term='daily',
-    #report_term='weekly',
+    #report_term='daily',
+    report_term='weekly',
     #report_term='monthly',
     #report_term='yearly',
+    totalling_term='daily',
     base_date=datetime(2022, 2, 13).astimezone(TIMEZONE),
 ))

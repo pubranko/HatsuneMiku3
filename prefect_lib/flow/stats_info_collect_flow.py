@@ -28,5 +28,5 @@ with Flow(
     result = task(base_date=base_date,)
 
 flow.run(parameters=dict(
-    base_date=datetime(2022, 2, 12).astimezone(TIMEZONE),
+    base_date=datetime(2022, 2, 11).astimezone(TIMEZONE),
 ))

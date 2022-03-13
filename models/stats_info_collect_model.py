@@ -11,7 +11,7 @@ class StatsInfoCollectModel(MongoCommonModel):
     mongo: MongoModel
     collection_name: str = os.environ['MONGO_STATS_INFO_COLLECT']
 
-    def all_update(self, records: list):
+    def stats_update(self, records: list, status_key: str = ''):
         ''' '''
         for record in records:
             conditions: list = []
@@ -21,6 +21,9 @@ class StatsInfoCollectModel(MongoCommonModel):
                 {'start_time': record['start_time']})
             conditions.append(
                 {'spider_name': record['spider_name']})
+            if len(status_key):
+                conditions.append(
+                    {status_key: record[status_key]})
             filter: Any = {'$and': conditions}
 
             self.update(filter=filter, record=record)

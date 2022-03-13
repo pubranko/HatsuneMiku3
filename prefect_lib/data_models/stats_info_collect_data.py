@@ -1,5 +1,7 @@
+from __future__ import annotations
 from datetime import datetime
 import pandas as pd
+from copy import deepcopy
 
 
 class StatsInfoCollectData:
@@ -21,13 +23,17 @@ class StatsInfoCollectData:
     #spider_stats_totalization_data: dict = field(default_factory=dict)
     '''データイメージ(domain = sankei.com + ロイター の例)'''
 
-    robots_response_status_dataframe: pd.DataFrame
-    downloader_response_status_dataframe: pd.DataFrame
-    spider_stats_datafram: pd.DataFrame
+    robots_df: pd.DataFrame
+    downloader_df: pd.DataFrame
+    spider_df: pd.DataFrame
+
+    #{'sum': df, 'mean': df, 'min': df, 'max': df}
+    robots_result_df: dict[str, pd.DataFrame]
+    downloader_result_df: dict[str, pd.DataFrame]
+    spider_result_df: dict[str, pd.DataFrame]
 
     def __init__(self):
-
-        self.robots_response_status_dataframe = pd.DataFrame({
+        self.robots_df = pd.DataFrame({
             'record_type': [],
             'start_time': [],
             'time_period_hour': [],
@@ -35,8 +41,7 @@ class StatsInfoCollectData:
             'robots_response_status': [],
             'count': [],
         })
-
-        self.downloader_response_status_dataframe = pd.DataFrame({
+        self.downloader_df = pd.DataFrame({
             'record_type': [],
             'start_time': [],
             'time_period_hour': [],
@@ -44,8 +49,7 @@ class StatsInfoCollectData:
             'downloader_response_status': [],
             'count': [],
         })
-
-        self.spider_stats_datafram = pd.DataFrame({
+        self.spider_df = pd.DataFrame({
             'record_type': [],
             'start_time': [],
             'time_period_hour': [],
@@ -64,6 +68,53 @@ class StatsInfoCollectData:
             'finish_reason': [],
         })
 
+        robots_result_col = {
+            'aggregate_base_term': [],
+            'spider_name': [],
+            'robots_response_status': [],
+            'count': [],
+        }
+        downloader_result_col = {
+            'aggregate_base_term': [],
+            'spider_name': [],
+            'downloader_response_status': [],
+            'count': [],
+        }
+        spider_result_col = {
+            'aggregate_base_term': [],
+            'log_count/CRITICAL': [],
+            'log_count/ERROR': [],
+            'log_count/WARNING': [],
+            'elapsed_time_seconds': [],
+            'memusage/max': [],
+            'downloader/request_count': [],
+            'downloader/response_count': [],
+            'request_depth_max': [],
+            'downloader/response_bytes': [],
+            'retry/count': [],
+            'item_scraped_count': [],
+        }
+
+        #{'sum': df, 'mean': df, 'min': df, 'max': df}
+        self.robots_result_df: dict[str, pd.DataFrame] = {
+            'sum': pd.DataFrame(robots_result_col),
+            'mean': pd.DataFrame(robots_result_col),
+            'min': pd.DataFrame(robots_result_col),
+            'max': pd.DataFrame(robots_result_col),
+        }
+        self.downloader_result_df: dict[str, pd.DataFrame] = {
+            'sum': pd.DataFrame(downloader_result_col),
+            'mean': pd.DataFrame(downloader_result_col),
+            'min': pd.DataFrame(downloader_result_col),
+            'max': pd.DataFrame(downloader_result_col),
+        }
+        self.spider_result_df: dict[str, pd.DataFrame] = {
+            'sum': pd.DataFrame(spider_result_col),
+            'mean': pd.DataFrame(downloader_result_col),
+            'min': pd.DataFrame(downloader_result_col),
+            'max': pd.DataFrame(downloader_result_col),
+        }
+
     def spider_stats_store(self, start_time: datetime, spider_name: str, stats: dict,) -> None:
         '''
         pandasのデータフレームを作成する。
@@ -73,7 +124,7 @@ class StatsInfoCollectData:
             # 例）robotstxt/response_status_count/403、robotstxt/response_status_count/200 など
             # 例）downloader/response_status_count/200、downloader/response_status_count/404 など
             if 'robotstxt/response_status_count/' in key:
-                self.robots_response_status_dataframe = self.robots_response_status_dataframe.append({
+                self.robots_df = self.robots_df.append({
                     'record_type': 'robots_response_status',
                     'start_time': start_time,
                     'time_period_hour': start_time.strftime('%H'),
@@ -82,7 +133,7 @@ class StatsInfoCollectData:
                     'count': value,
                 }, ignore_index=True)
             if 'downloader/response_status_count/' in key:
-                self.downloader_response_status_dataframe = self.downloader_response_status_dataframe.append({
+                self.downloader_df = self.downloader_df.append({
                     'record_type': 'downloader_response_status',
                     'start_time': start_time,
                     'time_period_hour': start_time.strftime('%H'),
@@ -91,7 +142,7 @@ class StatsInfoCollectData:
                     'count': value,
                 }, ignore_index=True)
 
-        self.spider_stats_datafram = self.spider_stats_datafram.append({
+        self.spider_df = self.spider_df.append({
             'record_type': 'spider_stats',
             'start_time': start_time,
             'time_period_hour': start_time.strftime('%H'),
@@ -111,16 +162,78 @@ class StatsInfoCollectData:
         }, ignore_index=True)
 
     def dataframe_recovery(self, stats_info_collect_record: dict) -> None:
-        '''pandasのデータフレームを復元する。'''
+        '''引数のレコードを基にpandasのデータフレームを復元する。'''
         if stats_info_collect_record['record_type'] == 'robots_response_status':
-            self.robots_response_status_dataframe = self.robots_response_status_dataframe.append(
+            self.robots_df = self.robots_df.append(
                 stats_info_collect_record, ignore_index=True)
         elif stats_info_collect_record['record_type'] == 'downloader_response_status':
-            self.downloader_response_status_dataframe = self.downloader_response_status_dataframe.append(
+            self.downloader_df = self.downloader_df.append(
                 stats_info_collect_record, ignore_index=True)
         elif stats_info_collect_record['record_type'] == 'spider_stats':
-            self.spider_stats_datafram = self.spider_stats_datafram.append(
+            self.spider_df = self.spider_df.append(
                 stats_info_collect_record, ignore_index=True)
+
+    def date_time_set_index(self, columns: str, df: pd.DataFrame):
+        '''
+        引数で指定されたデータフレームに対し、引数で指定したカラムの
+        インデックスを追加したデータフレームを返す。
+        '''
+        df[columns] = pd.to_datetime(df[columns])
+        df.set_index(['start_time']).tz_localize(
+            'UTC').tz_convert('Asia/Tokyo')
+        return df.set_index(['start_time']).tz_localize('UTC').tz_convert('Asia/Tokyo')
+
+    def stats_analysis_exec(self, datetime_term_list: list[tuple[datetime, datetime]]):
+        '''集計期間リストごとに解析を実行'''
+        # start_timeをインデックスとしたdataframを生成
+        # index生成後ソートを実行する。※ソートしないと将来的にエラーになると警告を受ける。
+        robots_df_index = self.date_time_set_index(
+            'start_time', self.robots_df).sort_index()
+        downloader_df_index = self.date_time_set_index(
+            'start_time', self.downloader_df).sort_index()
+        spider_df_index = self.date_time_set_index(
+            'start_time', self.spider_df).sort_index()
+
+        for calc_date_from, calc_date_to in datetime_term_list:
+            # 集計期間ごとに抽出
+            _ = '%Y-%m-%d %H:%M:%S.%f'
+            robots_select_df = robots_df_index[calc_date_from.strftime(
+                _): calc_date_to.strftime(_)]
+            downloader_select_df = downloader_df_index[calc_date_from.strftime(
+                _): calc_date_to.strftime(_)]
+            spider_select_df = spider_df_index[calc_date_from.strftime(
+                _): calc_date_to.strftime(_)]
+
+            # 上記の期間抽出されたデータフレームより集計結果を求める。
+            self.aggregate_result_set(self.robots_result_df, robots_select_df, [
+                                      'spider_name', 'robots_response_status'], calc_date_from.strftime('%Y-%m-%d'))
+            self.aggregate_result_set(self.downloader_result_df, downloader_select_df, [
+                                      'spider_name', 'downloader_response_status'], calc_date_from.strftime('%Y-%m-%d'))
+            self.aggregate_result_set(self.spider_result_df, spider_select_df, [
+                                      'spider_name'], calc_date_from.strftime('%Y-%m-%d'))
+
+        print('=======================')
+        print(self.robots_result_df)
+        print('=======================')
+        print(self.downloader_result_df)
+        print('=======================')
+        print(self.spider_result_df)
+
+    def aggregate_result_set(self, result_df: dict[str, pd.DataFrame], select_df: pd.DataFrame, groupby: list, aggregate_base_term: str):
+        ''''''
+        #{'sum': df, 'mean': df, 'min': df, 'max': df}
+        _ = select_df.groupby(groupby).sum()
+        _['aggregate_base_term'] = aggregate_base_term
+        result_df['sum'] = pd.concat([result_df['sum'], _])
+        _ = select_df.groupby(groupby).mean()
+        _['aggregate_base_term'] = aggregate_base_term
+        result_df['mean'] = pd.concat([result_df['mean'], _])
+        _ = select_df.groupby(groupby).min()
+        _['aggregate_base_term'] = aggregate_base_term
+        result_df['min'] = pd.concat([result_df['min'], _])
+        _ = select_df.groupby(groupby).max()
+        _['aggregate_base_term'] = aggregate_base_term
+        result_df['max'] = pd.concat([result_df['max'], _])
 
     # ログ１件より生成するデータイメージ。基準日とスパイダー名がkeyになる。
     # temp = {
