@@ -82,6 +82,7 @@ class StatsInfoCollectData:
         }
         spider_result_col = {
             'aggregate_base_term': [],
+            'spider_name': [],
             'log_count/CRITICAL': [],
             'log_count/ERROR': [],
             'log_count/WARNING': [],
@@ -184,7 +185,7 @@ class StatsInfoCollectData:
         return df.set_index(['start_time']).tz_localize('UTC').tz_convert('Asia/Tokyo')
 
     def stats_analysis_exec(self, datetime_term_list: list[tuple[datetime, datetime]]):
-        '''集計期間リストごとに解析を実行'''
+        '''引数で渡された集計期間リストごとに解析を実行'''
         # start_timeをインデックスとしたdataframを生成
         # index生成後ソートを実行する。※ソートしないと将来的にエラーになると警告を受ける。
         robots_df_index = self.date_time_set_index(
@@ -197,41 +198,47 @@ class StatsInfoCollectData:
         for calc_date_from, calc_date_to in datetime_term_list:
             # 集計期間ごとに抽出
             _ = '%Y-%m-%d %H:%M:%S.%f'
-            robots_select_df = robots_df_index[calc_date_from.strftime(
-                _): calc_date_to.strftime(_)]
-            downloader_select_df = downloader_df_index[calc_date_from.strftime(
-                _): calc_date_to.strftime(_)]
-            spider_select_df = spider_df_index[calc_date_from.strftime(
-                _): calc_date_to.strftime(_)]
+            robots_select_df = robots_df_index[
+                calc_date_from.strftime(_): calc_date_to.strftime(_)]
+            downloader_select_df = downloader_df_index[
+                calc_date_from.strftime(_): calc_date_to.strftime(_)]
+            spider_select_df = spider_df_index[
+                calc_date_from.strftime(_): calc_date_to.strftime(_)]
 
             # 上記の期間抽出されたデータフレームより集計結果を求める。
-            self.aggregate_result_set(self.robots_result_df, robots_select_df, [
-                                      'spider_name', 'robots_response_status'], calc_date_from.strftime('%Y-%m-%d'))
-            self.aggregate_result_set(self.downloader_result_df, downloader_select_df, [
-                                      'spider_name', 'downloader_response_status'], calc_date_from.strftime('%Y-%m-%d'))
-            self.aggregate_result_set(self.spider_result_df, spider_select_df, [
-                                      'spider_name'], calc_date_from.strftime('%Y-%m-%d'))
+            self.aggregate_result_set(robots_select_df, ['spider_name', 'robots_response_status'],
+                                      calc_date_from.strftime('%Y-%m-%d'), self.robots_result_df)
+            self.aggregate_result_set(downloader_select_df, ['spider_name', 'downloader_response_status'],
+                                      calc_date_from.strftime('%Y-%m-%d'), self.downloader_result_df)
+            self.aggregate_result_set(spider_select_df, ['spider_name'],
+                                      calc_date_from.strftime('%Y-%m-%d'), self.spider_result_df)
 
-        print('=======================')
-        print(self.robots_result_df)
-        print('=======================')
-        print(self.downloader_result_df)
-        print('=======================')
-        print(self.spider_result_df)
+        self.robots_result_df['sum'].sort_values(
+            by=['spider_name', 'aggregate_base_term', 'robots_response_status'], inplace=True)
+        self.downloader_result_df['sum'].sort_values(
+            by=['spider_name', 'aggregate_base_term', 'downloader_response_status'], inplace=True)
+        self.spider_result_df['sum'].sort_values(
+            by=['spider_name', 'aggregate_base_term'], inplace=True)
+        # print('===', self.robots_result_df['sum'])
+        # print('===', self.downloader_result_df['sum'])
+        # print('===', self.spider_result_df['sum'])
 
-    def aggregate_result_set(self, result_df: dict[str, pd.DataFrame], select_df: pd.DataFrame, groupby: list, aggregate_base_term: str):
+    def aggregate_result_set(self, select_df: pd.DataFrame, groupby: list, aggregate_base_term: str, result_df: dict[str, pd.DataFrame]):
         ''''''
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
-        _ = select_df.groupby(groupby).sum()
+        _ = select_df.groupby(by=groupby, as_index=False).sum()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['sum'] = pd.concat([result_df['sum'], _])
-        _ = select_df.groupby(groupby).mean()
+
+        _ = select_df.groupby(groupby, as_index=False).mean()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['mean'] = pd.concat([result_df['mean'], _])
-        _ = select_df.groupby(groupby).min()
+
+        _ = select_df.groupby(groupby, as_index=False).min()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['min'] = pd.concat([result_df['min'], _])
-        _ = select_df.groupby(groupby).max()
+
+        _ = select_df.groupby(groupby, as_index=False).max()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['max'] = pd.concat([result_df['max'], _])
 
