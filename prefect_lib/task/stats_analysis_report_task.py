@@ -3,7 +3,7 @@ import os
 import sys
 from typing import Any, Sequence
 from datetime import datetime
-import pandas
+import pandas as pd
 from pydantic import ValidationError
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
@@ -12,8 +12,10 @@ from urllib.parse import urlparse
 
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.cell import Cell, MergedCell
 from openpyxl.chart.bar_chart import BarChart
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
+from openpyxl.utils import get_column_letter
 
 path = os.getcwd()
 sys.path.append(path)
@@ -29,6 +31,69 @@ from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
 class StatsAnalysisReportTask(ExtensionsTask):
     '''
     '''
+    columns_info: list = [
+        #{見出し１行目, 見出し２行目, データフレーム列名}
+        {'head1': '集計日〜', 'head2': '',
+            'col': 'aggregate_base_term'},
+        {'head1': 'スパイダー名', 'head2': '',
+            'col': 'spider_name'},
+        {'head1': 'ログレベル件数', 'head2': 'CRITICAL',
+            'col': 'log_count/CRITICAL'},
+        {'head1': '', 'head2': 'ERROR',
+            'col': 'log_count/ERROR'},
+        {'head1': '', 'head2': 'WARNING',
+            'col': 'log_count/WARNING'},
+        {'head1': '処理時間', 'head2': '最小',
+            'col': 'elapsed_time_seconds_min'},
+        {'head1': '', 'head2': '最大',
+            'col': 'elapsed_time_seconds_max'},
+        {'head1': '', 'head2': '合計',
+            'col': 'elapsed_time_seconds'},
+        {'head1': '', 'head2': '平均',
+            'col': 'elapsed_time_seconds_mean'},
+        {'head1': 'メモリ使用量', 'head2': '最小',
+            'col': 'memusage/max_min'},
+        {'head1': '', 'head2': '最大',
+            'col': 'memusage/max_max'},
+        {'head1': '', 'head2': '平均',
+            'col': 'memusage/max_mean'},
+        {'head1': '総リクエスト数', 'head2': '最小',
+            'col': 'downloader/request_count_min'},
+        {'head1': '', 'head2': '最大',
+            'col': 'downloader/request_count_max'},
+        {'head1': '', 'head2': '合計',
+            'col': 'downloader/request_count'},
+        {'head1': '', 'head2': '平均',
+            'col': 'downloader/request_count_mean'},
+        {'head1': '総レスポンス数', 'head2': '最小',
+            'col': 'downloader/response_count_min'},
+        {'head1': '', 'head2': '最大',
+            'col': 'downloader/response_count_max'},
+        {'head1': '', 'head2': '合計',
+            'col': 'downloader/response_count'},
+        {'head1': '', 'head2': '平均',
+            'col': 'downloader/response_count_mean'},
+        {'head1': 'リクエストの深さ', 'head2': '最大',
+            'col': 'request_depth_max_max'},
+        {'head1': 'レスポンスのバイト数', 'head2': '合計',
+            'col': 'downloader/response_bytes'},
+        {'head1': '', 'head2': '平均',
+            'col': 'downloader/response_bytes_mean'},
+        {'head1': 'リトライ件数', 'head2': '合計',
+            'col': 'retry/count'},
+        {'head1': '', 'head2': '平均',
+            'col': 'retry/count_mean'},
+        {'head1': '保存件数', 'head2': '合計',
+            'col': 'item_scraped_count'},
+        {'head1': '', 'head2': '平均',
+            'col': 'item_scraped_count_mean'},
+        # {'head1': '実行回数', 'head2': '',
+        #    'col': ''},
+        # {'head1': 'robotsレスポンスステータス', 'head2': '',
+        #     'col': ''},
+        # {'head1': 'レスポンスステータス', 'head2': '',
+        #     'col': ''},
+    ]
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
@@ -91,101 +156,84 @@ class StatsAnalysisReportTask(ExtensionsTask):
         self.logger.info(
             f'=== 統計情報レポート件数({stats_info_collect_records.count()})')
 
-        stats_info_collect_data = StatsInfoCollectData()
+        collect_data = StatsInfoCollectData()
         for stats_info_collect_record in stats_info_collect_records:
-            stats_info_collect_data.dataframe_recovery(
+            collect_data.dataframe_recovery(
                 stats_info_collect_record)
 
-        # print(stats_info_collect_data.robots_response_status_dataframe.to_dict(orient='records'))
-        # print(stats_info_collect_data.downloader_response_status_dataframe.to_dict(orient='records'))
-        # print(stats_info_collect_data.spider_stats_datafram.to_dict(orient='records'))
+        # 集計期間リストごとに解析を実行
+        spider_result_all_df = collect_data.stats_analysis_exec(
+            self.stats_analysis_report_input.datetime_term_list())
 
         workbook = Workbook()     # ワークブックの新規作成
         self.report_edit_header(workbook)
-        self.report_edit_body(workbook, stats_info_collect_data)
-        # ws = workbook.active      # アクティブなワークシートを選択
-        # ws['a1'] = 10
-        # cell = ws['a1']
-        # # cellメソッドでセルに書き込み
-        # ws.cell(row=1, column=1).value = 1
-        # #cell.font = Font()
-
+        self.report_edit_body(workbook, spider_result_all_df)
         workbook.save('test.xlsx')    # ワークブックの新規作成と保存
 
     def report_edit_header(self, workbook: Workbook):
+        '''レポート用Excelの見出し編集'''
         ws: Worksheet = workbook.active      # アクティブなワークシートを選択
-        # 見出し１行目
-        row: int = 1
-        col: int = 1
-        ws.cell(row, col, '基準日From')
-        ws.cell(row, col := col + 1, '基準日to')
-        ws.cell(row, col := col + 1, 'スパイダー名')
-        ws.cell(row, col := col + 1, '実行回数')
-        ws.cell(row, col := col + 1, 'ログレベル件数')
-        ws.cell(row, col := col + 3, '処理時間')
-        ws.cell(row, col := col + 4, 'メモリ使用量')
-        ws.cell(row, col := col + 3, '総リクエスト数')
-        ws.cell(row, col := col + 4, '総レスポンス数')
-        ws.cell(row, col := col + 4, 'robotsレスポンスステータス')
-        ws.cell(row, col := col + 1, 'レスポンスステータス')
-        ws.cell(row, col := col + 1, 'リクエストの深さ')
-        ws.cell(row, col := col + 1, 'レスポンスのバイト数')
-        ws.cell(row, col := col + 2, 'リトライ件数')
-        ws.cell(row, col := col + 2, '保存件数')
-        ws.cell(row, col := col + 2, '終了理由')
-        for cells in ws["a1:ae1"]:
+
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+
+        for i, col_info in enumerate(self.columns_info):
+            ws.cell(1, i + 1, col_info['head1'])
+            ws.cell(2, i + 1, col_info['head2'])
+
+        max_row = ws.max_row
+        max_column = ws.max_column
+        # 型ヒントでエラーがでるので仕方なくAnyを使用
+        max_cell: Any = ws.cell(row=max_row, column=max_column)
+        fill = PatternFill(patternType='solid', fgColor='2986E8')
+
+        for cells in ws[f'a1:{max_cell.coordinate}']:
             for cell in cells:
+                cell: Cell
+                cell.border = border
                 cell.alignment = Alignment(
                     horizontal="centerContinuous")   # 選択範囲内中央寄せ
+                cell.fill = fill
 
-        # 見出し２行目
-        row: int = 2
-        col: int = 5
-        ws.cell(row, col, 'CRITICAL')
-        ws.cell(row, col := col + 1, 'ERROR')
-        ws.cell(row, col := col + 1, 'WARNING')
-        # 処理時間
-        ws.cell(row, col := col + 1, '最小')
-        ws.cell(row, col := col + 1, '最大')
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        # メモリ使用量
-        ws.cell(row, col := col + 1, '最小')
-        ws.cell(row, col := col + 1, '最大')
-        ws.cell(row, col := col + 1, '平均')
-        # 総リクエスト数
-        ws.cell(row, col := col + 1, '最小')
-        ws.cell(row, col := col + 1, '最大')
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        # 総レスポンス数
-        ws.cell(row, col := col + 1, '最小')
-        ws.cell(row, col := col + 1, '最大')
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        # リクエストの深さ
-        ws.cell(row, col := col + 3, '最大')
-        # レスポンスのバイト数
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        # リトライ件数
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        # 保存件数
-        ws.cell(row, col := col + 1, '合計')
-        ws.cell(row, col := col + 1, '平均')
-        for cells in ws["a2:ae2"]:
-            for cell in cells:
-                cell.alignment = Alignment(horizontal="center")  # 中央寄せ
 
-    def report_edit_body(self,
-                         workbook: Workbook,
-                         stats_info_collect_data: StatsInfoCollectData):
-
+    def report_edit_body(self, workbook: Workbook, spider_result_all_df: pd.DataFrame):
         # ワークシートを選択
-        # ws = workbook.active
-        # 集計期間リストごとに解析を実行
-        stats_info_collect_data.stats_analysis_exec(self.stats_analysis_report_input.datetime_term_list())
+        ws = workbook.active
+
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+
+        # 列ごとにエクセルに編集
+        for col_idx, col_info in enumerate(self.columns_info):
+            for row_idx, value in enumerate(spider_result_all_df[col_info['col']]):
+                ws.cell(row_idx + 3, col_idx + 1, value)
+
+        max_cell:str = get_column_letter(ws.max_column) + str(ws.max_row)   #"BC55"のようなセル番地を生成
+        print(max_cell)
+        for cells in ws[f'a3:{max_cell}']:
+            for cell in cells:
+                cell:Cell
+                cell.border = border
+
+        for cells in ws[f'c3:{max_cell}']:
+            for cell in cells:
+                #cell:Cell
+                cell.number_format = '0.0'
+
+        ### 列ごとに次の処理を行う。
+        ### 最大幅を確認
+        ### それに合わせた幅を設定する。
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter   #列名A,Bなどを取得
+            for cell in col:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            ws.column_dimensions[column].width = (max_length + 2) * 1.2
+
+        ws.freeze_panes = 'c3'
 
     # def asynchronous_report_analysis(self, log_analysis_report: StatsAnalysisReportInput):
     #     '''

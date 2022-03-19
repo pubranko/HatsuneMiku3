@@ -1,7 +1,9 @@
 from __future__ import annotations
 from datetime import datetime
+from typing import Any
 import pandas as pd
 from copy import deepcopy
+import itertools
 
 
 class StatsInfoCollectData:
@@ -111,9 +113,9 @@ class StatsInfoCollectData:
         }
         self.spider_result_df: dict[str, pd.DataFrame] = {
             'sum': pd.DataFrame(spider_result_col),
-            'mean': pd.DataFrame(downloader_result_col),
-            'min': pd.DataFrame(downloader_result_col),
-            'max': pd.DataFrame(downloader_result_col),
+            'mean': pd.DataFrame(spider_result_col),
+            'min': pd.DataFrame(spider_result_col),
+            'max': pd.DataFrame(spider_result_col),
         }
 
     def spider_stats_store(self, start_time: datetime, spider_name: str, stats: dict,) -> None:
@@ -184,7 +186,7 @@ class StatsInfoCollectData:
             'UTC').tz_convert('Asia/Tokyo')
         return df.set_index(['start_time']).tz_localize('UTC').tz_convert('Asia/Tokyo')
 
-    def stats_analysis_exec(self, datetime_term_list: list[tuple[datetime, datetime]]):
+    def stats_analysis_exec(self, datetime_term_list: list[tuple[datetime, datetime]]) -> pd.DataFrame:
         '''引数で渡された集計期間リストごとに解析を実行'''
         # start_timeをインデックスとしたdataframを生成
         # index生成後ソートを実行する。※ソートしないと将来的にエラーになると警告を受ける。
@@ -195,33 +197,83 @@ class StatsInfoCollectData:
         spider_df_index = self.date_time_set_index(
             'start_time', self.spider_df).sort_index()
 
+        date_list: list = []
         for calc_date_from, calc_date_to in datetime_term_list:
             # 集計期間ごとに抽出
-            _ = '%Y-%m-%d %H:%M:%S.%f'
-            robots_select_df = robots_df_index[
-                calc_date_from.strftime(_): calc_date_to.strftime(_)]
-            downloader_select_df = downloader_df_index[
-                calc_date_from.strftime(_): calc_date_to.strftime(_)]
-            spider_select_df = spider_df_index[
-                calc_date_from.strftime(_): calc_date_to.strftime(_)]
+            date_from = calc_date_from.strftime('%Y-%m-%d %H:%M:%S.%f')
+            date_to = calc_date_to.strftime('%Y-%m-%d %H:%M:%S.%f')
+            robots_select_df = robots_df_index[date_from: date_to]
+            downloader_select_df = downloader_df_index[date_from: date_to]
+            spider_select_df = spider_df_index[date_from: date_to]
 
+            date_from = calc_date_from.strftime('%Y-%m-%d')
             # 上記の期間抽出されたデータフレームより集計結果を求める。
             self.aggregate_result_set(robots_select_df, ['spider_name', 'robots_response_status'],
-                                      calc_date_from.strftime('%Y-%m-%d'), self.robots_result_df)
+                                      date_from, self.robots_result_df)
             self.aggregate_result_set(downloader_select_df, ['spider_name', 'downloader_response_status'],
-                                      calc_date_from.strftime('%Y-%m-%d'), self.downloader_result_df)
+                                      date_from, self.downloader_result_df)
             self.aggregate_result_set(spider_select_df, ['spider_name'],
-                                      calc_date_from.strftime('%Y-%m-%d'), self.spider_result_df)
+                                      date_from, self.spider_result_df)
 
-        self.robots_result_df['sum'].sort_values(
-            by=['spider_name', 'aggregate_base_term', 'robots_response_status'], inplace=True)
-        self.downloader_result_df['sum'].sort_values(
-            by=['spider_name', 'aggregate_base_term', 'downloader_response_status'], inplace=True)
-        self.spider_result_df['sum'].sort_values(
-            by=['spider_name', 'aggregate_base_term'], inplace=True)
-        # print('===', self.robots_result_df['sum'])
-        # print('===', self.downloader_result_df['sum'])
-        # print('===', self.spider_result_df['sum'])
+            # 日付リストを作成
+            date_list.append(date_from)
+
+        # 日付別のスパイダー一覧を作成する。
+        spider_list: pd.Series = (
+            self.spider_df['spider_name'].drop_duplicates())
+        #spider_by_date: list = list(itertools.product(date_list, spider_list))
+        spider_by_date: list = [[date, spider]
+                                for date, spider in itertools.product(date_list, spider_list)]
+        # print('===spider一覧の確認\n',spider_list)
+        # print('===\n',spider_by_date)
+        spider_by_date_df = pd.DataFrame(spider_by_date, columns=[
+                                         'aggregate_base_term', 'spider_name'])
+        # print('===\n',spider_by_date_df.to_dict())
+
+        #df2 = pd.merge(key_date_df, df2, how="left").sort_values(["key", "date"])
+
+        # 各データフレームに対してソートを行う。
+        df_sort_list: list[tuple[dict[str, pd.DataFrame], list]] = [
+            (self.robots_result_df,
+             ['spider_name', 'aggregate_base_term', 'robots_response_status']),
+            (self.downloader_result_df,
+             ['spider_name', 'aggregate_base_term', 'downloader_response_status']),
+            (self.spider_result_df,
+             ['spider_name', 'aggregate_base_term']),
+        ]
+        for type in ['sum', 'mean', 'min', 'max']:
+            for dataframes, sort_key in df_sort_list:
+                #dataframes[type].sort_values(by=sort_key, inplace=True)
+                dataframes[type] = pd.merge(spider_by_date_df, dataframes[type],how='left').sort_values(
+                    by=sort_key).fillna('')
+
+        spider_result_all_df = pd.merge(self.spider_result_df['sum'],
+                     self.spider_result_df['mean'],
+                     suffixes=['', '_mean'],
+                     on=['aggregate_base_term', 'spider_name'])
+        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df['min'],
+                     suffixes=['', '_min'],
+                     on=['aggregate_base_term', 'spider_name'])
+        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df['max'],
+                     suffixes=['', '_max'],
+                     on=['aggregate_base_term', 'spider_name'])
+
+        return spider_result_all_df
+
+
+        # self.robots_result_df['sum'].sort_values(
+        #     by=['spider_name', 'aggregate_base_term', 'robots_response_status'], inplace=True)
+        # self.downloader_result_df['sum'].sort_values(
+        #     by=['spider_name', 'aggregate_base_term', 'downloader_response_status'], inplace=True)
+        # self.spider_result_df['sum'].sort_values(
+        #     by=['spider_name', 'aggregate_base_term'], inplace=True)
+
+        # 他のソートもやらないと、、、
+
+        #print('===\n', self.spider_result_df['sum'].to_dict())
+        #print('===\n', self.spider_result_df['mean'].to_dict())
+        #print('===\n', self.spider_result_df['min'].to_dict())
+        #print('===\n', self.spider_result_df['max'].to_dict())
 
     def aggregate_result_set(self, select_df: pd.DataFrame, groupby: list, aggregate_base_term: str, result_df: dict[str, pd.DataFrame]):
         ''''''
@@ -229,6 +281,7 @@ class StatsInfoCollectData:
         _ = select_df.groupby(by=groupby, as_index=False).sum()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['sum'] = pd.concat([result_df['sum'], _])
+        # print(result_df['sum'].to_dict())
 
         _ = select_df.groupby(groupby, as_index=False).mean()
         _['aggregate_base_term'] = aggregate_base_term
