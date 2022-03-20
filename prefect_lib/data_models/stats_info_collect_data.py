@@ -280,20 +280,20 @@ class StatsInfoCollectData:
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
         _ = select_df.groupby(by=groupby, as_index=False).sum()
         _['aggregate_base_term'] = aggregate_base_term
-        result_df['sum'] = pd.concat([result_df['sum'], _])
+        result_df['sum'] = pd.concat([result_df['sum'], _]).round(2)
         # print(result_df['sum'].to_dict())
 
         _ = select_df.groupby(groupby, as_index=False).mean()
         _['aggregate_base_term'] = aggregate_base_term
-        result_df['mean'] = pd.concat([result_df['mean'], _])
+        result_df['mean'] = pd.concat([result_df['mean'], _]).round(2)
 
         _ = select_df.groupby(groupby, as_index=False).min()
         _['aggregate_base_term'] = aggregate_base_term
-        result_df['min'] = pd.concat([result_df['min'], _])
+        result_df['min'] = pd.concat([result_df['min'], _]).round(2)
 
         _ = select_df.groupby(groupby, as_index=False).max()
         _['aggregate_base_term'] = aggregate_base_term
-        result_df['max'] = pd.concat([result_df['max'], _])
+        result_df['max'] = pd.concat([result_df['max'], _]).round(2)
 
     # ログ１件より生成するデータイメージ。基準日とスパイダー名がkeyになる。
     # temp = {

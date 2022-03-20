@@ -9,7 +9,7 @@ from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 from pymongo.cursor import Cursor
 from urllib.parse import urlparse
-
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell import Cell, MergedCell
@@ -32,61 +32,51 @@ class StatsAnalysisReportTask(ExtensionsTask):
     '''
     '''
     columns_info: list = [
-        #{見出し１行目, 見出し２行目, データフレーム列名}
-        {'head1': '集計日〜', 'head2': '',
-            'col': 'aggregate_base_term'},
-        {'head1': 'スパイダー名', 'head2': '',
-            'col': 'spider_name'},
-        {'head1': 'ログレベル件数', 'head2': 'CRITICAL',
-            'col': 'log_count/CRITICAL'},
-        {'head1': '', 'head2': 'ERROR',
-            'col': 'log_count/ERROR'},
-        {'head1': '', 'head2': 'WARNING',
-            'col': 'log_count/WARNING'},
-        {'head1': '処理時間', 'head2': '最小',
-            'col': 'elapsed_time_seconds_min'},
-        {'head1': '', 'head2': '最大',
-            'col': 'elapsed_time_seconds_max'},
-        {'head1': '', 'head2': '合計',
-            'col': 'elapsed_time_seconds'},
-        {'head1': '', 'head2': '平均',
-            'col': 'elapsed_time_seconds_mean'},
-        {'head1': 'メモリ使用量', 'head2': '最小',
-            'col': 'memusage/max_min'},
-        {'head1': '', 'head2': '最大',
-            'col': 'memusage/max_max'},
-        {'head1': '', 'head2': '平均',
-            'col': 'memusage/max_mean'},
-        {'head1': '総リクエスト数', 'head2': '最小',
-            'col': 'downloader/request_count_min'},
-        {'head1': '', 'head2': '最大',
-            'col': 'downloader/request_count_max'},
-        {'head1': '', 'head2': '合計',
-            'col': 'downloader/request_count'},
-        {'head1': '', 'head2': '平均',
-            'col': 'downloader/request_count_mean'},
-        {'head1': '総レスポンス数', 'head2': '最小',
-            'col': 'downloader/response_count_min'},
-        {'head1': '', 'head2': '最大',
-            'col': 'downloader/response_count_max'},
-        {'head1': '', 'head2': '合計',
-            'col': 'downloader/response_count'},
-        {'head1': '', 'head2': '平均',
-            'col': 'downloader/response_count_mean'},
-        {'head1': 'リクエストの深さ', 'head2': '最大',
-            'col': 'request_depth_max_max'},
-        {'head1': 'レスポンスのバイト数', 'head2': '合計',
-            'col': 'downloader/response_bytes'},
-        {'head1': '', 'head2': '平均',
-            'col': 'downloader/response_bytes_mean'},
-        {'head1': 'リトライ件数', 'head2': '合計',
-            'col': 'retry/count'},
-        {'head1': '', 'head2': '平均',
-            'col': 'retry/count_mean'},
-        {'head1': '保存件数', 'head2': '合計',
-            'col': 'item_scraped_count'},
-        {'head1': '', 'head2': '平均',
-            'col': 'item_scraped_count_mean'},
+        # head1             : 必須 : 見出し１行目
+        # head2             : 必須 : 見出し２行目
+        # col               : 必須 : データフレーム列名
+        # digit_adjustment  : 任意 : 単位の調整。1000とした場合、'value/1000'となる。
+        # number_format     : 任意 : 小数点以下の桁数。省略した場合'#,##0'
+        {'head1': '集計日〜', 'head2': '', 'col': 'aggregate_base_term'},
+        {'head1': 'スパイダー名', 'head2': '', 'col': 'spider_name'},
+        {'head1': 'ログレベル件数', 'head2': 'CRITICAL', 'col': 'log_count/CRITICAL'},
+        {'head1': '', 'head2': 'ERROR', 'col': 'log_count/ERROR'},
+        {'head1': '', 'head2': 'WARNING', 'col': 'log_count/WARNING'},
+        {'head1': '処理時間(秒)', 'head2': '最小', 'col': 'elapsed_time_seconds_min',
+         'number_format': '#,##0.00'},
+        {'head1': '', 'head2': '最大', 'col': 'elapsed_time_seconds_max',
+         'number_format': '#,##0.00'},
+        {'head1': '', 'head2': '合計', 'col': 'elapsed_time_seconds',
+         'number_format': '#,##0.00'},
+        {'head1': '', 'head2': '平均', 'col': 'elapsed_time_seconds_mean',
+         'number_format': '#,##0.00'},
+        {'head1': 'メモリ使用量(kb)', 'head2': '最小', 'col': 'memusage/max_min',
+         'digit_adjustment': 1000},
+        {'head1': '', 'head2': '最大', 'col': 'memusage/max_max',
+         'digit_adjustment': 1000},
+        {'head1': '', 'head2': '平均', 'col': 'memusage/max_mean',
+         'digit_adjustment': 1000},
+        {'head1': '総リクエスト数', 'head2': '最小', 'col': 'downloader/request_count_min'},
+        {'head1': '', 'head2': '最大', 'col': 'downloader/request_count_max'},
+        {'head1': '', 'head2': '合計', 'col': 'downloader/request_count'},
+        {'head1': '', 'head2': '平均', 'col': 'downloader/request_count_mean',
+         'number_format': '#,##0.00'},
+        {'head1': '総レスポンス数', 'head2': '最小', 'col': 'downloader/response_count_min'},
+        {'head1': '', 'head2': '最大', 'col': 'downloader/response_count_max'},
+        {'head1': '', 'head2': '合計', 'col': 'downloader/response_count'},
+        {'head1': '', 'head2': '平均', 'col': 'downloader/response_count_mean',
+         'number_format': '#,##0.00'},
+        {'head1': 'リクエストの', 'head2': '深さ最大', 'col': 'request_depth_max_max'},
+        {'head1': 'レスポンス量(kb)', 'head2': '合計', 'col': 'downloader/response_bytes',
+         'digit_adjustment': 1000},
+        {'head1': '', 'head2': '平均', 'col': 'downloader/response_bytes_mean',
+         'digit_adjustment': 1000},
+        {'head1': 'リトライ件数', 'head2': '合計', 'col': 'retry/count'},
+        {'head1': '', 'head2': '平均', 'col': 'retry/count_mean',
+         'number_format': '#,##0.00'},
+        {'head1': '保存件数', 'head2': '合計', 'col': 'item_scraped_count'},
+        {'head1': '', 'head2': '平均', 'col': 'item_scraped_count_mean',
+         'number_format': '#,##0.00'},
         # {'head1': '実行回数', 'head2': '',
         #    'col': ''},
         # {'head1': 'robotsレスポンスステータス', 'head2': '',
@@ -196,7 +186,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     horizontal="centerContinuous")   # 選択範囲内中央寄せ
                 cell.fill = fill
 
-
     def report_edit_body(self, workbook: Workbook, spider_result_all_df: pd.DataFrame):
         # ワークシートを選択
         ws = workbook.active
@@ -208,30 +197,51 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 列ごとにエクセルに編集
         for col_idx, col_info in enumerate(self.columns_info):
             for row_idx, value in enumerate(spider_result_all_df[col_info['col']]):
-                ws.cell(row_idx + 3, col_idx + 1, value)
 
-        max_cell:str = get_column_letter(ws.max_column) + str(ws.max_row)   #"BC55"のようなセル番地を生成
-        print(max_cell)
+                target_cell: Cell = ws[get_column_letter(
+                    col_idx + 1) + str(row_idx + 1)]
+
+                # 表示単位の切り上げ (example:b -> kb)
+                custom_value = value
+                if 'digit_adjustment' in col_info:
+                    if value:
+                        custom_value = int(value) // col_info['digit_adjustment']
+                        Decimal(str(custom_value)).quantize(
+                            Decimal('0'), rounding=ROUND_HALF_UP)
+
+                # 小数点以下の調整
+                if 'number_format' in col_info:
+                    target_cell.number_format = col_info['number_format']
+                else:
+                    target_cell.number_format = '#,##0'
+
+                ws.cell(row_idx + 3, col_idx + 1, custom_value)
+
+        max_cell: str = get_column_letter(
+            ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
+        # print(max_cell)
         for cells in ws[f'a3:{max_cell}']:
             for cell in cells:
-                cell:Cell
+                cell: Cell
                 cell.border = border
 
-        for cells in ws[f'c3:{max_cell}']:
-            for cell in cells:
-                #cell:Cell
-                cell.number_format = '0.0'
+        # 小数点以下の調整
+        # for cells in ws[f'c3:{max_cell}']:
+        #     for cell in cells:
+        #         # cell:Cell
+        #         # cell.number_format = '0.0'
+        #         cell.number_format = '#,##0.0'
 
-        ### 列ごとに次の処理を行う。
-        ### 最大幅を確認
-        ### それに合わせた幅を設定する。
+        # 列ごとに次の処理を行う。
+        # 最大幅を確認
+        # それに合わせた幅を設定する。
         for col in ws.columns:
             max_length = 0
-            column = col[0].column_letter   #列名A,Bなどを取得
+            column = col[0].column_letter  # 列名A,Bなどを取得
             for cell in col:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            ws.column_dimensions[column].width = (max_length + 2) * 1.2
+            ws.column_dimensions[column].width = (max_length + 2.07)
 
         ws.freeze_panes = 'c3'
 
