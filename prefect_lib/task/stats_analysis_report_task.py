@@ -1,26 +1,25 @@
 from __future__ import annotations
 import os
 import sys
-from typing import Any, Sequence
-from datetime import datetime
+from typing import Any
 import pandas as pd
 from pydantic import ValidationError
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 from pymongo.cursor import Cursor
-from urllib.parse import urlparse
-from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
+from decimal import Decimal, ROUND_HALF_UP
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.cell import Cell, MergedCell
+from openpyxl.cell import Cell
 from openpyxl.chart.bar_chart import BarChart
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
 from openpyxl.utils import get_column_letter
 
 path = os.getcwd()
 sys.path.append(path)
+from prefect_lib.settings import DATA_DIR
 from common_lib.timezone_recovery import timezone_recovery
-from common_lib.mail_send import mail_send
+from common_lib.mail_attach_send import mail_attach_send
 from models.mongo_model import MongoModel
 from models.stats_info_collect_model import StatsInfoCollectModel
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -37,8 +36,11 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # col               : 必須 : データフレーム列名
         # digit_adjustment  : 任意 : 単位の調整。1000とした場合、'value/1000'となる。
         # number_format     : 任意 : 小数点以下の桁数。省略した場合'#,##0'
+        # number_format     : 任意 : 小数点以下の桁数。省略した場合'#,##0'
+        # equivalent_color  : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
         {'head1': '集計日〜', 'head2': '', 'col': 'aggregate_base_term'},
-        {'head1': 'スパイダー名', 'head2': '', 'col': 'spider_name'},
+        {'head1': 'スパイダー名', 'head2': '', 'col': 'spider_name',
+         'equivalent_color': 'bbbbbb'},
         {'head1': 'ログレベル件数', 'head2': 'CRITICAL', 'col': 'log_count/CRITICAL'},
         {'head1': '', 'head2': 'ERROR', 'col': 'log_count/ERROR'},
         {'head1': '', 'head2': 'WARNING', 'col': 'log_count/WARNING'},
@@ -101,9 +103,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 base_date=kwargs['base_date'],
             )
         except ValidationError as e:
-            # e.json()エラー結果をjson形式で見れる。
-            # e.errors()エラー結果をdict形式で見れる。
-            # str(e)エラー結果をlist形式で見れる。
             self.logger.error(
                 f'=== StatsAnalysisReportTask run : {e.errors()}')
             raise ENDRUN(state=state.Failed())
@@ -111,12 +110,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
         self.logger.info(
             f'=== StatsAnalysisReportTask run 基準日from ~ to : {self.stats_analysis_report_input.base_date_get()}')
 
-        '''
-        asynchronous_report
-        crawler_logs
-        '''
-        # self.asynchronous_report_analysis(log_analysis_report)
-        # self.crawler_logs_analysis(log_analysis_report)
         self.stats_analysis_report_create()
 
         # 各コレクション、solrの件数を取得して同期確認
@@ -124,7 +117,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
         # 終了処理
         self.closed()
-        # return ''
 
     def stats_analysis_report_create(self):
         '''  '''
@@ -155,10 +147,32 @@ class StatsAnalysisReportTask(ExtensionsTask):
         spider_result_all_df = collect_data.stats_analysis_exec(
             self.stats_analysis_report_input.datetime_term_list())
 
-        workbook = Workbook()     # ワークブックの新規作成
+        # ワークブックの新規作成
+        workbook = Workbook()
         self.report_edit_header(workbook)
         self.report_edit_body(workbook, spider_result_all_df)
-        workbook.save('test.xlsx')    # ワークブックの新規作成と保存
+
+        #レポートファイルの保存
+        file_name: str = 'stats_analysis_report.xlsx'
+        file_path = os.path.join(DATA_DIR, file_name)
+        workbook.save(file_path)
+
+        ### メールにレポートファイルを添付して送信
+        title = 'stats_analysis_report'
+        msg = f'''
+        <html>
+            <body>
+                <p>各種実行結果を解析したレポート</p>
+                <p>=== 実行条件 ============================================================</p>
+                <p>start_time = {self.start_time.isoformat()}</p>
+                <p>base_date_from = {base_date_from.isoformat()}</p>
+                <p>base_date_to = {base_date_to.isoformat()}</p>
+                <p>report_term = {self.stats_analysis_report_input.report_term}</p>
+                <p>totalling_term = {self.stats_analysis_report_input.totalling_term}</p>
+                <p>=========================================================================</p>
+            </body>
+        </html>'''
+        mail_attach_send(title=title, msg=msg, filepath=file_path)
 
     def report_edit_header(self, workbook: Workbook):
         '''レポート用Excelの見出し編集'''
@@ -167,29 +181,29 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
+        fill1 = PatternFill(patternType='solid', fgColor='0066CC')
+        fill2 = PatternFill(patternType='solid', fgColor='0099CC')
 
         for i, col_info in enumerate(self.columns_info):
-            ws.cell(1, i + 1, col_info['head1'])
-            ws.cell(2, i + 1, col_info['head2'])
+            # 見出し１行目
+            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            ws[head1_cell.coordinate] = col_info['head1']
+            head1_cell.fill = fill1
+            head1_cell.border = border
+            head1_cell.alignment = Alignment(
+                horizontal="centerContinuous")  # 選択範囲内中央寄せ
 
-        max_row = ws.max_row
-        max_column = ws.max_column
-        # 型ヒントでエラーがでるので仕方なくAnyを使用
-        max_cell: Any = ws.cell(row=max_row, column=max_column)
-        fill = PatternFill(patternType='solid', fgColor='2986E8')
-
-        for cells in ws[f'a1:{max_cell.coordinate}']:
-            for cell in cells:
-                cell: Cell
-                cell.border = border
-                cell.alignment = Alignment(
-                    horizontal="centerContinuous")   # 選択範囲内中央寄せ
-                cell.fill = fill
+            # 見出し２行目
+            head2_cell: Cell = ws[get_column_letter(i + 1) + str(2)]
+            ws[head2_cell.coordinate] = col_info['head2']
+            head2_cell.fill = fill2
+            head2_cell.border = border
+            head2_cell.alignment = Alignment(horizontal="center")  # 中央寄せ
 
     def report_edit_body(self, workbook: Workbook, spider_result_all_df: pd.DataFrame):
+        ''' '''
         # ワークシートを選択
         ws = workbook.active
-
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
@@ -197,15 +211,16 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 列ごとにエクセルに編集
         for col_idx, col_info in enumerate(self.columns_info):
             for row_idx, value in enumerate(spider_result_all_df[col_info['col']]):
-
+                # 更新対象のセル
                 target_cell: Cell = ws[get_column_letter(
-                    col_idx + 1) + str(row_idx + 1)]
+                    col_idx + 1) + str(row_idx + 3)]
 
                 # 表示単位の切り上げ (example:b -> kb)
                 custom_value = value
                 if 'digit_adjustment' in col_info:
                     if value:
-                        custom_value = int(value) // col_info['digit_adjustment']
+                        custom_value = int(
+                            value) // col_info['digit_adjustment']
                         Decimal(str(custom_value)).quantize(
                             Decimal('0'), rounding=ROUND_HALF_UP)
 
@@ -215,22 +230,26 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 else:
                     target_cell.number_format = '#,##0'
 
-                ws.cell(row_idx + 3, col_idx + 1, custom_value)
+                # 更新対象のセルに値を設定
+                ws[target_cell.coordinate] = custom_value
 
+                # 同値カラー調整
+                if 'equivalent_color' in col_info:
+                    # 比較用の１つ上のセルと同じ値の場合は文字色を変更
+                    compare_cell: Cell = ws[get_column_letter(
+                        col_idx + 1) + str(row_idx + 2)]
+                    if target_cell.value == compare_cell.value:
+                        target_cell.font = Font(
+                            color=col_info['equivalent_color'])
+
+        # 一番右下のセル
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        # print(max_cell)
+
         for cells in ws[f'a3:{max_cell}']:
             for cell in cells:
                 cell: Cell
                 cell.border = border
-
-        # 小数点以下の調整
-        # for cells in ws[f'c3:{max_cell}']:
-        #     for cell in cells:
-        #         # cell:Cell
-        #         # cell.number_format = '0.0'
-        #         cell.number_format = '#,##0.0'
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
@@ -243,136 +262,5 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     max_length = len(str(cell.value))
             ws.column_dimensions[column].width = (max_length + 2.07)
 
+        # ウィンドウ枠の固定。２行２列は常に表示させる。
         ws.freeze_panes = 'c3'
-
-    # def asynchronous_report_analysis(self, log_analysis_report: StatsAnalysisReportInput):
-    #     '''
-    #     まずデータの有無。
-    #     指定期間内に非同期データがあればレポート要。
-    #     record_type、start_time、async_listの3項目。
-    #     record_typeは3種 : news_crawl_async, news_clip_master_async, solr_news_clip_async。
-    #     async_listから総件数、ドメイン別の件数。
-    #     '''
-
-    #     asynchronous_report_model = AsynchronousReportModel(self.mongo)
-
-    #     base_date_from, base_date_to = log_analysis_report.base_date_get()
-
-    #     #
-    #     conditions: list = []
-    #     conditions.append(
-    #         {'start_time': {'$gte': base_date_from}})
-    #     conditions.append(
-    #         {'start_time': {'$lt': base_date_to}})
-
-    #     log_filter: Any = {'$and': conditions}
-
-    #     asynchronous_report_records: Cursor = asynchronous_report_model.find(
-    #         filter=log_filter,
-    #         projection={'_id': 0, 'parameter': 0}
-    #     )
-    #     self.logger.info(
-    #         f'=== 非同期レポート件数({asynchronous_report_records.count()})')
-
-    #     # レコードタイプ別カウントエリア
-    #     by_record_type_count: dict[str, int] = {
-    #         'news_crawl_async': 0,
-    #         'news_clip_master_async': 0,
-    #         'solr_news_clip_async': 0,
-    #     }
-    #     # レコードタイプ別・ドメイン別カウントエリア
-    #     by_record_type_by_domain_count: dict[str, dict[str, int]] = {
-    #         'news_crawl_async': {},
-    #         'news_clip_master_async': {},
-    #         'solr_news_clip_async': {},
-    #     }
-
-    #     for asynchronous_report_record in asynchronous_report_records:
-    #         # print(asynchronous_report_record)
-
-    #         # レコードタイプ別に集計を行う。
-    #         by_record_type_count[asynchronous_report_record['record_type']] += 1
-    #         self.by_domain_asynchronous_report_count(
-    #             asynchronous_report_record['async_list'], by_record_type_by_domain_count[asynchronous_report_record['record_type']])
-
-    #     print(by_record_type_count)
-    #     print(by_record_type_by_domain_count)
-
-    #     wb = Workbook()
-    #     ws = wb.active
-    #     ws['a1'] = 10
-    #     cell = ws['a1']
-    #     #cell.font = Font()
-
-    #     wb.save('test.xlsx')
-
-    # def by_domain_asynchronous_report_count(self, async_list: list, by_domain_count: dict):
-    #     for url in async_list:
-    #         url_parse = urlparse(url)
-    #         if url_parse.netloc not in by_domain_count:
-    #             by_domain_count[url_parse.netloc] = 0
-    #         by_domain_count[url_parse.netloc] += 1
-
-    # def crawler_logs_analysis(self, log_analysis_report: StatsAnalysisReportInput):
-    #     '''
-    #     ログレベルワーニング、エラー、クリティカルの発生件数
-    #     record_type = spider_reports
-    #         start_time  record_type domain  spider_name stats
-    #     record_type = その他（タスク）※実行ログ
-    #     '''
-    #     crawler_logs = CrawlerLogsModel(self.mongo)
-
-    #     base_date_from, base_date_to = log_analysis_report.base_date_get()
-
-    #     #
-    #     conditions: list = []
-    #     conditions.append(
-    #         {'start_time': {'$gte': base_date_from}})
-    #     conditions.append(
-    #         {'start_time': {'$lt': base_date_to}})
-
-    #     log_filter: Any = {'$and': conditions}
-
-    #     crawler_logs_records: Cursor = crawler_logs.find(
-    #         filter=log_filter,
-    #         projection={'_id': 0, 'crawl_urls_list': 0}  # crawl_urls_listは不要
-    #     )
-    #     self.logger.info(
-    #         f'=== ログ件数({crawler_logs_records.count()})')
-
-    #     print('=============')
-    #     print('=============')
-    #     print('=============')
-    #     # for crawler_logs_record in crawler_logs_records:
-    #     #    print(crawler_logs_record)
-
-        # head1 = ['基準日', 'スパイダー名', '実行回数',
-        #          'ログレベル件数',
-        #          '処理時間',
-        #          'メモリ使用量',
-        #          '総リクエスト数',
-        #          '総レスポンス数',
-
-        #          'robotsレスポンスステータス',  #
-        #          'レスポンスステータス',  #
-
-        #          'リクエストの深さ',
-        #          'レスポンスのバイト数',
-        #          'リトライ件数',
-        #          '保存件数',
-        #          '終了理由', ]
-        # head2 = ['', '', '',
-        #          'CRITICAL', 'ERROR', 'WARNING',
-        #          '最小', '最大', '合計', '平均',
-        #          '最小', '最大', '平均',
-        #          '最小', '最大', '合計', '平均',
-        #          '最小', '最大', '合計', '平均',
-
-        #          'sss/nnn sss/nnn ~',
-        #          'sss/nnn sss/nnn ~',
-
-        #          '最大'
-        #          '平均', '合計',
-        #          '平均', '合計',
-        #          '平均', '合計',
-        #          '', ]
