@@ -10,4 +10,4 @@ if not'log_file_path' in globals():
     log_file_path = tempfile.NamedTemporaryFile(dir='./logs').name
     logging.basicConfig(level=logging.DEBUG, filemode="w+", filename=log_file_path,
                         format='%(asctime)s %(levelname)s [%(name)s] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    print('tempfile ', log_file_path)
+    #print('tempfile ', log_file_path)

@@ -40,13 +40,14 @@ class ExtensionsTask(Task):
         # ログファイルパス
         if log_file_path:
             self.log_file_path = log_file_path
+            self.logger.info(f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
         else:
             raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
 
         # 開始時間
         if start_time:
             self.start_time = start_time
-            self.logger.info('=== ExtensionsTask __init__ start_time : ' + str(start_time.isoformat()))
+            self.logger.info(f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
         else:
             raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
@@ -75,13 +76,13 @@ class ExtensionsTask(Task):
 
         title: str = ''
         if pattern_traceback.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
-            title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
+            title = f'【{self.name}:クリティカル発生】{self.start_time.isoformat()}'
         elif pattern_critical.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
-            title = '【' + self.name + ':クリティカル発生】' + self.start_time.isoformat()
+            title = f'【{self.start_time.isoformat()}:クリティカル発生】{self.start_time.isoformat()}'
         elif pattern_error.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
-            title = '【' + self.name + ':エラー発生】' + self.start_time.isoformat()
+            title = f'【{self.name}:エラー発生】{self.start_time.isoformat()}'
         elif pattern_warning.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
-            title = '【' + self.name + ':ワーニング発生】' + self.start_time.isoformat()
+            title = f'【{self.name}:ワーニング発生】{self.start_time.isoformat()}'
 
         if not title == '':
             msg: str = '\n'.join([

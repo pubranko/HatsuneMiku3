@@ -8,3 +8,6 @@ NOTICE_LEVEL: str = 'WARNING'
 
 # バックアップファイルを保存するベースディレクトリパス
 BACKUP_BASE_DIR = 'backup_files'
+
+# データ類の保存ベースディレクトリ
+DATA_DIR = 'data_dir'
