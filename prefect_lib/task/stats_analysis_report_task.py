@@ -28,9 +28,30 @@ from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
 
 
 class StatsAnalysisReportTask(ExtensionsTask):
-    '''
-    '''
-    columns_info: list = [
+    ''''''
+    robots_analysis_columns_info: list = [
+        # head1             : 必須 : 見出し１行目
+        # col               : 必須 : データフレーム列名
+        # equivalent_color  : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        {'head1': '集計日〜', 'col': 'aggregate_base_term'},
+        {'head1': 'スパイダー名', 'col': 'spider_name',
+         'equivalent_color': 'bbbbbb'},
+        {'head1': 'status', 'col': 'robots_response_status'},
+        {'head1': 'count', 'col': 'count'},
+    ]
+
+    downloader_analysis_columns_info: list = [
+        # head1             : 必須 : 見出し１行目
+        # col               : 必須 : データフレーム列名
+        # equivalent_color  : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        {'head1': '集計日〜', 'col': 'aggregate_base_term'},
+        {'head1': 'スパイダー名', 'col': 'spider_name',
+         'equivalent_color': 'bbbbbb'},
+        {'head1': 'status', 'col': 'downloader_response_status'},
+        {'head1': 'count', 'col': 'count'},
+    ]
+
+    stats_analysis_columns_info: list = [
         # head1             : 必須 : 見出し１行目
         # head2             : 必須 : 見出し２行目
         # col               : 必須 : データフレーム列名
@@ -149,10 +170,31 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
         # ワークブックの新規作成
         workbook = Workbook()
-        self.report_edit_header(workbook)
-        self.report_edit_body(workbook, spider_result_all_df)
+        # アクティブなワークシートを選択
+        ws: Worksheet = workbook.active
+        # スパイダー統計解析レポートを編集
+        self.stats_analysis_report_edit_header(ws)
+        self.stats_analysis_report_edit_body(ws, spider_result_all_df)
 
-        #レポートファイルの保存
+        # シートを追加し選択
+        _ = 'robots_response_status'
+        workbook.create_sheet(title=_)
+        any:Any = workbook[_]
+        ws = any
+        # robotsレスポンスステータス統計解析レポートを編集
+        self.robots_analysis_report_edit_header(ws)
+        self.robots_analysis_report_edit_body(ws, collect_data.robots_result_df['sum'])
+
+        # シートを追加し選択
+        _ = 'downloader_response_status'
+        workbook.create_sheet(title=_)
+        any:Any = workbook[_]
+        ws = any
+        # downloaderレスポンスステータス統計解析レポートを編集
+        self.downloader_analysis_report_edit_header(ws)
+        self.downloader_analysis_report_edit_body(ws, collect_data.downloader_result_df['sum'])
+
+        ### レポートファイルの保存
         file_name: str = 'stats_analysis_report.xlsx'
         file_path = os.path.join(DATA_DIR, file_name)
         workbook.save(file_path)
@@ -172,11 +214,145 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 <p>=========================================================================</p>
             </body>
         </html>'''
-        mail_attach_send(title=title, msg=msg, filepath=file_path)
+        #mail_attach_send(title=title, msg=msg, filepath=file_path)
 
-    def report_edit_header(self, workbook: Workbook):
+    def robots_analysis_report_edit_header(self, ws: Worksheet):
+        '''robots レスポンスレポート用Excelの見出し編集'''
+        ws.title = 'robots Analysis Report'  # シート名変更
+
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+        fill1 = PatternFill(patternType='solid', fgColor='0066CC')
+
+        for i, col_info in enumerate(self.robots_analysis_columns_info):
+            # 見出し１行目
+            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            ws[head1_cell.coordinate] = col_info['head1']
+            head1_cell.fill = fill1
+            head1_cell.border = border
+            head1_cell.alignment = Alignment(
+                horizontal="center")  # 選択範囲内中央寄せ
+
+    def robots_analysis_report_edit_body(self, ws: Worksheet, robots_result_df: pd.DataFrame):
+        '''robots レスポンスレポート用Excelの編集'''
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+
+        # 列ごとにエクセルに編集
+        for col_idx, col_info in enumerate(self.robots_analysis_columns_info):
+            for row_idx, value in enumerate(robots_result_df[col_info['col']]):
+                # 更新対象のセル
+                target_cell: Cell = ws[get_column_letter(
+                    col_idx + 1) + str(row_idx + 2)]
+
+                custom_value = value
+                # 更新対象のセルに値を設定
+                ws[target_cell.coordinate] = custom_value
+
+                # 同値カラー調整
+                if 'equivalent_color' in col_info:
+                    # 比較用の１つ上のセルと同じ値の場合は文字色を変更
+                    compare_cell: Cell = ws[get_column_letter(
+                        col_idx + 1) + str(row_idx + 1)]
+                    if target_cell.value == compare_cell.value:
+                        target_cell.font = Font(
+                            color=col_info['equivalent_color'])
+
+        # 一番右下のセル
+        max_cell: str = get_column_letter(
+            ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
+
+        for cells in ws[f'a2:{max_cell}']:
+            for cell in cells:
+                cell: Cell
+                cell.border = border
+
+        # 列ごとに次の処理を行う。
+        # 最大幅を確認
+        # それに合わせた幅を設定する。
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter  # 列名A,Bなどを取得
+            for cell in col:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            ws.column_dimensions[column].width = (max_length + 2.07)
+
+        # ウィンドウ枠の固定。１行２列は常に表示させる。
+        ws.freeze_panes = 'c2'
+
+    def downloader_analysis_report_edit_header(self, ws: Worksheet):
+        '''ダウンローダーレスポンス レポート用Excelの見出し編集'''
+        ws.title = 'downloader Analysis Report'  # シート名変更
+
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+        fill1 = PatternFill(patternType='solid', fgColor='0066CC')
+
+        for i, col_info in enumerate(self.downloader_analysis_columns_info):
+            # 見出し１行目
+            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            ws[head1_cell.coordinate] = col_info['head1']
+            head1_cell.fill = fill1
+            head1_cell.border = border
+            head1_cell.alignment = Alignment(
+                horizontal="center")  # 選択範囲内中央寄せ
+
+    def downloader_analysis_report_edit_body(self, ws: Worksheet, downloader_result_df: pd.DataFrame):
+        '''ダウンローダーレスポンス レポート用Excelの編集'''
+        # 罫線定義
+        side = Side(style='thin', color='000000')
+        border = Border(top=side, bottom=side, left=side, right=side)
+
+        # 列ごとにエクセルに編集
+        for col_idx, col_info in enumerate(self.downloader_analysis_columns_info):
+            for row_idx, value in enumerate(downloader_result_df[col_info['col']]):
+                # 更新対象のセル
+                target_cell: Cell = ws[get_column_letter(
+                    col_idx + 1) + str(row_idx + 2)]
+
+                custom_value = value
+                # 更新対象のセルに値を設定
+                ws[target_cell.coordinate] = custom_value
+
+                # 同値カラー調整
+                if 'equivalent_color' in col_info:
+                    # 比較用の１つ上のセルと同じ値の場合は文字色を変更
+                    compare_cell: Cell = ws[get_column_letter(
+                        col_idx + 1) + str(row_idx + 1)]
+                    if target_cell.value == compare_cell.value:
+                        target_cell.font = Font(
+                            color=col_info['equivalent_color'])
+
+        # 一番右下のセル
+        max_cell: str = get_column_letter(
+            ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
+
+        for cells in ws[f'a2:{max_cell}']:
+            for cell in cells:
+                cell: Cell
+                cell.border = border
+
+        # 列ごとに次の処理を行う。
+        # 最大幅を確認
+        # それに合わせた幅を設定する。
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter  # 列名A,Bなどを取得
+            for cell in col:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            ws.column_dimensions[column].width = (max_length + 2.07)
+
+        # ウィンドウ枠の固定。１行２列は常に表示させる。
+        ws.freeze_panes = 'c2'
+
+    def stats_analysis_report_edit_header(self, ws: Worksheet):
         '''レポート用Excelの見出し編集'''
-        ws: Worksheet = workbook.active      # アクティブなワークシートを選択
+        ws.title = 'Stats Analysis Report'  # シート名変更
 
         # 罫線定義
         side = Side(style='thin', color='000000')
@@ -184,7 +360,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         fill1 = PatternFill(patternType='solid', fgColor='0066CC')
         fill2 = PatternFill(patternType='solid', fgColor='0099CC')
 
-        for i, col_info in enumerate(self.columns_info):
+        for i, col_info in enumerate(self.stats_analysis_columns_info):
             # 見出し１行目
             head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
             ws[head1_cell.coordinate] = col_info['head1']
@@ -200,16 +376,14 @@ class StatsAnalysisReportTask(ExtensionsTask):
             head2_cell.border = border
             head2_cell.alignment = Alignment(horizontal="center")  # 中央寄せ
 
-    def report_edit_body(self, workbook: Workbook, spider_result_all_df: pd.DataFrame):
+    def stats_analysis_report_edit_body(self, ws: Worksheet, spider_result_all_df: pd.DataFrame):
         ''' '''
-        # ワークシートを選択
-        ws = workbook.active
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
 
         # 列ごとにエクセルに編集
-        for col_idx, col_info in enumerate(self.columns_info):
+        for col_idx, col_info in enumerate(self.stats_analysis_columns_info):
             for row_idx, value in enumerate(spider_result_all_df[col_info['col']]):
                 # 更新対象のセル
                 target_cell: Cell = ws[get_column_letter(
