@@ -221,16 +221,10 @@ class StatsInfoCollectData:
         # 日付別のスパイダー一覧を作成する。
         spider_list: pd.Series = (
             self.spider_df['spider_name'].drop_duplicates())
-        #spider_by_date: list = list(itertools.product(date_list, spider_list))
         spider_by_date: list = [[date, spider]
                                 for date, spider in itertools.product(date_list, spider_list)]
-        # print('===spider一覧の確認\n',spider_list)
-        # print('===\n',spider_by_date)
         spider_by_date_df = pd.DataFrame(spider_by_date, columns=[
                                          'aggregate_base_term', 'spider_name'])
-        # print('===\n',spider_by_date_df.to_dict())
-
-        #df2 = pd.merge(key_date_df, df2, how="left").sort_values(["key", "date"])
 
         # 各データフレームに対してソートを行う。
         df_sort_list: list[tuple[dict[str, pd.DataFrame], list]] = [
@@ -243,7 +237,6 @@ class StatsInfoCollectData:
         ]
         for type in ['sum', 'mean', 'min', 'max']:
             for dataframes, sort_key in df_sort_list:
-                #dataframes[type].sort_values(by=sort_key, inplace=True)
                 dataframes[type] = pd.merge(spider_by_date_df, dataframes[type],how='left').sort_values(
                     by=sort_key).fillna('')
 
@@ -260,28 +253,12 @@ class StatsInfoCollectData:
 
         return spider_result_all_df
 
-
-        # self.robots_result_df['sum'].sort_values(
-        #     by=['spider_name', 'aggregate_base_term', 'robots_response_status'], inplace=True)
-        # self.downloader_result_df['sum'].sort_values(
-        #     by=['spider_name', 'aggregate_base_term', 'downloader_response_status'], inplace=True)
-        # self.spider_result_df['sum'].sort_values(
-        #     by=['spider_name', 'aggregate_base_term'], inplace=True)
-
-        # 他のソートもやらないと、、、
-
-        #print('===\n', self.spider_result_df['sum'].to_dict())
-        #print('===\n', self.spider_result_df['mean'].to_dict())
-        #print('===\n', self.spider_result_df['min'].to_dict())
-        #print('===\n', self.spider_result_df['max'].to_dict())
-
     def aggregate_result_set(self, select_df: pd.DataFrame, groupby: list, aggregate_base_term: str, result_df: dict[str, pd.DataFrame]):
         ''''''
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
         _ = select_df.groupby(by=groupby, as_index=False).sum()
         _['aggregate_base_term'] = aggregate_base_term
         result_df['sum'] = pd.concat([result_df['sum'], _]).round(2)
-        # print(result_df['sum'].to_dict())
 
         _ = select_df.groupby(groupby, as_index=False).mean()
         _['aggregate_base_term'] = aggregate_base_term
@@ -295,55 +272,8 @@ class StatsInfoCollectData:
         _['aggregate_base_term'] = aggregate_base_term
         result_df['max'] = pd.concat([result_df['max'], _]).round(2)
 
-    # ログ１件より生成するデータイメージ。基準日とスパイダー名がkeyになる。
-    # temp = {
-    #     'start_time': "datetime形式",
-    #     'spider_name': "名前",
-    #     'number_of_times_executed': "実行回数",
-    #     'totalization': {
-    #         # # ログレベル件数
-    #         #     ログレベル(CRITICAL) log_count/CRITICAL
-    #         #     ログレベル(ERROR)    log_count/ERROR
-    #         #     ログレベル(WARNING)  log_count/WARNING
-    #         # # elapsed_time_secondsを使う
-    #         #     処理時間(最小)
-    #         #     処理時間(最大)
-    #         #     処理時間(合計)
-    #         #     処理時間(平均)
-    #         # # メモリ使用量  memusage/maxを使う
-    #         #     メモリ使用量(最小)
-    #         #     メモリ使用量(最大)
-    #         #     メモリ使用量(平均)
-    #         # # 総リクエスト数、総レスポンス数(downloader/request_count,downloader/response_count)
-    #         #     総リクエスト数(最小)
-    #         #     総リクエスト数(最大)
-    #         #     総リクエスト数(合計)
-    #         #     総リクエスト数(平均)
-    #         #     総レスポンス数(最小)
-    #         #     総レスポンス数(最大)
-    #         #     総レスポンス数(合計)
-    #         #     総レスポンス数(平均)
-    #         # # レスポンスのエラー件数（200以外の数をカウント）robotstxt/response_status_count/＊、downloader/response_status_count/＊
-    #         #     robotsレスポンスのエラー件数(平均)
-    #         #     robotsレスポンスのエラー件数(合計)
-    #         #     レスポンスのエラー件数(平均)
-    #         #     レスポンスのエラー件数(合計)
-    #         # # リクエストの深さ(最大)
-    #         #     リクエスト最大深度  request_depth_maxの最大値
-    #         # # レスポンスのバイト数 downloader/response_bytes
-    #         #     レスポンスバイト数(平均)
-    #         #     レスポンスバイト数(合計)
-    #         # # リトライ件数 retry/count
-    #         #     リトライ件数(平均)
-    #         #     リトライ件数(合計)
-    #         # # 保存した件数 item_scraped_count
-    #         #     平均
-    #         #     合計
-    #         # # 異常終了ステータス    finish_reason: "finished"
-    #         #     finish_reasonが"finished"以外の件数
-    #     }, }
 
-    # stats = {
+    stats_image = {
     #     # ログレベル件数
     #     "log_count/CRITICAL": 0,
     #     "log_count/ERROR": 0,
@@ -408,4 +338,4 @@ class StatsInfoCollectData:
     #     "item_scraped_count": 15,
     #     # 終了理由
     #     "finish_reason": "finished"
-    # }
+    }
