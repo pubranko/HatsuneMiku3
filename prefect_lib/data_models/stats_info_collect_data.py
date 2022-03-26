@@ -33,6 +33,8 @@ class StatsInfoCollectData:
     robots_result_df: dict[str, pd.DataFrame]
     downloader_result_df: dict[str, pd.DataFrame]
     spider_result_df: dict[str, pd.DataFrame]
+    # spiderの一覧
+    spider_list: pd.Series
 
     def __init__(self):
         self.robots_df = pd.DataFrame({
@@ -219,10 +221,11 @@ class StatsInfoCollectData:
             date_list.append(date_from)
 
         # 日付別のスパイダー一覧を作成する。
-        spider_list: pd.Series = (
-            self.spider_df['spider_name'].drop_duplicates())
+        self.spider_list: pd.Series = (
+            self.spider_df['spider_name'].drop_duplicates().sort_values()
+            )
         spider_by_date: list = [[date, spider]
-                                for date, spider in itertools.product(date_list, spider_list)]
+                                for date, spider in itertools.product(date_list, self.spider_list)]
         spider_by_date_df = pd.DataFrame(spider_by_date, columns=[
                                          'aggregate_base_term', 'spider_name'])
 
