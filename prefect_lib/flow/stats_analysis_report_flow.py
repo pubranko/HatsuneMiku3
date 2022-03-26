@@ -38,5 +38,5 @@ flow.run(parameters=dict(
     #report_term='monthly',
     #report_term='yearly',
     totalling_term='daily',
-    base_date=datetime(2022, 2, 13).astimezone(TIMEZONE),
+    base_date=datetime(2022, 2, 13).astimezone(TIMEZONE),   # 左記基準日の前日分のデータが対象となる。
 ))

@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import os
 import sys
 from typing import Any
@@ -30,24 +31,30 @@ from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
 class StatsAnalysisReportTask(ExtensionsTask):
     ''''''
     robots_analysis_columns_info: list = [
-        # head1             : 必須 : 見出し１行目
-        # col               : 必須 : データフレーム列名
-        # equivalent_color  : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        # head1                     : 必須 : 見出し１行目
+        # col                       : 必須 : データフレーム列名
+        # equivalent_color          : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        # warning_value             : 任意 : ワーニングとする値を入れる配列
+        # warning_background_color  : 任意 : ワーンングとなったセルの背景色
         {'head1': '集計日〜', 'col': 'aggregate_base_term'},
         {'head1': 'スパイダー名', 'col': 'spider_name',
          'equivalent_color': 'bbbbbb'},
-        {'head1': 'status', 'col': 'robots_response_status'},
+        {'head1': 'status', 'col': 'robots_response_status',
+         'warning_value': [], 'warning_background_color':'FF8C00'},
         {'head1': 'count', 'col': 'count'},
     ]
 
     downloader_analysis_columns_info: list = [
-        # head1             : 必須 : 見出し１行目
-        # col               : 必須 : データフレーム列名
-        # equivalent_color  : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        # head1                     : 必須 : 見出し１行目
+        # col                       : 必須 : データフレーム列名
+        # equivalent_color          : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
+        # warning_value             : 任意 : ワーニングとする値を入れる配列
+        # warning_background_color  : 任意 : ワーンングとなったセルの背景色
         {'head1': '集計日〜', 'col': 'aggregate_base_term'},
         {'head1': 'スパイダー名', 'col': 'spider_name',
          'equivalent_color': 'bbbbbb'},
-        {'head1': 'status', 'col': 'downloader_response_status'},
+        {'head1': 'status', 'col': 'downloader_response_status',
+         'warning_value': [], 'warning_background_color':'FF8C00'},
         {'head1': 'count', 'col': 'count'},
     ]
 
@@ -100,12 +107,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
         {'head1': '保存件数', 'head2': '合計', 'col': 'item_scraped_count'},
         {'head1': '', 'head2': '平均', 'col': 'item_scraped_count_mean',
          'number_format': '#,##0.00'},
-        # {'head1': '実行回数', 'head2': '',
-        #    'col': ''},
-        # {'head1': 'robotsレスポンスステータス', 'head2': '',
-        #     'col': ''},
-        # {'head1': 'レスポンスステータス', 'head2': '',
-        #     'col': ''},
     ]
 
     def run(self, **kwargs):
@@ -131,16 +132,17 @@ class StatsAnalysisReportTask(ExtensionsTask):
         self.logger.info(
             f'=== StatsAnalysisReportTask run 基準日from ~ to : {self.stats_analysis_report_input.base_date_get()}')
 
-        self.stats_analysis_report_create()
+        stats_info_collect_records: Cursor = self.stats_info_collect_get()
 
-        # 各コレクション、solrの件数を取得して同期確認
-        # ここで上記の解析結果よりレポートを作成する？
+        self.stats_analysis_report_create(stats_info_collect_records)
 
         # 終了処理
         self.closed()
 
-    def stats_analysis_report_create(self):
-        '''  '''
+    def stats_info_collect_get(self) -> Cursor:
+        '''
+        mongoDBより指定期間内の統計情報集計レコードを取得して返す。
+        '''
         stats_info_collect_model = StatsInfoCollectModel(self.mongo)
         base_date_from, base_date_to = self.stats_analysis_report_input.base_date_get()
 
@@ -159,6 +161,10 @@ class StatsAnalysisReportTask(ExtensionsTask):
         self.logger.info(
             f'=== 統計情報レポート件数({stats_info_collect_records.count()})')
 
+        return stats_info_collect_records
+
+    def stats_analysis_report_create(self,stats_info_collect_records:Cursor):
+        '''  '''
         collect_data = StatsInfoCollectData()
         for stats_info_collect_record in stats_info_collect_records:
             collect_data.dataframe_recovery(
@@ -179,27 +185,43 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # シートを追加し選択
         _ = 'robots_response_status'
         workbook.create_sheet(title=_)
-        any:Any = workbook[_]
+        any: Any = workbook[_]
         ws = any
-        # robotsレスポンスステータス統計解析レポートを編集
-        self.robots_analysis_report_edit_header(ws)
-        self.robots_analysis_report_edit_body(ws, collect_data.robots_result_df['sum'])
+        self.collect_result_analysis_report_edit_header(
+            ws,
+            'robots Analysis Report',
+            self.robots_analysis_columns_info,)
+        self.collect_result_analysis_report_edit_body(
+            ws,
+            collect_data.spider_list,
+            collect_data.robots_result_df['sum'],
+            'robots_response_status',
+            self.robots_analysis_columns_info,)
 
         # シートを追加し選択
         _ = 'downloader_response_status'
         workbook.create_sheet(title=_)
-        any:Any = workbook[_]
+        any: Any = workbook[_]
         ws = any
         # downloaderレスポンスステータス統計解析レポートを編集
-        self.downloader_analysis_report_edit_header(ws)
-        self.downloader_analysis_report_edit_body(ws, collect_data.downloader_result_df['sum'])
+        self.collect_result_analysis_report_edit_header(
+            ws,
+            'downloader Analysis Report',
+            self.downloader_analysis_columns_info,)
+        self.collect_result_analysis_report_edit_body(
+            ws,
+            collect_data.spider_list,
+            collect_data.downloader_result_df['sum'],
+            'downloader_response_status',
+            self.downloader_analysis_columns_info,)
 
-        ### レポートファイルの保存
+        # レポートファイルの保存
         file_name: str = 'stats_analysis_report.xlsx'
         file_path = os.path.join(DATA_DIR, file_name)
         workbook.save(file_path)
 
-        ### メールにレポートファイルを添付して送信
+        # メールにレポートファイルを添付して送信
+        base_date_from, base_date_to = self.stats_analysis_report_input.base_date_get()
         title = 'stats_analysis_report'
         msg = f'''
         <html>
@@ -214,18 +236,24 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 <p>=========================================================================</p>
             </body>
         </html>'''
+        # メール送信は一時停止
         #mail_attach_send(title=title, msg=msg, filepath=file_path)
 
-    def robots_analysis_report_edit_header(self, ws: Worksheet):
-        '''robots レスポンスレポート用Excelの見出し編集'''
-        ws.title = 'robots Analysis Report'  # シート名変更
+    def collect_result_analysis_report_edit_header(
+        self, ws: Worksheet,            # レポートの出力先のワークシート
+        sheet_name: str,                # レポートの出力先のワークシートのシート名
+        analysis_columns_info: list,):  # レポート出力対象カラムに関する情報リスト
+        '''集計結果解析レポート用Excelの編集(見出し)'''
+
+        ws.title = sheet_name  # シート名変更
 
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
+        # 背景色
         fill1 = PatternFill(patternType='solid', fgColor='0066CC')
 
-        for i, col_info in enumerate(self.robots_analysis_columns_info):
+        for i, col_info in enumerate(analysis_columns_info):
             # 見出し１行目
             head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
             ws[head1_cell.coordinate] = col_info['head1']
@@ -234,115 +262,92 @@ class StatsAnalysisReportTask(ExtensionsTask):
             head1_cell.alignment = Alignment(
                 horizontal="center")  # 選択範囲内中央寄せ
 
-    def robots_analysis_report_edit_body(self, ws: Worksheet, robots_result_df: pd.DataFrame):
-        '''robots レスポンスレポート用Excelの編集'''
+    def collect_result_analysis_report_edit_body(
+        self,
+        ws: Worksheet,                  # レポートの出力先のワークシート
+        spider_list: pd.Series,         # スパイダーの一覧
+        result_df: pd.DataFrame,        # mongoDBへの集計結果より作成したデータフレーム
+        check_col: str,                 # チェックを行いたいカラム
+        analysis_columns_info: list,):  # レポート出力対象カラムに関する情報リスト
+        '''集計結果解析レポート用Excelの編集'''
+
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
 
-        # 列ごとにエクセルに編集
-        for col_idx, col_info in enumerate(self.robots_analysis_columns_info):
-            for row_idx, value in enumerate(robots_result_df[col_info['col']]):
-                # 更新対象のセル
-                target_cell: Cell = ws[get_column_letter(
-                    col_idx + 1) + str(row_idx + 2)]
+        # 集計期間の数を確認
+        aggregate_base_term_list_count = len(
+            result_df['aggregate_base_term'].drop_duplicates())
 
-                custom_value = value
-                # 更新対象のセルに値を設定
-                ws[target_cell.coordinate] = custom_value
+        # エクセルシートの編集開始行数初期化
+        base_row_idx: int = 2
+        # スパイダー別に解析を行う。
+        for spider in spider_list:
+            columns_info_by_spider = deepcopy(
+                analysis_columns_info)
+            # スパイダー別のデータフレームを作成
+            by_spider_df = result_df.query(
+                f'spider_name == "{spider}"')
+            # データ無しの件数を確認 ※スパイダーの可動前はデータ無しとなる。
+            data_none_count: int = len(
+                by_spider_df.query(f'{check_col} == ""'))
+            nomal_count: int = aggregate_base_term_list_count - data_none_count
+            # ステータス別の一覧を作成
+            status_list_sr: pd.Series = (
+                by_spider_df[check_col].drop_duplicates())
 
-                # 同値カラー調整
-                if 'equivalent_color' in col_info:
-                    # 比較用の１つ上のセルと同じ値の場合は文字色を変更
-                    compare_cell: Cell = ws[get_column_letter(
-                        col_idx + 1) + str(row_idx + 1)]
-                    if target_cell.value == compare_cell.value:
-                        target_cell.font = Font(
-                            color=col_info['equivalent_color'])
+            # ステータス別にの出現件数が集計期間数と一致するか確認
+            for status in status_list_sr:
+                # データ無しは除く
+                if status:
+                    by_status_df = by_spider_df.query(
+                        f'{check_col} == "{status}"')
+                    if nomal_count != len(by_status_df):
+                        for col_info in columns_info_by_spider:
+                            if col_info['col'] == check_col:
+                                col_info['warning_value'].append(status)
 
-        # 一番右下のセル
+            # 列ごとにエクセルに編集
+            for col_idx, col_info in enumerate(columns_info_by_spider):
+                # データフレームの列ごとに１行ずつ処理を実施
+                for row_idx, value in enumerate(by_spider_df[col_info['col']]):
+                    # 更新対象のセルに値を設定
+                    target_cell: Cell = ws[get_column_letter(
+                        col_idx + 1) + str(base_row_idx + row_idx)]
+                    ws[target_cell.coordinate] = value
+
+                    # 同値カラー調整列の場合、更新対象セルの上と同値ならば色を変える。
+                    if 'equivalent_color' in col_info:
+                        compare_cell: Cell = ws[get_column_letter(
+                            col_idx + 1) + str(base_row_idx + row_idx - 1)]
+                        if target_cell.value == compare_cell.value:
+                            target_cell.font = Font(
+                                color=col_info['equivalent_color'])
+
+                    # ワーニングカラー調整列の場合、ワーニングとする値をがあった場合、背景色を設定。
+                    if 'warning_value' in col_info:
+                        if value in col_info['warning_value']:
+                            target_cell.fill = PatternFill(
+                                patternType='solid', fgColor=col_info['warning_background_color'])
+
+            # １つのスパイダーに対する編集が終わった段階で、次のスパイダー用にエクセルの編集行の基準を設定する。
+            base_row_idx = base_row_idx + len(by_spider_df)
+
+        # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-
+        cell: Cell  # 型ヒントの定義のみ
         for cells in ws[f'a2:{max_cell}']:
             for cell in cells:
-                cell: Cell
                 cell.border = border
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        for col in ws.columns:
+        for cols in ws.columns:
             max_length = 0
-            column = col[0].column_letter  # 列名A,Bなどを取得
-            for cell in col:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            ws.column_dimensions[column].width = (max_length + 2.07)
-
-        # ウィンドウ枠の固定。１行２列は常に表示させる。
-        ws.freeze_panes = 'c2'
-
-    def downloader_analysis_report_edit_header(self, ws: Worksheet):
-        '''ダウンローダーレスポンス レポート用Excelの見出し編集'''
-        ws.title = 'downloader Analysis Report'  # シート名変更
-
-        # 罫線定義
-        side = Side(style='thin', color='000000')
-        border = Border(top=side, bottom=side, left=side, right=side)
-        fill1 = PatternFill(patternType='solid', fgColor='0066CC')
-
-        for i, col_info in enumerate(self.downloader_analysis_columns_info):
-            # 見出し１行目
-            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
-            ws[head1_cell.coordinate] = col_info['head1']
-            head1_cell.fill = fill1
-            head1_cell.border = border
-            head1_cell.alignment = Alignment(
-                horizontal="center")  # 選択範囲内中央寄せ
-
-    def downloader_analysis_report_edit_body(self, ws: Worksheet, downloader_result_df: pd.DataFrame):
-        '''ダウンローダーレスポンス レポート用Excelの編集'''
-        # 罫線定義
-        side = Side(style='thin', color='000000')
-        border = Border(top=side, bottom=side, left=side, right=side)
-
-        # 列ごとにエクセルに編集
-        for col_idx, col_info in enumerate(self.downloader_analysis_columns_info):
-            for row_idx, value in enumerate(downloader_result_df[col_info['col']]):
-                # 更新対象のセル
-                target_cell: Cell = ws[get_column_letter(
-                    col_idx + 1) + str(row_idx + 2)]
-
-                custom_value = value
-                # 更新対象のセルに値を設定
-                ws[target_cell.coordinate] = custom_value
-
-                # 同値カラー調整
-                if 'equivalent_color' in col_info:
-                    # 比較用の１つ上のセルと同じ値の場合は文字色を変更
-                    compare_cell: Cell = ws[get_column_letter(
-                        col_idx + 1) + str(row_idx + 1)]
-                    if target_cell.value == compare_cell.value:
-                        target_cell.font = Font(
-                            color=col_info['equivalent_color'])
-
-        # 一番右下のセル
-        max_cell: str = get_column_letter(
-            ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-
-        for cells in ws[f'a2:{max_cell}']:
-            for cell in cells:
-                cell: Cell
-                cell.border = border
-
-        # 列ごとに次の処理を行う。
-        # 最大幅を確認
-        # それに合わせた幅を設定する。
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter  # 列名A,Bなどを取得
-            for cell in col:
+            column = cols[0].column_letter  # 列名A,Bなどを取得
+            for cell in cols:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             ws.column_dimensions[column].width = (max_length + 2.07)
@@ -378,6 +383,15 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
     def stats_analysis_report_edit_body(self, ws: Worksheet, spider_result_all_df: pd.DataFrame):
         ''' '''
+
+        '''以下のチェックを追加してみよう
+        １．保存件数ゼロ
+        ２．critical,errorあり
+        ３．メモリ使用量の平均の1.5倍を超えているセル
+        ４．リトライ件数が毎日ある場合OK。一部ある場合はワーニング。
+        ５．処理時間(最大) > 600秒
+        '''
+
         # 罫線定義
         side = Side(style='thin', color='000000')
         border = Border(top=side, bottom=side, left=side, right=side)
