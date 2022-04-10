@@ -1,18 +1,25 @@
+from __future__ import annotations
 import os
 import sys
 import logging
+import pickle
 from typing import Any
 from logging import Logger
 from datetime import datetime
 from importlib import import_module
 from pymongo import ASCENDING
 from pymongo.cursor import Cursor
+from bs4 import BeautifulSoup as bs4
+from bs4.element import Tag
+from bs4.element import ResultSet
 path = os.getcwd()
 sys.path.append(path)
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel
+from models.scraper_by_domain_model import ScraperByDomainModel
 from models.controller_model import ControllerModel
+from prefect_lib.data_models.scraper_by_domain_data import ScraperByDomainData
 from common_lib.timezone_recovery import timezone_recovery
 from prefect_lib.common_module.scraped_record_error_check import scraped_record_error_check
 
@@ -27,6 +34,7 @@ def exec(kwargs: dict):
     crawler_response: CrawlerResponseModel = CrawlerResponseModel(mongo)
     scraped_from_response: ScrapedFromResponseModel = ScrapedFromResponseModel(
         mongo)
+    scraper_by_domain: ScraperByDomainModel = ScraperByDomainModel(mongo)
     controller: ControllerModel = ControllerModel(mongo)
     domain: str = kwargs['domain']
     crawling_start_time_from: datetime = kwargs['crawling_start_time_from']
@@ -59,13 +67,13 @@ def exec(kwargs: dict):
     record_count = crawler_response.find(
         projection=None,
         filter=filter,
+        sort=[('domain', ASCENDING)],
     ).count()
     logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
 
     # 件数制限でスクレイピング処理を実施
     limit: int = 100
     skip_list = list(range(0, record_count, limit))
-
     scraped: dict = {}
     scraper_mod: dict = {}
 
@@ -73,7 +81,7 @@ def exec(kwargs: dict):
         records: Cursor = crawler_response.find(
             projection=None,
             filter=filter,
-            sort=[('response_time',ASCENDING)],
+            sort=[('response_time', ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
@@ -88,13 +96,25 @@ def exec(kwargs: dict):
             scraped['scrapying_start_time'] = start_time
             scraped['source_of_information'] = record['source_of_information']
 
-            # 各サイトのスクレイピングした項目を結合
-            module_name = str(record['domain']).replace('.', '_')
-            if not module_name in scraper_mod:
-                scraper_mod[module_name] = import_module(
-                    'prefect_lib.scraper.' + module_name)
-            scraped.update(
-                getattr(scraper_mod[module_name], 'exec')(record, kwargs))
+            # bs4で解析
+            response_body: str = pickle.loads(record['response_body'])
+            soup: bs4 = bs4(response_body, 'lxml')
+            scraped['pattern'] = {}
+
+            # ここをドメイン別に取得するようにするにはどうするか？？？
+            scraper_by_domain.record_read(filter={'domain': domain})
+
+            for scraper, pattern_list in scraper_by_domain.scrape_item_get():
+                if not scraper in scraper_mod:
+                    scraper_mod[scraper] = import_module(
+                        'prefect_lib.scraper.' + scraper)
+                scraped_result, scraped_pattern = getattr(scraper_mod[scraper], 'scraper')(
+                    soup=soup, scraper=scraper, scrape_parm=pattern_list,)
+                scraped.update(scraped_result)
+                scraped['pattern'].update(scraped_pattern)
+            print('title: ', scraped['title'])
+            #print('date: ',scraped['publish_date'])
+            #print('article: ',scraped['article'])
 
             # データチェック
             error_flg: bool = scraped_record_error_check(scraped)

@@ -8,6 +8,7 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run
 from common_lib.directory_search_spiders import directory_search_spiders
+from prefect_lib.settings import DIRECT_CRAWL_FILES_DIR
 
 
 
@@ -24,7 +25,7 @@ class DirectCrawlTask(ExtensionsTask):
 
         spider_name: str = kwargs['spider_name']
         file: str = kwargs['file']
-        file_path: str = os.path.join('static', 'direct_crawl_files', file)
+        file_path: str = os.path.join(DIRECT_CRAWL_FILES_DIR, file)
         urls: list = []
         if os.path.exists(file_path):
             with open(file_path) as f:
