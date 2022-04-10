@@ -18,13 +18,17 @@ class CrawlerResponseModel(MongoCommonModel):
 
         # インデックスの有無を確認し、なければ作成する。
         # ※sort使用時、indexがないとメモリ不足となるため。
-        create_index_flg:bool = True
-        for indexes in self.mongo.mongo_db[self.collection_name].list_indexes():
-            for idx in indexes['key']:
-                if idx == 'response_time':
-                    create_index_flg = False
-        if create_index_flg:
-            self.mongo.mongo_db[self.collection_name].create_index('response_time')
+        create_index_flg: bool = True
+        index_list: list = []
+        # indexes['key']のデータイメージ => SON([('_id', 1)])、SON([('response_time', 1)])
+        index_list = [
+            indexes['key'].keys()[0] for indexes in self.mongo.mongo_db[self.collection_name].list_indexes()]
+
+        if not 'response_time' in index_list:
+            self.mongo.mongo_db[self.collection_name].create_index(
+                'response_time')
+        if not 'domain' in index_list:
+            self.mongo.mongo_db[self.collection_name].create_index('domain')
 
     def news_clip_master_register_result(self, url: str, response_time: datetime, news_clip_master_register: str) -> None:
         '''news_clip_masterへの登録結果を反映させる'''

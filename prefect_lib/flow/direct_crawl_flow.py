@@ -16,7 +16,7 @@ from prefect_lib.task.direct_crawl_task import DirectCrawlTask
 '''
 ダイレクトクロール
 ・指定したurlへのみクロールを行う。
-・事前にstatic/direct_crawl_files配下のファイルにクロールしたいurlを登録する。
+・事前に"prefect_lib.settings.DIRECT_CRAWL_FILES_DIR"配下のファイルにクロールしたいurlを登録する。
 ・実行時にそのファイル名を指定する。
 '''
 with Flow(

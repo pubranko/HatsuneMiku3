@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import logging
@@ -24,47 +25,56 @@ def exec(record: dict, kwargs: dict) -> dict:
     response_body: str = pickle.loads(record['response_body'])
     soup = bs4(response_body, 'lxml')
     scraped_record: dict = {}
+    scraping_type_by_item: dict = {}
 
-    # url
+    ### url ###
     url: str = record['url']
     scraped_record['url'] = url
     logger.info('=== スクレイピングURL : ' + url)
 
     # title
-    title_selecter: Any = soup.select_one('head > title')
-    if title_selecter:
-        tag: Tag = title_selecter
-        scraped_record['title'] = tag.get_text()
+    title_selecter = soup.select_one('head > title')
+    if type(title_selecter) is Tag:
+        scraping_type_by_item['title'] = 'type_1'
+        scraped_record['title'] = title_selecter.get_text()
 
-    # article
-    #body > div#fusion-app > div.grid div.grid > section > article.article-wrapper > div.article-body > p.article-text
-    article_selecter: Any = soup.select('body  article.article-wrapper > div.article-body > p.article-text')
-    if not article_selecter:
-        article_selecter: Any = soup.select(
-            '.article-body > .article-text')
+    ### article ###
+    # body > div#fusion-app > div.grid div.grid > section > article.article-wrapper > div.article-body > p.article-text
+
+    article_scraping_parm:list =[
+        {'type':'parse_type_2',
+         'css_selecter':'.article-body > .article-text'},
+        {'type':'parse_type_1',
+         'css_selecter':'body  article.article-wrapper > div.article-body > p.article-text'},
+    ]
+    article_selecter = soup.select(
+        'body  article.article-wrapper > div.article-body > p.article-text')
     if article_selecter:
-        result_set: ResultSet = article_selecter
-        tag_list: list = [tag.get_text() for tag in result_set]
+        scraping_type_by_item['article'] = 'type_1'
+
+    if not article_selecter:
+        scraping_type_by_item['article'] = 'type_2'
+        article_selecter = soup.select('.article-body > .article-text')
+
+    if type(article_selecter) is ResultSet:
+        tag_list: list[str] = [tag.get_text() for tag in article_selecter]
         scraped_record['article'] = '\n'.join(tag_list).strip()
-    p5 = time.perf_counter()
 
-    # publish_date
-    modified_selecter: Any = soup.select_one('meta[name="article:modified_time"]')
-    if modified_selecter:
-        tag: Tag = modified_selecter
+    ### publish_date ###
+    scraping_type_by_item['publish_date'] = 'type_1'
+    publish_selecter = soup.select_one('meta[name="article:modified_time"]')
+    if not publish_selecter:
+        scraping_type_by_item['publish_date'] = 'type_2'
+        publish_selecter = soup.select_one(
+            'meta[name="article:published_time"]')
+    if type(publish_selecter) is Tag:
         scraped_record['publish_date'] = parse(
-            tag['content']).astimezone(TIMEZONE)
-    else:
-        #publish_selecter: Any = soup.select_one('div.article-meta-upper > time[datetime]')
-        #publish_selecter: Any = soup.select_one('div.article-datetime > time[datetime]')
-        publish_selecter: Any = soup.select_one('meta[name="article:published_time"]')
-        if publish_selecter:
-            tag: Tag = publish_selecter
-            scraped_record['publish_date'] = parse(
-                tag['content']).astimezone(TIMEZONE)
+            str(publish_selecter['content'])).astimezone(TIMEZONE)
 
-    p6 = time.perf_counter()
-    # 発行者
+    ### 発行者 ###
     scraped_record['issuer'] = ['産経新聞社', '産経']
+
+    ### 各スクレイピングのバージョンを統計のため記録 ###
+    scraped_record['scraping_type_by_item'] = scraping_type_by_item
 
     return scraped_record

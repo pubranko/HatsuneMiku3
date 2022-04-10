@@ -105,10 +105,9 @@ class ExtensionsTask(Task):
 
         self.log_check()
         resource_check()
-        self.log_save()
         self.mongo.close()
-        #elf.log_file_path
-        os.remove(self.log_file_path)
+        self.log_save()
+        os.remove(self.log_file_path)   #終了後ログファイルを削除
 
     def run(self,):
         '''(ここはオーバーライドすることを前提とする。)
