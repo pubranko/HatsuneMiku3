@@ -11,7 +11,7 @@ sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
-from prefect_lib.task.mongo_import_selector_task import MongoImportSelectorTask
+from prefect_lib.task.scraper_info_uploader_task import ScraperInfoUploaderTask
 
 '''
 mongoDBのインポートを行う。
@@ -20,30 +20,22 @@ mongoDBのインポートを行う。
 ・対象の年月を指定できる。範囲を指定した場合、月ごとにエクスポートを行う。
 '''
 with Flow(
-    name='Mongo import selector flow',
+    name='Scraper info uploader flow',
     state_handlers=[flow_status_change],
 ) as flow:
-    collections_name = Parameter(
-        'collections_name', required=True,)
-    backup_dir_from = Parameter(
-        'backup_dir_from', required=True,)
-    backup_dir_to = Parameter(
-        'backup_dir_to', required=True,)
-    task = MongoImportSelectorTask(
+    scraper_info_by_domain_files = Parameter(
+        'scraper_info_by_domain_files', required=True,)
+    task = ScraperInfoUploaderTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
-    result = task(collections_name=collections_name,
-                  backup_dir_from=backup_dir_from,
-                  backup_dir_to=backup_dir_to)
+    result = task(scraper_info_by_domain_files=scraper_info_by_domain_files)
 
 flow.run(parameters=dict(
-    collections_name=[
-        # 'crawler_response',
-        # 'scraped_from_response',
-        # 'news_clip_master',
-        'crawler_logs',
-        # 'asynchronous_report',
-        # 'controller',
+    scraper_info_by_domain_files=[
+        #'yomiuri_co_jp.json',
+        #'yomiuri_co_jp_e1.json',
+        #'yomiuri_co_jp_e2.json',
+        #'yomiuri_co_jp_e3.json',
+        #'yomiuri_co_jp_e4.json',
+        #'yomiuri_co_jp.json',
     ],
-    backup_dir_from='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
-    backup_dir_to='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
 ))

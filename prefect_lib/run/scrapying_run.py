@@ -17,9 +17,8 @@ sys.path.append(path)
 from models.mongo_model import MongoModel
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel
-from models.scraper_by_domain_model import ScraperByDomainModel
+from models.scraper_info_by_domain_model import ScraperInfoByDomainModel
 from models.controller_model import ControllerModel
-from prefect_lib.data_models.scraper_by_domain_data import ScraperByDomainData
 from common_lib.timezone_recovery import timezone_recovery
 from prefect_lib.common_module.scraped_record_error_check import scraped_record_error_check
 
@@ -34,7 +33,7 @@ def exec(kwargs: dict):
     crawler_response: CrawlerResponseModel = CrawlerResponseModel(mongo)
     scraped_from_response: ScrapedFromResponseModel = ScrapedFromResponseModel(
         mongo)
-    scraper_by_domain: ScraperByDomainModel = ScraperByDomainModel(mongo)
+    scraper_by_domain: ScraperInfoByDomainModel = ScraperInfoByDomainModel(mongo)
     controller: ControllerModel = ControllerModel(mongo)
     domain: str = kwargs['domain']
     crawling_start_time_from: datetime = kwargs['crawling_start_time_from']

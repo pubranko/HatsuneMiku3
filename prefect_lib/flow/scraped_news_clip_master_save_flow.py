@@ -10,7 +10,7 @@ from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
-from prefect_lib.common_module.logging_setting import log_file_path
+from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
 from prefect_lib.task.scraped_news_clip_master_save_task import ScrapedNewsClipMasterSaveTask
 
@@ -28,7 +28,7 @@ with Flow(
     scrapying_start_time_to = DateTimeParameter(
         'scrapying_start_time_to', required=False)
     task = ScrapedNewsClipMasterSaveTask(
-        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
+        log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain, scrapying_start_time_from=scrapying_start_time_from,
                   scrapying_start_time_to=scrapying_start_time_to)
 

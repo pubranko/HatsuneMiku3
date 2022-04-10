@@ -1,5 +1,7 @@
 import os
 from datetime import timedelta, timezone
+
+import scrapy
 # タイムゾーン
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
@@ -9,11 +11,12 @@ NOTICE_LEVEL: str = 'WARNING'
 
 # データ類の保存ベースディレクトリ
 DATA_DIR = 'data_dir'
-
 # バックアップファイルを保存するベースディレクトリパス
 #BACKUP_BASE_DIR = 'backup_files'
 BACKUP_BASE_DIR:str = os.path.join(DATA_DIR, 'backup_files')
-
+# デバック用ファイルの保存先
 DEBUG_FILE_DIR:str = os.path.join(DATA_DIR, 'debug')
-
+# ダイレクトクロール用のファイルの格納先
 DIRECT_CRAWL_FILES_DIR:str = os.path.join(DATA_DIR, 'direct_crawl_files')
+# ドメイン別スクレイパーファイルの格納先
+SCRAPER_INFO_BY_DOMAIN_DIR:str = os.path.join(DATA_DIR, 'scraper_info_by_domain')

@@ -1,25 +1,27 @@
 from __future__ import annotations
-from datetime import datetime
+import os
+from models.mongo_model import MongoModel
+from models.mongo_common_model import MongoCommonModel
 from typing import Any, Tuple
 from typing import Generator
-import pandas as pd
-from copy import deepcopy
-import itertools
 
 
-class ScraperByDomainData:
+class ScraperInfoByDomainModel(MongoCommonModel):
     '''
+    scraper_by_domainコレクション用モデル
     '''
+    mongo: MongoModel
+    collection_name: str = os.environ['MONGO_SCRAPER_BY_DOMAIN']
 
     scraper_by_domain_record: dict = {}
 
-    def __init__(self):
-        ''''''
-        pass
-
-    def record_recovery(self, scraper_by_domain_record: dict):
-        '''引数としてドメインごとのレコードを受け取る。'''
-        self.scraper_by_domain_record = scraper_by_domain_record
+    def record_read(self, filter) -> None:
+        ''' '''
+        record = self.find_one(filter=filter)
+        if type(record) is dict:
+            self.scraper_by_domain_record = record
+        else:
+            self.scraper_by_domain_record = {}
 
     def domain_get(self) -> str:
         '''ドメインを返す'''
@@ -34,5 +36,5 @@ class ScraperByDomainData:
         for scraper, pattern_list in scrape_items.items():
             # patternリストは、patternで降順にソート
             pattern_list = sorted(pattern_list,
-                                  key=lambda d: d['pattern'], reverse=True)
+                        key=lambda d: d['pattern'], reverse=True)
             yield scraper, pattern_list
