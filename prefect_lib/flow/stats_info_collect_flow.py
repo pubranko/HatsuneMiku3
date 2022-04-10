@@ -10,7 +10,7 @@ from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
-from prefect_lib.common_module.logging_setting import log_file_path
+from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
 from prefect_lib.task.stats_info_collect_task import StatsInfoCollectTask
 
@@ -24,7 +24,7 @@ with Flow(
 ) as flow:
     base_date = DateTimeParameter('base_date', required=False,)
     task = StatsInfoCollectTask(
-        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
+        log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(base_date=base_date,)
 
 flow.run(parameters=dict(

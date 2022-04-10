@@ -10,7 +10,7 @@ from prefect.engine import signals
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
-from prefect_lib.common_module.logging_setting import log_file_path
+from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
 from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 
@@ -30,7 +30,7 @@ with Flow(
     start_time_to = DateTimeParameter(
         'start_time_to', required=False)
     task = CrawlUrlsSyncCheckTask(
-        log_file_path=log_file_path, start_time=datetime.now().astimezone(TIMEZONE))
+        log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain,
                   start_time_from=start_time_from,
                   start_time_to=start_time_to)
