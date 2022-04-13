@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -18,8 +17,7 @@ class ScrapyingTask(ExtensionsTask):
         kwargs['start_time'] = self.start_time
         kwargs['mongo'] = self.mongo
 
-        logger: Logger = self.logger
-        logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
+        self.logger.info('=== ScrapyingTask run kwargs : ' + str(kwargs))
 
         scrapying_run.exec(kwargs)
 
@@ -31,7 +29,8 @@ class ScrapyingTask(ExtensionsTask):
             kwargs['scraped_save_start_time_to'] = self.start_time
 
             scraped_news_clip_master_save_run.check_and_save(kwargs)
-            solr_news_clip_save_run.check_and_save(kwargs)
+            ### 本格開発までsolrへの連動を一時停止 ###
+            # solr_news_clip_save_run.check_and_save(kwargs)
 
         # 終了処理
         self.closed()

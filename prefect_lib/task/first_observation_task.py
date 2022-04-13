@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 import threading
 path = os.getcwd()
 sys.path.append(path)
@@ -19,8 +18,6 @@ class FirstObservationTask(ExtensionsTask):
 
     def run(self):
         '''ここがprefectで起動するメイン処理'''
-        logger: Logger = self.logger
-
         kwargs: dict = {}
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger
@@ -57,9 +54,9 @@ class FirstObservationTask(ExtensionsTask):
 
         kwargs['spiders_info'] = crawling_target_spiders
 
-        logger.info('=== 初回観測対象スパイダー : ' +
+        self.logger.info('=== 初回観測対象スパイダー : ' +
                     str(crawling_target_spiders_name) + '\n')
-        logger.info('=== 初回観測 run kwargs : ' + str(kwargs) + '\n')
+        self.logger.info('=== 初回観測 run kwargs : ' + str(kwargs) + '\n')
 
         thread = threading.Thread(
             target=scrapy_crawling_run.first_run(kwargs))
@@ -70,7 +67,8 @@ class FirstObservationTask(ExtensionsTask):
 
         scrapying_run.exec(kwargs)
         scraped_news_clip_master_save_run.check_and_save(kwargs)
-        solr_news_clip_save_run.check_and_save(kwargs)
+        ### 本格開発までsolrへの連動を一時停止 ###
+        # solr_news_clip_save_run.check_and_save(kwargs)
 
         # 終了処理
         self.closed()

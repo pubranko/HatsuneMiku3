@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -15,8 +14,7 @@ class CrawlUrlsSyncCheckTask(ExtensionsTask):
 
         kwargs['start_time'] = self.start_time
         kwargs['mongo'] = self.mongo
-        logger: Logger = self.logger
-        logger.info('=== CrawlUrlsSyncCheckTask run kwargs : ' + str(kwargs))
+        self.logger.info('=== CrawlUrlsSyncCheckTask run kwargs : ' + str(kwargs))
 
         crawl_urls_sync_check_run.check(kwargs)
 

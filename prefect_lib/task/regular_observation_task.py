@@ -1,7 +1,6 @@
 # pylint: disable=E1101
 import os
 import sys
-from logging import Logger
 import threading
 path = os.getcwd()
 sys.path.append(path)
@@ -18,8 +17,6 @@ class RegularObservationTask(ExtensionsTask):
 
     def run(self):
         '''ここがprefectで起動するメイン処理'''
-        logger: Logger = self.logger
-
         kwargs: dict = {}
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger
@@ -51,11 +48,11 @@ class RegularObservationTask(ExtensionsTask):
 
         kwargs['spiders_info'] = crawling_target_spiders
 
-        logger.info('=== 定期観測対象スパイダー : ' +
+        self.logger.info('=== 定期観測対象スパイダー : ' +
                     str(crawling_target_spiders_name) + '\n')
-        logger.info('=== 定期観測対象外スパイダー : ' +
+        self.logger.info('=== 定期観測対象外スパイダー : ' +
                     str(crawling_subject_spiders_name) + '\n')
-        logger.info('=== 定期観測 run kwargs : ' + str(kwargs) + '\n')
+        self.logger.info('=== 定期観測 run kwargs : ' + str(kwargs) + '\n')
 
         thread = threading.Thread(
             target=scrapy_crawling_run.continued_run(kwargs))
@@ -66,7 +63,9 @@ class RegularObservationTask(ExtensionsTask):
 
         scrapying_run.exec(kwargs)
         scraped_news_clip_master_save_run.check_and_save(kwargs)
-        solr_news_clip_save_run.check_and_save(kwargs)
+
+        ### 本格開発までsolrへの連動を一時停止 ###
+        # solr_news_clip_save_run.check_and_save(kwargs)
 
         # 終了処理
         self.closed()

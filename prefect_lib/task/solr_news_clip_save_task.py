@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -15,11 +14,10 @@ class SolrNewsClipSaveTask(ExtensionsTask):
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
 
-        logger: Logger = self.logger
         kwargs['mongo'] = self.mongo
         kwargs['start_time'] = self.start_time
 
-        logger.info('=== Scrapyed Save run kwargs : ' + str(kwargs))
+        self.logger.info('=== SolrNewsClipSaveTask run kwargs : ' + str(kwargs))
         solr_news_clip_save_run.check_and_save(kwargs)
 
         self.closed()

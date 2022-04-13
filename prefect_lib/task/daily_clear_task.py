@@ -1,17 +1,9 @@
 import os
 import sys
-import pickle
-from typing import Any, Union
-from logging import Logger
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from pymongo import ASCENDING
-from pymongo.cursor import Cursor
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE
 from prefect_lib.task.extentions_task import ExtensionsTask
 from models.scraped_from_response_model import ScrapedFromResponseModel
 
@@ -24,10 +16,9 @@ class DailyClearTask(ExtensionsTask):
         ''''''
         def delete_non_filter(collection_name: str, collection: ScrapedFromResponseModel,) -> None:
             delete_count: int = collection.delete_many(filter={})
-            logger.info(f'=== DailyClearTask run delete_non_filter : 削除件数({collection_name}) : {delete_count}件')
+            self.logger.info(f'=== DailyClearTask run delete_non_filter : 削除件数({collection_name}) : {delete_count}件')
 
         ###################################################################################
-        logger: Logger = self.logger
         collections_name: list = ['scraped_from_response']
 
         for collection_name in collections_name:

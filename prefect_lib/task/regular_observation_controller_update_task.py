@@ -1,7 +1,6 @@
 import os
 import sys
 import re
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -20,13 +19,12 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
     def run(self, spiders_name: str, in_out: str,):
         '''ここがprefectで起動するメイン処理'''
 
-        logger: Logger = self.logger
-        logger.info('=== Regular Observation Controller Update Task run kwargs : ' +
+        self.logger.info('=== Regular Observation Controller Update Task run kwargs : ' +
                     str(spiders_name) + '/' + str(in_out))
         mongo: MongoModel = self.mongo
         controller = ControllerModel(mongo)
         record = set(controller.regular_observation_spider_name_set_get())
-        logger.info(
+        self.logger.info(
             '=== Regular Observation  Controller Update Task : run : 更新前の登録内容 : ' + str(record))
 
         # 空白除去しカンマ区切りのセットへ変換
@@ -43,7 +41,7 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
         if in_out == 'in':
             for spider_name in spiders_name_set:
                 if not spider_name in spiders_exist_set:
-                    logger.error(
+                    self.logger.error(
                         '=== Regular Observation  Controller Update Task : run : spider_nameパラメータエラー : ' + spider_name + ' は存在しません。')
                     raise ENDRUN(state=state.Failed())
             record.update(spiders_name_set)
@@ -52,15 +50,15 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
                 if spider_name in record:
                     record.remove(spider_name)
                 else:
-                    logger.error(
+                    self.logger.error(
                         '=== Regular Observation  Controller Update Task : run : spider_nameパラメータエラー : ' + spider_name + ' は登録されていません。')
                     raise ENDRUN(state=state.Failed())
         else:
-            logger.error(
+            self.logger.error(
                 '=== Regular Observation  Controller Update Task : run : in_outパラメータエラー : ')
             raise ENDRUN(state=state.Failed())
 
-        logger.info(
+        self.logger.info(
             '=== Regular Observation  Controller Update Task : run : 更新後の登録内容 : ' + str(record))
 
         controller.regular_observation_spider_name_set_update(record)

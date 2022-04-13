@@ -1,8 +1,6 @@
 # pylint: disable=E1101
 import os
 import sys
-from typing import Any
-from logging import Logger
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 import threading
@@ -21,9 +19,8 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
-        logger: Logger = self.logger
         kwargs['logger'] = self.logger
-        logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
+        self.logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
 
         error_spider_names: list = []
         spider_run_list: list = []
@@ -75,7 +72,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
                 error_spider_names.append(spider_name)
 
         if len(error_spider_names):
-            logger.error(
+            self.logger.error(
                 '=== scrapy crwal run : 指定されたspider_nameは存在しませんでした : ' + str(error_spider_names))
             raise ENDRUN(state=state.Failed())
         else:
@@ -101,6 +98,8 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
             scrapying_run.exec(kwargs)
             scraped_news_clip_master_save_run.check_and_save(kwargs)
-            solr_news_clip_save_run.check_and_save(kwargs)
+
+            ### 本格開発までsolrへの連動を一時停止 ###
+            # solr_news_clip_save_run.check_and_save(kwargs)
 
         self.closed()

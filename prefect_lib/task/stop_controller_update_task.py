@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -17,8 +16,7 @@ class StopControllerUpdateTask(ExtensionsTask):
     def run(self, domain: str, in_out: str, destination: str):
         '''ここがprefectで起動するメイン処理'''
 
-        logger: Logger = self.logger
-        logger.info('=== Stop Controller Update Task run kwargs : ' +
+        self.logger.info('=== Stop Controller Update Task run kwargs : ' +
                     str(domain) + '/' + str(in_out) + '/' + str(destination))
         mongo: MongoModel = self.mongo
         controller = ControllerModel(mongo)
@@ -27,7 +25,7 @@ class StopControllerUpdateTask(ExtensionsTask):
         elif destination == 'scrapying':
             record: list = controller.scrapying_stop_domain_list_get()
         else:
-            logger.error(
+            self.logger.error(
                 '=== Stop Controller Update Task : run : destinationパラメータエラー : ')
             raise ENDRUN(state=state.Failed())
 
@@ -39,11 +37,11 @@ class StopControllerUpdateTask(ExtensionsTask):
             if domain in record:
                 record.remove(domain)
             else:
-                logger.error(
+                self.logger.error(
                     '=== Stop Controller Update Task : run : domainパラメータエラー : ')
                 raise ENDRUN(state=state.Failed())
         else:
-            logger.error(
+            self.logger.error(
                 '=== Stop Controller Update Task : run : in_outパラメータエラー : ')
             raise ENDRUN(state=state.Failed())
 
