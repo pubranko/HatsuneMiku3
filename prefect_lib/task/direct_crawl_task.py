@@ -1,6 +1,5 @@
 import os
 import sys
-from logging import Logger
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
@@ -18,10 +17,9 @@ class DirectCrawlTask(ExtensionsTask):
     def run(self, **kwargs):
         '''Direct Crawl Task'''
 
-        logger: Logger = self.logger
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger
-        logger.info('=== Direct crwal run kwargs : ' + str(kwargs))
+        self.logger.info('=== Direct crwal run kwargs : ' + str(kwargs))
 
         spider_name: str = kwargs['spider_name']
         file: str = kwargs['file']
@@ -31,11 +29,11 @@ class DirectCrawlTask(ExtensionsTask):
             with open(file_path) as f:
                 urls = [line for line in f.readlines()]
         else:
-            logger.error(
+            self.logger.error(
                 '=== Direct crwal run : 指定されたファイルは存在しませんでした : ' + file_path)
             raise ENDRUN(state=state.Failed())
         if len(urls) == 0:
-            logger.error(
+            self.logger.error(
                 '=== Direct crwal run : 指定されたファイルが空です : ' + file_path)
             raise ENDRUN(state=state.Failed())
         kwargs['urls'] = urls
@@ -49,7 +47,7 @@ class DirectCrawlTask(ExtensionsTask):
                 error_flg: bool = False
 
         if error_flg:
-            logger.error(
+            self.logger.error(
                 '=== Direct crwal run : 指定されたspider_nameは存在しませんでした : ' + spider_name)
             raise ENDRUN(state=state.Failed())
 

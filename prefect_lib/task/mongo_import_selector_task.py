@@ -3,17 +3,13 @@ import sys
 import pickle
 import glob
 import re
-from typing import Any, Union
-from logging import Logger
-from datetime import datetime, date
+from datetime import date
 from dateutil.relativedelta import relativedelta
-from pymongo import ASCENDING
-from pymongo.cursor import Cursor
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE, BACKUP_BASE_DIR
+from prefect_lib.settings import BACKUP_BASE_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel
@@ -29,8 +25,7 @@ class MongoImportSelectorTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''''''
-        logger: Logger = self.logger
-        logger.info(f'=== MongoImportSelectorTask run kwargs : {str(kwargs)}')
+        self.logger.info(f'=== MongoImportSelectorTask run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']
 
@@ -65,7 +60,7 @@ class MongoImportSelectorTask(ExtensionsTask):
                     'file': file,})
 
         if len(import_files_info) == 0:
-            logger.error(
+            self.logger.error(
                 '=== MongoImportSelectorTask run : インポート可能なディレクトリがありません。')
             raise ENDRUN(state=state.Failed())
 
@@ -90,7 +85,7 @@ class MongoImportSelectorTask(ExtensionsTask):
                 select_files_info.append(import_file_info)
 
         select_file_list = [_['file'] for _ in select_files_info]
-        logger.info(
+        self.logger.info(
             f'=== MongoImportSelectorTask run : インポート対象ファイル : {str(select_file_list)}')
 
         # インポート対象ファイルがある場合、ファイルからオブジェクトを復元しインポートを実施する。
@@ -125,7 +120,7 @@ class MongoImportSelectorTask(ExtensionsTask):
                     if collection:
                         # インポート
                         collection.insert(collection_records)
-                        logger.info(
+                        self.logger.info(
                             f'=== MongoImportSelectorTask run : コレクション({select_file["collection_name"]})  : {len(collection_records)}件')
 
                     # 処理の終わったファイルオブジェクトを削除

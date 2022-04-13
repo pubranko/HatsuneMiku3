@@ -1,12 +1,8 @@
 import os
 import sys
-import pickle
 from typing import Any, Union
-from logging import Logger
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
-from pymongo import ASCENDING
-from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
@@ -32,15 +28,14 @@ class MonthlyDeleteTask(ExtensionsTask):
             collection: Union[CrawlerResponseModel, ScrapedFromResponseModel, ControllerModel,
                               NewsClipMasterModel, CrawlerLogsModel, AsynchronousReportModel],
         ):
-            logger.info(
+            self.logger.info(
                 f'=== {collection_name} 削除条件 : {filter}')
             delete_count = collection.delete_many(filter=filter)
-            logger.info(
+            self.logger.info(
                 f'=== {collection_name} 削除対象件数 : {str(delete_count)}')
 
         #####################################################
-        logger: Logger = self.logger
-        logger.info(f'=== Monthly delete task run kwargs : {str(kwargs)}')
+        self.logger.info(f'=== Monthly delete task run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']
         # base_monthの指定がなかった場合は自動補正

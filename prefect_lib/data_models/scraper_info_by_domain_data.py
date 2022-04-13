@@ -1,15 +1,6 @@
 from __future__ import annotations
 import os
 import glob
-
-from calendar import month
-from copy import deepcopy
-import re
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
-from xml.dom import minicompat
-from dateutil import parser
-from typing import Any, Union, Optional, Tuple
 from pydantic import BaseModel, ValidationError, validator, Field
 from pydantic.main import ModelMetaclass
 from prefect_lib.settings import TIMEZONE
@@ -21,7 +12,7 @@ class ScraperInfoByDomainData(BaseModel):
     '''
     scraper: dict = Field(..., title="スクレイパー情報")
 
-    def __init__(self, **data: Any):
+    def __init__(self, **data: dict):
         super().__init__(**data)
 
     '''
@@ -36,7 +27,7 @@ class ScraperInfoByDomainData(BaseModel):
     def scraper_domain_check(cls, value: dict, values: dict) -> dict:
         if not 'domain' in value:
             raise ValueError(
-                f'不正データ。ドメイン(domain)が定義されていません。\n{value}')
+                f'不正データ。ドメイン(domain)が定義されていません。{value}')
         elif not type(value['domain']) is str:
             raise ValueError(
                 f'不正データ。ドメイン(domain)の値が文字列型以外はエラー({type(value["domain"])})')
@@ -67,9 +58,15 @@ class ScraperInfoByDomainData(BaseModel):
                     raise ValueError(
                         f'不正データ。スクレイパー内のパターンが定義されていません。({scrape_item_value})')
 
+                for pattern_info in scrape_item_value:
+                    if not type(pattern_info) is dict:
+                        raise ValueError(
+                            f'不正データ。パターン情報の値が辞書型以外はエラー。({scrape_item_value})')
+                    elif not all((s in pattern_info.keys()) for s in ['pattern','css_selecter']):
+                        raise ValueError(
+                            f'不正データ。パターン情報内にpatternとcss_selecterが揃って定義されていません。({pattern_info})')
 
         return value
-
 
     ###################################
     # 関連項目チェック

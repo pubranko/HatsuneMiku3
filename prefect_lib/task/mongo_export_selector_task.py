@@ -3,7 +3,6 @@ import sys
 import pickle
 import copy
 from typing import Any, Union
-from logging import Logger
 from datetime import datetime, date, time
 from dateutil.relativedelta import relativedelta
 from pymongo import ASCENDING
@@ -38,11 +37,11 @@ class MongoExportSelectorTask(ExtensionsTask):
         ):
             '''指定されたフィルターに基づき、コレクションから取得したレコードをファイルへエクスポートする。'''
 
-            logger.info(f'=== {collection_name} へのfilter: {str(filter)}')
+            self.logger.info(f'=== {collection_name} へのfilter: {str(filter)}')
 
             # エクスポート対象件数を確認
             record_count = collection.find(filter=filter,).count()
-            logger.info(
+            self.logger.info(
                 f'=== {collection_name} バックアップ対象件数 : {str(record_count)}')
 
             # 100件単位で処理を実施
@@ -74,7 +73,7 @@ class MongoExportSelectorTask(ExtensionsTask):
             # 同一フォルダへのエクスポートは禁止。
             dir_path = os.path.join(BACKUP_BASE_DIR, export_dir)
             if os.path.exists(dir_path):
-                logger.error(
+                self.logger.error(
                     f'=== MongoExportSelector run : backup_dirパラメータエラー : {export_dir} は既に存在します。')
                 raise ENDRUN(state=state.Failed())
             else:
@@ -141,8 +140,7 @@ class MongoExportSelectorTask(ExtensionsTask):
                 os.chmod(file_path, 0o444)
 
         #####################################################
-        logger: Logger = self.logger
-        logger.info(f'=== MongoExportSelector run kwargs : {str(kwargs)}')
+        self.logger.info(f'=== MongoExportSelector run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']
         # base_monthとbackup_dirの指定がなかった場合は自動補正
@@ -177,7 +175,7 @@ class MongoExportSelectorTask(ExtensionsTask):
             export_dir = base_date.strftime(
                 '%Y-%m') + kwargs['export_dir_extended_name']  # yyyy-mm + 拡張名
 
-            logger.info(
+            self.logger.info(
                 f"=== MongoExportSelector run {base_date.strftime('%Y年%m月')}のエクスポート開始")
             export_by_month(start_time_from, start_time_to,
                             export_dir, collections_name)

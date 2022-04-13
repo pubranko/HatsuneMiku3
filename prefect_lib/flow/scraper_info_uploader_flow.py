@@ -36,6 +36,9 @@ flow.run(parameters=dict(
         #'yomiuri_co_jp_e2.json',
         #'yomiuri_co_jp_e3.json',
         #'yomiuri_co_jp_e4.json',
+        #'yomiuri_co_jp_e5.json',
+        #'yomiuri_co_jp_e6.json',
+        #'yomiuri_co_jp_e7.json',
         #'yomiuri_co_jp.json',
     ],
 ))
