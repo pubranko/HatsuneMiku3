@@ -55,8 +55,8 @@ flow.run(parameters=dict(
         'asynchronous_report',
         'controller',
     ],
-    export_dir_extended_name='test4',   # export先のフォルダyyyy-mmの末尾に拡張した名前を付与する(testや臨時でエクスポートしたい時などに使う)
-    export_period_from='2022-02',  # 月次エクスポートを行うデータの基準年月
-    export_period_to='2022-02',  # 月次エクスポートを行うデータの基準年月
+    export_dir_extended_name='scraper_mae',   # export先のフォルダyyyy-mmの先頭に拡張した名前を付与する(半角空白使用禁止。testや臨時でエクスポートしたい時などに使う)
+    export_period_from='2021-10',  # 月次エクスポートを行うデータの基準年月
+    export_period_to='2022-04',  # 月次エクスポートを行うデータの基準年月
     crawler_response__registered=True,   # crawler_responseの場合、登録済みになったレコードのみエクスポートする場合True、登録済み以外のレコードも含めてエクスポートする場合False
 ))

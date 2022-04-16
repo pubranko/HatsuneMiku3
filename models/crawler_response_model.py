@@ -18,7 +18,6 @@ class CrawlerResponseModel(MongoCommonModel):
 
         # インデックスの有無を確認し、なければ作成する。
         # ※sort使用時、indexがないとメモリ不足となるため。
-        create_index_flg: bool = True
         index_list: list = []
         # indexes['key']のデータイメージ => SON([('_id', 1)])、SON([('response_time', 1)])
         index_list = [
