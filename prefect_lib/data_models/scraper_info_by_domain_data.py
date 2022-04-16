@@ -62,9 +62,9 @@ class ScraperInfoByDomainData(BaseModel):
                     if not type(pattern_info) is dict:
                         raise ValueError(
                             f'不正データ。パターン情報の値が辞書型以外はエラー。({scrape_item_value})')
-                    elif not all((s in pattern_info.keys()) for s in ['pattern','css_selecter']):
+                    elif not all((s in pattern_info.keys()) for s in ['pattern','css_selecter','priority','register_date']):
                         raise ValueError(
-                            f'不正データ。パターン情報内にpatternとcss_selecterが揃って定義されていません。({pattern_info})')
+                            f'不正データ。パターン情報内にpattern,css_selecter,priority,register_dateが揃って定義されていません。({pattern_info})')
 
         return value
 

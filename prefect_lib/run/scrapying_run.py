@@ -60,7 +60,7 @@ def exec(kwargs: dict):
         filter: Any = {'$and': conditions}
     else:
         filter = None
-    logger.info('=== crawler_responseへのfilter: ' + str(filter))
+    logger.info(f'=== crawler_responseへのfilter: {str(filter)}')
 
     # スクレイピング対象件数を確認
     record_count = crawler_response.find(
@@ -68,7 +68,7 @@ def exec(kwargs: dict):
         filter=filter,
         sort=[('domain', ASCENDING)],
     ).count()
-    logger.info('=== crawler_response スクレイピング対象件数 : ' + str(record_count))
+    logger.info(f'=== crawler_response スクレイピング対象件数 : {str(record_count)}')
 
     # 件数制限でスクレイピング処理を実施
     limit: int = 100
@@ -101,7 +101,9 @@ def exec(kwargs: dict):
             scraped['pattern'] = {}
 
             # ここをドメイン別に取得するようにするにはどうするか？？？
-            scraper_by_domain.record_read(filter={'domain': domain})
+            scraper_by_domain.record_read(filter={'domain': record['domain']})
+            logger.info(f'=== scrapying_run run  処理対象ドメイン : {record["domain"]}')
+            logger.info(f'=== scrapying_run run  処理対象ドメイン : {len(scraper_by_domain.scraper_by_domain_record)}')
 
             for scraper, pattern_list in scraper_by_domain.scrape_item_get():
                 if not scraper in scraper_mod:

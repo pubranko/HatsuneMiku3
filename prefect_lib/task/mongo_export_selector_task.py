@@ -172,8 +172,10 @@ class MongoExportSelectorTask(ExtensionsTask):
                 base_date, time(0, 0, 0)).astimezone(TIMEZONE)
             start_time_to: datetime = datetime.combine(
                 base_date, time(23, 59, 59, 999999)).astimezone(TIMEZONE) + relativedelta(day=99)
-            export_dir = base_date.strftime(
-                '%Y-%m') + kwargs['export_dir_extended_name']  # yyyy-mm + 拡張名
+            export_dir = kwargs['export_dir_extended_name'] + ' ' + base_date.strftime(
+                '%Y-%m')  # 拡張名 + yyyy-mm
+            # export_dir = base_date.strftime(
+            #     '%Y-%m') + kwargs['export_dir_extended_name']  # yyyy-mm + 拡張名
 
             self.logger.info(
                 f"=== MongoExportSelector run {base_date.strftime('%Y年%m月')}のエクスポート開始")
