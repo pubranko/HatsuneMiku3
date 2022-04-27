@@ -445,7 +445,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     if 'equivalent_color' in col_info:
                         # 比較用の１つ上のセルと同じ値の場合は文字色を変更
                         compare_cell: Cell = ws[get_column_letter(
-                            col_idx + 1) + str(base_row_idx + row_idx)]
+                            col_idx + 1) + str(base_row_idx + row_idx - 1)]
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
                                 color=col_info['equivalent_color'])
@@ -500,7 +500,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         if stats_warning_flg or robots_warning_flg or downloder_warning_flg:
             title = title + '(ワーニング有り)'
 
-        warning_messege:str = ''
+        warning_messege: str = ''
         if stats_warning_flg:
             warning_messege = '<p>statsでワーニング発生</p>'
         if robots_warning_flg:

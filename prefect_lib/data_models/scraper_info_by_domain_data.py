@@ -1,14 +1,15 @@
 from __future__ import annotations
 import os
 import glob
+from typing import Any
+import pandas as pd
 from pydantic import BaseModel, ValidationError, validator, Field
 from pydantic.main import ModelMetaclass
-from prefect_lib.settings import TIMEZONE
 
 
 class ScraperInfoByDomainData(BaseModel):
     '''
-    start_time,report_term,base_date
+    ドメイン別スクレイパー情報用のデータクラス
     '''
     scraper: dict = Field(..., title="スクレイパー情報")
 
@@ -62,10 +63,9 @@ class ScraperInfoByDomainData(BaseModel):
                     if not type(pattern_info) is dict:
                         raise ValueError(
                             f'不正データ。パターン情報の値が辞書型以外はエラー。({scrape_item_value})')
-                    elif not all((s in pattern_info.keys()) for s in ['pattern','css_selecter','priority','register_date']):
+                    elif not all((s in pattern_info.keys()) for s in ['pattern', 'css_selecter', 'priority', 'register_date']):
                         raise ValueError(
                             f'不正データ。パターン情報内にpattern,css_selecter,priority,register_dateが揃って定義されていません。({pattern_info})')
-
         return value
 
     ###################################
@@ -75,3 +75,86 @@ class ScraperInfoByDomainData(BaseModel):
     #####################################
     # カスタマイズデータ
     #####################################
+    def domain_get(self) -> str:
+        return self.scraper['domain']
+
+    def making_into_a_table_format(self) -> list[dict[str,Any]]:
+        '''ドメイン別スクレイパー情報を表形式へ加工'''
+        result:list = []
+        scrape_items: dict = self.scraper["scrape_items"]
+        for scraper_item_key, scraper_item_value in scrape_items.items():
+
+            for pattern_info in scraper_item_value:
+                result.append({
+                    'domain': self.scraper['domain'],
+                    'scraper_item': scraper_item_key,
+                    'pattern': pattern_info['pattern'],
+                    'priority': pattern_info['priority'],
+                    #'count_of_use': 0,
+                })
+        return result
+
+
+'''データイメージ
+{
+    "_id": ObjectID("62542b32efbb8d4ef6de0356"),
+    "domain": "yomiuri.co.jp",
+    "scrape_items": {
+        "title_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > title",
+                "priority": 2,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "title",
+                "priority": 1,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "article_scraper": [
+            {
+                "pattern": 4,
+                "css_selecter": "div.p-main-contents > p",
+                "priority": 4,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 3,
+                "css_selecter": "div.p-main-contents > p[class^=par]",
+                "priority": 3,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 2,
+                "css_selecter": "div.p-main-contents > p[iarticle_selecterrop=articleBody]",
+                "priority": 2,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "div.main-contents > p[iarticle_selecterrop=articleBody]",
+                "priority": 1,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "publish_date_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > meta[property=\"article:modified_time\"]",
+                "priority": 2,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "head > meta[property=\"article:published_time\"]",
+                "priority": 1,
+                "register_date": "2022-04-16T14:00:00+09:00"
+            }
+        ]
+    }
+}
+
+'''

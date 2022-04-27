@@ -1,0 +1,59 @@
+{
+    "domain": "yomiuri.co.jp",
+    "scrape_items": {
+        "title_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > title",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "title",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "article_scraper": [
+            {
+                "pattern": 4,
+                "css_selecter": "div.p-main-contents > p",
+                "priority": 4,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 3,
+                "css_selecter": "div.p-main-contents > p[class^=par]",
+                "priority": 3,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 2,
+                "css_selecter": "div.p-main-contents > p[iarticle_selecterrop=articleBody]",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "div.main-contents > p[iarticle_selecterrop=articleBody]",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "publish_date_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > meta[property=\"article:modified_time\"]",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "head > meta[property=\"article:published_time\"]",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ]
+    }
+}

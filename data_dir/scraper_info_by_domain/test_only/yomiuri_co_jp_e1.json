@@ -1,0 +1,42 @@
+{
+    "scrape_items": {
+        "title_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > title"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "title"
+            }
+        ],
+        "article_scraper": [
+            {
+                "pattern": 4,
+                "css_selecter": "div.p-main-contents > p"
+            },
+            {
+                "pattern": 3,
+                "css_selecter": "div.p-main-contents > p[class^=par]"
+            },
+            {
+                "pattern": 2,
+                "css_selecter": "div.p-main-contents > p[iarticle_selecterrop=articleBody]"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "div.main-contents > p[iarticle_selecterrop=articleBody]"
+            }
+        ],
+        "publish_date_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > meta[property=\"article:modified_time\"]"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "head > meta[property=\"article:published_time\"]"
+            }
+        ]
+    }
+}

@@ -1,5 +1,9 @@
+from email import generator
+from numpy import generic
 from pymongo import collection
 from models.mongo_model import MongoModel
+from pymongo.cursor import Cursor
+
 
 class MongoCommonModel(object):
     '''
@@ -15,7 +19,7 @@ class MongoCommonModel(object):
     def find_one(self, projection=None, filter=None):
         return self.mongo.mongo_db[self.collection_name].find_one(projection=projection, filter=filter)
 
-    #def find(self, projection=None, filter=None, sort=None, index=None):
+    # def find(self, projection=None, filter=None, sort=None, index=None):
     def find(self, projection=None, filter=None, sort=None):
         return self.mongo.mongo_db[self.collection_name].find(projection=projection, filter=filter, sort=sort)
 
@@ -30,7 +34,8 @@ class MongoCommonModel(object):
             filter, record, upsert=True)
 
     def delete_many(self, filter) -> int:
-        result = self.mongo.mongo_db[self.collection_name].delete_many(filter=filter)
+        result = self.mongo.mongo_db[self.collection_name].delete_many(
+            filter=filter)
         return int(result.deleted_count)
 
     def aggregate(self, aggregate_key: str):
@@ -40,3 +45,23 @@ class MongoCommonModel(object):
             {'$group': {'_id': '$' + aggregate_key, 'count': {'$sum': 1}}},
         ]
         return self.mongo.mongo_db[self.collection_name].aggregate(pipeline=pipeline)
+
+    def limited_find(self, projection=None, filter=None, sort=None, limit: int = 100):
+        '''
+        ・findした結果をレコード単位で返すジェネレーター。
+        ・デフォルトで100件単位でデータを取得するが、当メソッドの呼び出し元では
+          取得件数の制限を意識すること無く検索結果を参照できる。
+        ・以下のような繰り返し処理で使用することを想定
+            for record in news_clip_master.limited_find(filter=filter):
+                pass
+        '''
+        # 対象件数を確認
+        record_count = self.find(filter=filter).count()
+        # 100件単位で処理を実施
+        skip_list = list(range(0, record_count, limit))
+        for skip in skip_list:
+            records: Cursor = self.find(
+                filter=filter, projection=projection, sort=sort).skip(skip).limit(limit)
+            for record in records:
+                yield record
+
