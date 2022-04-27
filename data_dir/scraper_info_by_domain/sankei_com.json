@@ -1,0 +1,47 @@
+{
+    "domain": "sankei.com",
+    "scrape_items": {
+        "title_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > title",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "title",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "article_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": ".article-body > .article-text",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "body  article.article-wrapper > div.article-body > p.article-text",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ],
+        "publish_date_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > meta[property=\"article:modified_time\"]",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "meta[name=\"article:published_time\"]",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ]
+    }
+}

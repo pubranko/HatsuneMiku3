@@ -132,3 +132,4 @@ dmypy.json
 .vscode/launch.json
 news_crawl/exclusive_work/*
 data_dir/*
+!/data_dir/scraper_info_by_domain/

@@ -30,9 +30,9 @@ class ExtensionsTask(Task):
     log_record: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
     #prefect_context: Context = prefect.context
-    any:Any = prefect
+    any: Any = prefect
     prefect_context: Context = any.context
-    logger:Logger
+    logger: Logger
 
     def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,14 +40,16 @@ class ExtensionsTask(Task):
         # ログファイルパス
         if log_file_path:
             self.log_file_path = log_file_path
-            self.logger.info(f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
+            self.logger.info(
+                f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
         else:
             raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
 
         # 開始時間
         if start_time:
             self.start_time = start_time
-            self.logger.info(f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
+            self.logger.info(
+                f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
         else:
             raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
@@ -70,8 +72,8 @@ class ExtensionsTask(Task):
             r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} CRITICAL ')
         pattern_error = re.compile(
             r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
-        pattern_warning = re.compile(
-            r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING ')
+        # pattern_warning = re.compile(
+        #     r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING ')
         # 2021-08-08 12:31:04 INFO [prefect.FlowRunner] : Flow run SUCCESS: all reference tasks succeeded
 
         title: str = ''
@@ -81,8 +83,8 @@ class ExtensionsTask(Task):
             title = f'【{self.start_time.isoformat()}:クリティカル発生】{self.start_time.isoformat()}'
         elif pattern_error.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
             title = f'【{self.name}:エラー発生】{self.start_time.isoformat()}'
-        elif pattern_warning.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
-            title = f'【{self.name}:ワーニング発生】{self.start_time.isoformat()}'
+        # elif pattern_warning.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
+        #     title = f'【{self.name}:ワーニング発生】{self.start_time.isoformat()}'
 
         if not title == '':
             msg: str = '\n'.join([
@@ -107,7 +109,7 @@ class ExtensionsTask(Task):
         resource_check()
         self.mongo.close()
         self.log_save()
-        os.remove(self.log_file_path)   #終了後ログファイルを削除
+        os.remove(self.log_file_path)  # 終了後ログファイルを削除
 
     def run(self,):
         '''(ここはオーバーライドすることを前提とする。)
