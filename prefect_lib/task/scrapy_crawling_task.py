@@ -65,6 +65,10 @@ class ScrapyCrawlingTask(ExtensionsTask):
                     spider_run['crawl_point_non_update'] = kwargs['spider_kwargs']['crawl_point_non_update']
                 else:
                     spider_run['crawl_point_non_update'] = None
+                if 'url_pattern' in kwargs['spider_kwargs']:
+                    spider_run['url_pattern'] = kwargs['spider_kwargs']['url_pattern']
+                else:
+                    spider_run['url_pattern'] = None
 
                 spider_run_list.append(spider_run)
 

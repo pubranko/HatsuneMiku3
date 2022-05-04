@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import time
+from typing import Union, Any
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
 from scrapy.http import Response
 from scrapy_selenium import SeleniumRequest
@@ -82,7 +83,10 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         start_page: int = pages['start_page']
         end_page: int = pages['end_page']
 
-        driver: WebDriver = response.request.meta['driver']
+
+        r:Any = response.request
+        driver: WebDriver = r.meta['driver']
+        #driver: WebDriver = response.request.meta['driver']
         urls_list: list = []
 
         # 直近の数分間の指定がある場合
