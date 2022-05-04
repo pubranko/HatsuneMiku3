@@ -126,19 +126,21 @@ def custom_crawl_run(kwargs: dict):
                       direct_crawl_urls=spider_run['direct_crawl_urls'],
                       debug=spider_run['debug'],
                       crawl_point_non_update=spider_run['crawl_point_non_update'],
+                      url_pattern=spider_run['url_pattern'],
                       )
     process.start()
 
 @scrapy_deco
 def custom_runner_run(kwargs: dict):
     '''
+    検討したがcustom_crawl_runを使用することにした。
+    とりあえずサンプルとしてソースは残している。
     '''
     runner = CrawlerRunner(settings=get_project_settings())
     configure_logging(install_root_handler=True)
     spider_run_list = kwargs['spider_run_list']
 
     for spider_run in spider_run_list:
-        print('=== ',spider_run['class_instans'].name)
         run:Any = runner.crawl(spider_run['class_instans'],
                       crawling_start_time=spider_run['start_time'],
                       lastmod_period_minutes=spider_run['lastmod_period_minutes'],
@@ -147,6 +149,7 @@ def custom_runner_run(kwargs: dict):
                       direct_crawl_urls=spider_run['direct_crawl_urls'],
                       debug=spider_run['debug'],
                       crawl_point_non_update=spider_run['crawl_point_non_update'],
+                      url_pattern=spider_run['url_pattern'],
                       )
     run = runner.join()
     reac:Any = reactor
