@@ -7,6 +7,7 @@ from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
+from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
@@ -101,7 +102,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         次ページがあれば、BeautifulSoupのResultSetで返す。
         このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
         '''
-        return ResultSet('', '')
+        return ResultSet(response.text, [])
 
     def closed(self, spider):
         '''spider終了処理'''

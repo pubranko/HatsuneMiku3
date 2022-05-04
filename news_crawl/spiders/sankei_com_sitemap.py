@@ -20,9 +20,13 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
         ]
 
     # seleniumモードON。callbackをselenium用parseに変更。
-    # selenium_mode: bool = True
+    selenium_mode: bool = True
     # sitemap_rules = [(r'.*', 'selenium_parse')]
     # splashモードON。callbackをsplash用parseに変更。
-    splash_mode: bool = True
+    # splash_mode: bool = True
 
     sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
+
+    # rules = (
+    #     Rule(LinkExtractor(restrict_css=(r'.pagination [href]')),callback='splash_parse'),
+    # )
