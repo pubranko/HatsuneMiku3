@@ -293,14 +293,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 else:
                     yield scrapy.Request(url, callback=self.parse)
 
-        if response.url.startswith('https://www.sankei.com/politics/news/210521/plt2105210030'):print('!!! ',response.url)
+        #if response.url.startswith('https://www.sankei.com/politics/news/210521/plt2105210030'):print('!!! ',response.url)
         # ページ内の全リンクを抽出（重複分はsetで削除）
         #for link in set(response.css('[href]::attr(href)').getall()):
         for link in response.css('[href]::attr(href)').getall():
             # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
             link_url: str = unquote(response.urljoin(link))
             #if response.url.startswith('https://www.sankei.com/politics/news/210521/plt2105210030'):
-            print('=== 0 ',link_url)
+            #print('=== 0 ',link_url)
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
             '''
@@ -462,7 +462,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         link_parse: ParseResult = urlparse(link_url)
         # 解析したクエリーをdictへ変換 page=2&a=1&b=2 -> {'page': ['2'], 'a': ['1'], 'b': ['2']}
         link_query: dict = parse_qs(link_parse.query)
-        if 'plt2105210030' in link_parse.path:print('=== 10 ',link_url)
+        #if 'plt2105210030' in link_parse.path:print('=== 10 ',link_url)
 
         # 追加リクエスト済み情報の準備
         #pagination_selected_pathes:set = set()
@@ -478,16 +478,16 @@ class ExtensionsSitemapSpider(SitemapSpider):
         for _ in self.crawl_target_urls:
             # sitemapから取得したurlを解析
             crawl_target_parse: ParseResult = urlparse(_)
-            if 'plt2105210030' in link_parse.path:print('=== 20 ',link_url)
+            #if 'plt2105210030' in link_parse.path:print('=== 20 ',link_url)
 
             # netloc（hostnameだけでなくportも含む）が一致すること
             if crawl_target_parse.netloc == link_parse.netloc:
-                if 'plt2105210030' in link_parse.path:print('=== 30 ',link_url)
+                #if 'plt2105210030' in link_parse.path:print('=== 30 ',link_url)
 
                 # まだ同一ページの追加リクエストされていない場合（path部分で判定）
                 #if not link_parse.path in pagination_selected_pathes:
                 if True:
-                    if 'plt2105210030' in link_parse.path:print('=== 40 ',link_url)
+                    #if 'plt2105210030' in link_parse.path:print('=== 40 ',link_url)
 
                     # パスの末尾にページが付与されているケースの場合、追加リクエストの対象とする。
                     # 例）https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/
@@ -512,7 +512,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     if re.search(_, link_parse.path):
                         link_type2 = _.sub('', link_parse.path) # 例）〜n1.html -> 〜n
                         crawl_type2 = _.sub('', crawl_target_parse.path)
-                        if 'plt2105210030' in link_parse.path:print('=== 50 ',link_url)
+                        #if 'plt2105210030' in link_parse.path:print('=== 50 ',link_url)
                         # 末尾の拡張子やページ情報を除いて比較し一致した場合
                         if crawl_type2 == link_type2:
                             self.logger.info(
