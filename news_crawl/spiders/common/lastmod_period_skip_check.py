@@ -12,7 +12,7 @@ class LastmodPeriodMinutesSkipCheck(object):
         lastmodの期間指定がある場合、datetime形式にしてクラス変数に保存
         ※kwargs['lastmod_period_minutes']=[from,to]
         '''
-        if 'lastmod_period_minutes' in kwargs:             # lastmod期間指定あり
+        if 'lastmod_period_minutes' in kwargs and kwargs['lastmod_period_minutes']:             # lastmod期間指定あり
             lastmod_period_minutes_list = str(kwargs['lastmod_period_minutes']).split(',')
             if not lastmod_period_minutes_list[0] == '':
                 self.lastmod_period_minutes_from = start_time - \
