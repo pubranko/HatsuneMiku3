@@ -293,17 +293,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 else:
                     yield scrapy.Request(url, callback=self.parse)
 
-        #if response.url.startswith('https://www.sankei.com/politics/news/210521/plt2105210030'):print('!!! ',response.url)
         # ページ内の全リンクを抽出（重複分はsetで削除）
-        #for link in set(response.css('[href]::attr(href)').getall()):
-        for link in response.css('[href]::attr(href)').getall():
+        for link in set(response.css('[href]::attr(href)').getall()):
             # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
             link_url: str = unquote(response.urljoin(link))
-            #if response.url.startswith('https://www.sankei.com/politics/news/210521/plt2105210030'):
-            #print('=== 0 ',link_url)
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
-            '''
             if self.pagination_check(response, link_url):
                 if self.selenium_mode:
                     yield SeleniumRequest(link_url, callback=self.parse, meta=meta, args=args)
@@ -311,7 +306,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     yield SplashRequest(link_url, callback=self.parse, meta=meta, args=args)
                 else:
                     yield scrapy.Request(link_url, callback=self.parse, meta=meta)
-            '''
         ###
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
@@ -329,108 +323,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),
             response_body=body_dumps,
-            spider_version_info=_info,
-            crawling_start_time=self._crawling_start_time,
-            source_of_information=source_of_information,
-        )
-
-    def parse_temp(self, response: TextResponse):
-        '''
-        取得したレスポンスよりDBへ書き込み
-        '''
-        # 既知のページネーションページ内の対象urlを抽出
-        for css_selector in self.known_pagination_css_selectors:
-            # 既知のページネーションのurlの場合リクエストへ追加
-            for link in response.css(css_selector).getall():
-                # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
-                url: str = unquote(response.urljoin(link))
-                self.pagination_selected_urls.add(url)
-                # self.logger.info(f'=== {self.name} 既知ページネーション : {url}')
-                yield scrapy.Request(url, callback=self.parse)
-
-        # ページ内の全リンクを抽出（重複分はsetで削除）
-        for link in set(response.css('[href]::attr(href)').getall()):
-            # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
-            link_url: str = unquote(response.urljoin(link))
-            # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
-            # 抽出されていなかった場合リクエストへ追加
-            if self.pagination_check(response, link_url):
-                yield scrapy.Request(response.urljoin(link_url), callback=self.parse)
-        ###
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
-
-        source_of_information: dict = {}
-        for record in self.crawl_urls_list:
-            record: dict
-            if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
-
-        yield NewsCrawlItem(
-            domain=self.allowed_domains[0],
-            url=response.url,
-            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-            response_headers=pickle.dumps(response.headers),
-            response_body=pickle.dumps(response.body),
-            spider_version_info=_info,
-            crawling_start_time=self._crawling_start_time,
-            source_of_information=source_of_information,
-        )
-
-    def selenium_parse_temp(self, response: TextResponse):
-        '''
-        seleniumu版parse。JavaScript処理終了後のレスポンスよりDBへ書き込み
-        '''
-        r: Any = response.request
-        driver: WebDriver = r.meta['driver']
-        #driver: WebDriver = response.request.meta['driver']
-        # Javascript実行が終了するまで最大30秒間待つように指定
-        driver.set_script_timeout(30)
-
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
-
-        source_of_information: dict = {}
-        for record in self.crawl_urls_list:
-            record: dict
-            if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
-
-        yield NewsCrawlItem(
-            domain=self.allowed_domains[0],
-            url=response.url,
-            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-            response_headers=pickle.dumps(response.headers),
-            response_body=pickle.dumps(driver.page_source),
-            spider_version_info=_info,
-            crawling_start_time=self._crawling_start_time,
-            source_of_information=source_of_information,
-        )
-
-    def splash_parse_temp(self, response: SplashTextResponse):
-        '''
-        splash版parse。
-        読み込んだページへ何かしら操作したい（クリックなど）場合、オーバーライドして使用する。
-        標準の動作はparseと同じ。
-        '''
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
-
-        source_of_information: dict = {}
-        for record in self.crawl_urls_list:
-            record: dict
-            if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
-
-        yield NewsCrawlItem(
-            domain=self.allowed_domains[0],
-            url=response.url,
-            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
-            response_headers=pickle.dumps(response.headers),
-            response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
             source_of_information=source_of_information,
@@ -462,15 +354,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
         link_parse: ParseResult = urlparse(link_url)
         # 解析したクエリーをdictへ変換 page=2&a=1&b=2 -> {'page': ['2'], 'a': ['1'], 'b': ['2']}
         link_query: dict = parse_qs(link_parse.query)
-        #if 'plt2105210030' in link_parse.path:print('=== 10 ',link_url)
 
         # 追加リクエスト済み情報の準備
-        #pagination_selected_pathes:set = set()
-        pagination_selected_pathes:list = []
+        pagination_selected_pathes:set = set()
+        #pagination_selected_pathes:list = []
         pagination_selected_same_path_queries:list = []
         for pagination_selected_url in self.pagination_selected_urls:
             _ = urlparse(pagination_selected_url)
-            pagination_selected_pathes.append(_.path)
+            pagination_selected_pathes.add(_.path)
             if link_parse.path == _.path:
                 pagination_selected_same_path_queries.append(parse_qs(_.query))
 
@@ -478,17 +369,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
         for _ in self.crawl_target_urls:
             # sitemapから取得したurlを解析
             crawl_target_parse: ParseResult = urlparse(_)
-            #if 'plt2105210030' in link_parse.path:print('=== 20 ',link_url)
-
             # netloc（hostnameだけでなくportも含む）が一致すること
             if crawl_target_parse.netloc == link_parse.netloc:
-                #if 'plt2105210030' in link_parse.path:print('=== 30 ',link_url)
-
                 # まだ同一ページの追加リクエストされていない場合（path部分で判定）
-                #if not link_parse.path in pagination_selected_pathes:
-                if True:
-                    #if 'plt2105210030' in link_parse.path:print('=== 40 ',link_url)
-
+                if not link_parse.path in pagination_selected_pathes:
                     # パスの末尾にページが付与されているケースの場合、追加リクエストの対象とする。
                     # 例）https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/
                     #     https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/2/
@@ -512,7 +396,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     if re.search(_, link_parse.path):
                         link_type2 = _.sub('', link_parse.path) # 例）〜n1.html -> 〜n
                         crawl_type2 = _.sub('', crawl_target_parse.path)
-                        #if 'plt2105210030' in link_parse.path:print('=== 50 ',link_url)
                         # 末尾の拡張子やページ情報を除いて比較し一致した場合
                         if crawl_type2 == link_type2:
                             self.logger.info(
