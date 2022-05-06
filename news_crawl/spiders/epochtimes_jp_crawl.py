@@ -104,7 +104,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 f'=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( {len(anchors)} 件)')
 
         for anchor in anchors:
-            full_path: str = 'https://www.epochtimes.jp/p' + anchor.get('href')
+            full_path: str = f'https://www.epochtimes.jp/p{anchor.get("href")}'
             urls_list.append({'loc': full_path, 'lastmod': ''})
             # 前回からの続きの指定がある場合
             if 'continued' in self.kwargs_save:

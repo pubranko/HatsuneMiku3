@@ -26,6 +26,7 @@ def directory_search_spiders(directory_path: str = 'news_crawl/spiders') -> list
         # 読み込んだモジュールに含まれるクラス名とクラスインスタンスを呼び出す
         for class_name, class_instans in inspect.getmembers(mod, inspect.isclass):
 
+            print(f'=== 開始{class_name}')
             # 末尾がSpiderのクラスに限定する。
             # ただしSpider用のクラスや継承用のクラスは除外する。
             ptn = re.compile(r'Spider$')  #
@@ -35,6 +36,8 @@ def directory_search_spiders(directory_path: str = 'news_crawl/spiders') -> list
             domain: str = ''
             domain_name: str = ''
             spider_name: str = ''
+            selenium_mode: bool = False
+            splash_mode: bool = False
             if ptn.search(class_name) and \
                     class_name not in exclusion_list:
                 members: dict = class_instans.__dict__
@@ -43,9 +46,11 @@ def directory_search_spiders(directory_path: str = 'news_crawl/spiders') -> list
                     if len(members['allowed_domains']) == 0:
                         select_flg: bool = False
                     else:
-                        domain: str = members['allowed_domains'][0]
-                        domain_name: str = members['_domain_name']
-                        spider_name: str = members['name']
+                        domain = members['allowed_domains'][0]
+                        domain_name = members['_domain_name']
+                        spider_name = members['name']
+                        selenium_mode = members['selenium_mode'] if 'selenium_mode' in members else False
+                        splash_mode = members['splash_mode'] if 'splash_mode' in members else False
                 else:
                     select_flg: bool = False
             else:
@@ -59,12 +64,13 @@ def directory_search_spiders(directory_path: str = 'news_crawl/spiders') -> list
                     'domain': domain,
                     'domain_name': domain_name,
                     'spider_name': spider_name,
+                    'selenium_mode': selenium_mode,
+                    'splash_mode': splash_mode,
                 })
 
         del mod  # 不要になったモジュールを削除(メモリ節約)
 
     return class_list
-
 
 if __name__ == "__main__":
     # execute only if run as a script
