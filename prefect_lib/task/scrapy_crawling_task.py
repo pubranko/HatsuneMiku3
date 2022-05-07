@@ -1,15 +1,19 @@
 # pylint: disable=E1101
 import os
 import sys
+from typing import Any
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 import threading
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.directory_search_spiders import directory_search_spiders
+from common_lib.directory_search_spiders import DirectorySearchSpiders
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask
+from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+import pprint
+from twisted.internet import reactor
 
 
 class ScrapyCrawlingTask(ExtensionsTask):
@@ -23,101 +27,65 @@ class ScrapyCrawlingTask(ExtensionsTask):
         self.logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
 
         error_spider_names: list = []
-        spider_run_list: list = []
-        spider_run_threads: list = []
+        threads: list[threading.Thread] = []
+        directory_search_spiders = DirectorySearchSpiders()
 
-        threads:list[threading.Thread] =[]
-
-        spiders_info: list = directory_search_spiders()
-        spiders_info_name_list = [x['spider_name'] for x in spiders_info]
-
-        # 引数で渡されたスパイダー名リストを順に処理(重複があった場合はsetで削除)
-        spider_names_set = set(kwargs['spider_names'])
-        for spider_name in spider_names_set:
+        # spidersディレクトリより取得した一覧に存在するかチェック
+        args_spiders_name = set(kwargs['spider_names'])
+        for args_spider_name in args_spiders_name:
             # spidersディレクトリより取得した一覧に存在するかチェック
-            if spider_name in spiders_info_name_list:
-                # クラスインスタンスリストへ追加
-                idx = spiders_info_name_list.index(spider_name)
-                spider_run = {'spider_name': spider_name,
-                              'class_instans': spiders_info[idx]['class_instans'],
-                              'start_time': self.start_time,
-                              }
-                # spider引数を設定
-                if 'lastmod_period_minutes' in kwargs['spider_kwargs']:
-                    spider_run['lastmod_period_minutes'] = kwargs['spider_kwargs']['lastmod_period_minutes']
-                else:
-                    spider_run['lastmod_period_minutes'] = None
-                if 'pages' in kwargs['spider_kwargs']:
-                    spider_run['pages'] = kwargs['spider_kwargs']['pages']
-                else:
-                    spider_run['pages'] = None
-                if 'continued' in kwargs['spider_kwargs']:
-                    spider_run['continued'] = kwargs['spider_kwargs']['continued']
-                else:
-                    spider_run['continued'] = None
-                if 'direct_crawl_urls' in kwargs['spider_kwargs']:
-                    spider_run['direct_crawl_urls'] = kwargs['spider_kwargs']['direct_crawl_urls']
-                else:
-                    spider_run['direct_crawl_urls'] = None
-                if 'debug' in kwargs['spider_kwargs']:
-                    spider_run['debug'] = kwargs['spider_kwargs']['debug']
-                else:
-                    spider_run['debug'] = None
-                if 'crawl_point_non_update' in kwargs['spider_kwargs']:
-                    spider_run['crawl_point_non_update'] = kwargs['spider_kwargs']['crawl_point_non_update']
-                else:
-                    spider_run['crawl_point_non_update'] = None
-                if 'url_pattern' in kwargs['spider_kwargs']:
-                    spider_run['url_pattern'] = kwargs['spider_kwargs']['url_pattern']
-                else:
-                    spider_run['url_pattern'] = None
-
-                spider_run_list.append(spider_run)
-
-            else:
-                error_spider_names.append(spider_name)
-
+            if not args_spider_name in directory_search_spiders.spiders_name_list_get():
+                error_spider_names.append(args_spider_name)
         if len(error_spider_names):
             self.logger.error(
                 f'=== scrapy crwal run : 指定されたspider_nameは存在しませんでした : {error_spider_names}')
             raise ENDRUN(state=state.Failed())
-        else:
-            kwargs['spider_run_list'] = spider_run_list
-
-            この辺作りかけ。スパイダーの情報収集後、seleniumとそれ以外でリストをわけないとだめだね。
-
-            # マルチスレッド実行
-            # selenium_mode=Trueのスパイダーは単独で実行。それ以外のスパイダーはまとめて実行。
-            for idx, a in enumerate(spider_run_list):
-                kwargs['spider_run_list']
-                threads[idx] = threading.Thread(
-                    target=scrapy_crawling_run.custom_crawl_run(kwargs))
-                # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
-                threads[idx].start()
-
-            # 各スレッドが終了するまで待機
-            for idx, a in enumerate(['a']):
-                threads[idx].join()
 
 
 
-            if kwargs['following_processing_execution'] == 'Yes':
-                # 必要な引数設定
-                kwargs['start_time'] = self.start_time
-                kwargs['mongo'] = self.mongo
-                kwargs['domain'] = None
-                kwargs['crawling_start_time_from'] = self.start_time
-                kwargs['crawling_start_time_to'] = self.start_time
-                kwargs['urls'] = []
-                kwargs['scrapying_start_time_from'] = self.start_time
-                kwargs['scrapying_start_time_to'] = self.start_time
-                kwargs['scraped_save_start_time_from'] = self.start_time
-                kwargs['scraped_save_start_time_to'] = self.start_time
+        # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
+        scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
+            kwargs['spider_kwargs'])
+        # seleniumの使用有無により分けられた単位でマルチスレッド処理を実行する。
+        for separate_spiders_info in directory_search_spiders.separate_spider_using_selenium(args_spiders_name):
+            threads.append(
+                threading.Thread(target=scrapy_crawling_run.custom_runner_run(
+                    logger=self.logger,
+                    start_time=self.start_time,
+                    scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    spiders_info=separate_spiders_info)))
+            #threads[-1].start()
 
-                scrapying_run.exec(kwargs)
-                scraped_news_clip_master_save_run.check_and_save(kwargs)
+        for thread in threads:
+            print('start ',thread)
+            thread.start()
+        reac: Any = reactor
+        #run.addBoth(lambda _: reac.stop())
+        #reac.run()
+        # 各スレッドが終了するまで待機
+        for thread in threads:
+            print('join ',thread)
+            thread.join()
 
-                ### 本格開発までsolrへの連動を一時停止 ###
-                # solr_news_clip_save_run.check_and_save(kwargs)
+        #reac.stop()
+
+        if kwargs['following_processing_execution'] == 'Yes':
+            # 必要な引数設定
+            kwargs['start_time'] = self.start_time
+            kwargs['mongo'] = self.mongo
+            kwargs['domain'] = None
+            kwargs['crawling_start_time_from'] = self.start_time
+            kwargs['crawling_start_time_to'] = self.start_time
+            kwargs['urls'] = []
+            kwargs['scrapying_start_time_from'] = self.start_time
+            kwargs['scrapying_start_time_to'] = self.start_time
+            kwargs['scraped_save_start_time_from'] = self.start_time
+            kwargs['scraped_save_start_time_to'] = self.start_time
+
+            scrapying_run.exec(kwargs)
+            scraped_news_clip_master_save_run.check_and_save(kwargs)
+
+            ### 本格開発までsolrへの連動を一時停止 ###
+            # solr_news_clip_save_run.check_and_save(kwargs)
 
         self.closed()

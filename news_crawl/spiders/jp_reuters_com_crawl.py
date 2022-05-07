@@ -2,25 +2,23 @@ from __future__ import annotations
 import urllib.parse
 import scrapy
 from datetime import datetime
+import urllib.parse
 from typing import Any
-from scrapy.http import Request, TextResponse
+from scrapy.http import TextResponse
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
 from scrapy_splash import SplashRequest
 from scrapy_splash.response import SplashJsonResponse
-from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
-from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
-from news_crawl.spiders.common.lua_script_get import lua_script_get
-from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
-
 from scrapy_selenium import SeleniumRequest
-import urllib.parse
-import scrapy
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.lua_script_get import lua_script_get
+from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 
 
 class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
@@ -77,8 +75,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             for url in self.start_urls:
                 yield SeleniumRequest(
                     url=url,
-                    callback=self.parse_start_response_selenium,
-                )
+                    callback=self.parse_start_response_selenium)
 
         elif self.splash_mode:
             for url in self.start_urls:
@@ -93,14 +90,12 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                         'find_element': 'div.control-nav > a.control-nav-next',  # 左記の要素が表示されるまで待機させる。
                     },
                     headers={'X-My-Header': 'value'},
-                    session_id=self.session_id,  # 任意の値
-                )
+                    session_id=self.session_id)  # 任意の値
 
     def parse_start_response_selenium(self, response: TextResponse):
         ''' (拡張メソッド)
-        取得したレスポンスよりDBへ書き込み
+        取得したレスポンスよりDBへ書き込み(selenium版)
         '''
-
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
 
@@ -162,7 +157,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
     def parse_start_response_splash(self, response: SplashJsonResponse):
         ''' (拡張メソッド)
-        取得したレスポンスよりDBへ書き込み
+        取得したレスポンスよりDBへ書き込み(splash版)
         '''
         self.logger.info(
             f'=== parse_start_response 現在解析中のURL = {response.url}')
