@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import logging
@@ -13,14 +14,14 @@ path = os.getcwd()
 sys.path.append(path)
 from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
-
+import time
 
 def scrapy_deco(func):
-    def deco(kwargs: dict):
+    def deco(*args, **kwargs):
         ### 初期処理 ###
         logger: Logger = kwargs['logger']
         ### 主処理 ###
-        func(kwargs)
+        func(*args, **kwargs)
         ### 終了処理 ###
         # Scrapy実行後に、rootロガーに追加されているストリームハンドラを削除(これをやらないとログが二重化する)
         root_logger = logging.getLogger()
@@ -110,48 +111,54 @@ def first_run(kwargs: dict):
 
 
 @scrapy_deco
-def custom_crawl_run(kwargs: dict):
+def custom_crawl_run_test(logger: Logger, start_time: datetime, scrapy_crawling_kwargs: dict, spiders_info: list[dict[str, Any]]):
+    '''
+    '''
+    print('custom_crawl_run_test 開始')
+    time.sleep(3)
+    print('custom_crawl_run_test 終了')
+
+@scrapy_deco
+def custom_crawl_run(logger: Logger, start_time: datetime, scrapy_crawling_kwargs: dict, spiders_info: list[dict[str, Any]]):
     '''
     '''
     process = CrawlerProcess(settings=get_project_settings())
     configure_logging(install_root_handler=False)
-    spider_run_list = kwargs['spider_run_list']
 
-    for spider_run in spider_run_list:
-        process.crawl(spider_run['class_instans'],
-                      crawling_start_time=spider_run['start_time'],
-                      lastmod_period_minutes=spider_run['lastmod_period_minutes'],
-                      pages=spider_run['pages'],
-                      continued=spider_run['continued'],
-                      direct_crawl_urls=spider_run['direct_crawl_urls'],
-                      debug=spider_run['debug'],
-                      crawl_point_non_update=spider_run['crawl_point_non_update'],
-                      url_pattern=spider_run['url_pattern'],
+    for spider_info in spiders_info:
+        process.crawl(spider_info['class_instans'],
+                      crawling_start_time=start_time,
+                      lastmod_period_minutes=scrapy_crawling_kwargs['lastmod_period_minutes'],
+                      pages=scrapy_crawling_kwargs['pages'],
+                      continued=scrapy_crawling_kwargs['continued'],
+                      direct_crawl_urls=scrapy_crawling_kwargs['direct_crawl_urls'],
+                      debug=scrapy_crawling_kwargs['debug'],
+                      crawl_point_non_update=scrapy_crawling_kwargs['crawl_point_non_update'],
+                      url_pattern=scrapy_crawling_kwargs['url_pattern'],
                       )
     process.start()
 
 @scrapy_deco
-def custom_runner_run(kwargs: dict):
+def custom_runner_run(logger: Logger, start_time: datetime, scrapy_crawling_kwargs: dict, spiders_info: list[dict[str, Any]]):
     '''
     検討したがcustom_crawl_runを使用することにした。
     とりあえずサンプルとしてソースは残している。
     '''
     runner = CrawlerRunner(settings=get_project_settings())
     configure_logging(install_root_handler=True)
-    spider_run_list = kwargs['spider_run_list']
 
-    for spider_run in spider_run_list:
-        run:Any = runner.crawl(spider_run['class_instans'],
-                      crawling_start_time=spider_run['start_time'],
-                      lastmod_period_minutes=spider_run['lastmod_period_minutes'],
-                      pages=spider_run['pages'],
-                      continued=spider_run['continued'],
-                      direct_crawl_urls=spider_run['direct_crawl_urls'],
-                      debug=spider_run['debug'],
-                      crawl_point_non_update=spider_run['crawl_point_non_update'],
-                      url_pattern=spider_run['url_pattern'],
+    for spider_info in spiders_info:
+        run: Any = runner.crawl(spider_info['class_instans'],
+                      crawling_start_time=start_time,
+                      lastmod_period_minutes=scrapy_crawling_kwargs['lastmod_period_minutes'],
+                      pages=scrapy_crawling_kwargs['pages'],
+                      continued=scrapy_crawling_kwargs['continued'],
+                      direct_crawl_urls=scrapy_crawling_kwargs['direct_crawl_urls'],
+                      debug=scrapy_crawling_kwargs['debug'],
+                      crawl_point_non_update=scrapy_crawling_kwargs['crawl_point_non_update'],
+                      url_pattern=scrapy_crawling_kwargs['url_pattern'],
                       )
     run = runner.join()
-    reac:Any = reactor
-    run.addBoth(lambda _: reac.stop())
-    reac.run()
+    #reac: Any = reactor
+    #run.addBoth(lambda _: reac.stop())
+    #reac.run()
