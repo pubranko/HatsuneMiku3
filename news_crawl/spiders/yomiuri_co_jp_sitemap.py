@@ -33,3 +33,6 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     known_pagination_css_selectors:list[str] = [
         #'.p-article-wp-pager a[href]::attr(href)',
     ]
+
+    selenium_mode: bool = True
+    sitemap_rules = [(r'.*', 'selenium_parse')]
