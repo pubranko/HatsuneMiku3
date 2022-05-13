@@ -118,9 +118,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
             for loc in self.kwargs_save['direct_crawl_urls']:
                 self.crawl_target_urls.append(loc)  # しかたなくsitemapから取得したことにして後続を実施
                 if self.selenium_mode:
-                    yield SeleniumRequest(loc, callback=self.parse)
+                    yield SeleniumRequest(url=loc, callback=self.selenium_parse)
                 elif self.splash_mode:
-                    yield SplashRequest(loc, callback=self.parse,
+                    yield SplashRequest(url=loc, callback=self.parse,
                                         meta={'max_retry_times': 20},
                                         args={
                                             'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
@@ -129,11 +129,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                             'images': 0,  # 画像はダウンロードしない(0)
                                         })
                 else:
-                    yield scrapy.Request(loc, callback=self.parse)
+                    yield scrapy.Request(url=loc, callback=self.parse)
 
         else:
             for url in self.sitemap_urls:
-                yield scrapy.Request(url, self.custom_parse_sitemap)
+                yield scrapy.Request(url=url, callback=self.custom_parse_sitemap)
 
     def custom_parse_sitemap(self, response: Response):
         '''
@@ -259,6 +259,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         # selenium、splash、通常モードにより処理を切り分ける
         meta = {}
         args = {}
+
         if self.selenium_mode:
             r: Any = response.request
             driver: WebDriver = r.meta['driver']
@@ -287,11 +288,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 self.pagination_selected_urls.add(url)
                 self.logger.info(f'=== {self.name} 既知ページネーション : {url}')
                 if self.selenium_mode:
-                    yield SeleniumRequest(url, callback=self.parse)
+                    yield SeleniumRequest(url=url, callback=self.parse)
                 elif self.splash_mode:
-                    yield SplashRequest(url, callback=self.parse, meta=meta, args=args)
+                    yield SplashRequest(url=url, callback=self.parse, meta=meta, args=args)
                 else:
-                    yield scrapy.Request(url, callback=self.parse)
+                    yield scrapy.Request(url=url, callback=self.parse)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
         for link in set(response.css('[href]::attr(href)').getall()):
@@ -301,11 +302,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
             # 抽出されていなかった場合リクエストへ追加
             if self.pagination_check(response, link_url):
                 if self.selenium_mode:
-                    yield SeleniumRequest(link_url, callback=self.parse, meta=meta, args=args)
+                    yield SeleniumRequest(url=link_url, callback=self.parse)
                 elif self.splash_mode:
-                    yield SplashRequest(link_url, callback=self.parse, meta=meta, args=args)
+                    yield SplashRequest(url=link_url, callback=self.parse, meta=meta, args=args)
                 else:
-                    yield scrapy.Request(link_url, callback=self.parse, meta=meta)
+                    yield scrapy.Request(url=link_url, callback=self.parse)
         ###
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
@@ -323,6 +324,56 @@ class ExtensionsSitemapSpider(SitemapSpider):
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),
             response_body=body_dumps,
+            spider_version_info=_info,
+            crawling_start_time=self._crawling_start_time,
+            source_of_information=source_of_information,
+        )
+
+    def selenium_parse(self, response: TextResponse):
+        '''
+        取得したレスポンスよりDBへ書き込み
+        '''
+        any: Any = response.request
+        driver: WebDriver = any.meta['driver']
+        #driver: WebDriver = response.request.meta['driver']
+        # Javascript実行が終了するまで最大30秒間待つように指定
+        driver.set_script_timeout(30)
+
+        # 既知のページネーションページ内の対象urlを抽出
+        for css_selector in self.known_pagination_css_selectors:
+            # 既知のページネーションのurlの場合リクエストへ追加
+            for link in response.css(css_selector).getall():
+                # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
+                url: str = unquote(response.urljoin(link))
+                self.pagination_selected_urls.add(url)
+                self.logger.info(f'=== {self.name} 既知ページネーション : {url}')
+                yield SeleniumRequest(url=url, callback=self.parse)
+
+        # ページ内の全リンクを抽出（重複分はsetで削除）
+        for link in set(response.css('[href]::attr(href)').getall()):
+            # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
+            link_url: str = unquote(response.urljoin(link))
+            # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
+            # 抽出されていなかった場合リクエストへ追加
+            if self.pagination_check(response, link_url):
+                yield SeleniumRequest(url=link_url, callback=self.parse)
+        ###
+        _info = self.name + ':' + str(self._spider_version) + ' / ' \
+            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
+
+        source_of_information: dict = {}
+        for record in self.crawl_urls_list:
+            record: dict
+            if response.url == record['loc']:
+                source_of_information['source_url'] = record['source_url']
+                source_of_information['lastmod'] = record['lastmod']
+
+        yield NewsCrawlItem(
+            domain=self.allowed_domains[0],
+            url=response.url,
+            response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
+            response_headers=pickle.dumps(response.headers),
+            response_body=pickle.dumps(driver.page_source),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
             source_of_information=source_of_information,

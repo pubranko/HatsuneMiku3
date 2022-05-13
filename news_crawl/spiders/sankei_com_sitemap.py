@@ -21,6 +21,7 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
         ]
 
     selenium_mode: bool = True
+    sitemap_rules = [(r'.*', 'selenium_parse')]
     #splash_mode: bool = True
 
     sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ

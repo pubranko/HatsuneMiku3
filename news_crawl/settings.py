@@ -76,8 +76,10 @@ SPIDER_MIDDLEWARES = {
 # ダウンロードのミドルウェアを自作のものを使いたい場合、以下の設定を変える。
 DOWNLOADER_MIDDLEWARES = {
     #'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
+    #selenium用 -> カスタムバージョン
+    'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 800,
     #selenium用
-    'scrapy_selenium.SeleniumMiddleware': 800,
+    #'scrapy_selenium.SeleniumMiddleware': 800,
     #splash用
     'scrapy_splash.SplashCookiesMiddleware': 723,
     'scrapy_splash.SplashMiddleware': 725,
@@ -178,7 +180,8 @@ INSTALL_ROOT_HANDLER=False
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+#SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+SELENIUM_DRIVER_ARGUMENTS = []
 
 # Scrapy-Splashの設定
 SPLASH_URL = 'http://localhost:8050/'
@@ -190,6 +193,8 @@ RETRY_ENABLED = True
 #RETRY_TIMES = 2    requestオブジェクトで直接拡張させたのでここでの設定不要。
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 
+
+SCRAPER_SLOT_MAX_ACTIVE_SIZE = 5000000000
 
 '''公式よりミドルウェアの優先順
 {

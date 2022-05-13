@@ -16,3 +16,6 @@ class AsahiComSitemapSpider(ExtensionsSitemapSpider):
     known_pagination_css_selectors:list[str] = [
         #'.entryPageNav  a[href]::attr(href)',
     ]
+
+    selenium_mode: bool = True
+    sitemap_rules = [(r'.*', 'selenium_parse')]
