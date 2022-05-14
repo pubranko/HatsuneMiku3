@@ -31,8 +31,8 @@ class YomiuriCoJpSitemapSpider(ExtensionsSitemapSpider):
     sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     known_pagination_css_selectors:list[str] = [
-        #'.p-article-wp-pager a[href]::attr(href)',
+        '.p-article-wp-pager a[href]',
     ]
 
-    selenium_mode: bool = True
-    sitemap_rules = [(r'.*', 'selenium_parse')]
+    #selenium_mode: bool = True
+    #sitemap_rules = [(r'.*', 'selenium_parse')]

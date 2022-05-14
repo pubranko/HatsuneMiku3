@@ -1,5 +1,6 @@
 """This module contains the ``SeleniumMiddleware`` scrapy middleware"""
-
+from __future__ import annotations
+from typing import Any
 from importlib import import_module
 
 from scrapy import signals
@@ -9,17 +10,21 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapy_selenium.http import SeleniumRequest
 
-###カスタム
+# カスタム
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+import random
 ###
 
 
 class SeleniumMiddleware:
     """Scrapy middleware handling the requests using selenium"""
 
+    driver: WebDriver
+
     def __init__(self, driver_name, driver_executable_path, driver_arguments,
-        browser_executable_path):
+                 browser_executable_path, profile=None):  # パラメータにプロファイルを追加してみた。
         """Initialize the selenium webdriver
 
         Parameters
@@ -42,29 +47,31 @@ class SeleniumMiddleware:
         driver_options_module = import_module(f'{webdriver_base_path}.options')
         driver_options_class = getattr(driver_options_module, 'Options')
 
-        ### カスタム 型ヒント
-        driver_options:Options = driver_options_class()
+        # カスタム 型ヒント
+        driver_options: Options = driver_options_class()
         if browser_executable_path:
             driver_options.binary_location = browser_executable_path
         for argument in driver_arguments:
             driver_options.add_argument(argument)
-        ### カスタム：プロファイル
-        driver_options.profile
+
+        driver_options.profile = profile    # 追加されたパラメータのプロファイルを設定
 
         driver_kwargs = {
             'executable_path': driver_executable_path,
             f'{driver_name}_options': driver_options
         }
 
-        self.driver  = driver_class(**driver_kwargs)
+        self.driver = driver_class(**driver_kwargs)
 
     @classmethod
     def from_crawler(cls, crawler):
         """Initialize the middleware with the crawler settings"""
 
         driver_name = crawler.settings.get('SELENIUM_DRIVER_NAME')
-        driver_executable_path = crawler.settings.get('SELENIUM_DRIVER_EXECUTABLE_PATH')
-        browser_executable_path = crawler.settings.get('SELENIUM_BROWSER_EXECUTABLE_PATH')
+        driver_executable_path = crawler.settings.get(
+            'SELENIUM_DRIVER_EXECUTABLE_PATH')
+        browser_executable_path = crawler.settings.get(
+            'SELENIUM_BROWSER_EXECUTABLE_PATH')
         driver_arguments = crawler.settings.get('SELENIUM_DRIVER_ARGUMENTS')
 
         if not driver_name or not driver_executable_path:
@@ -72,14 +79,24 @@ class SeleniumMiddleware:
                 'SELENIUM_DRIVER_NAME and SELENIUM_DRIVER_EXECUTABLE_PATH must be set'
             )
 
+        # firefox用のプロファイルを作成してミドルウェアのインスタンス作成時に
+        # それを使用するようカスタマイズ
+        set_preferences: dict[str,int] = crawler.settings.get(
+            'SELENIUM_DRIVER_SET_PREFERENCE')
+        new_profile = FirefoxProfile()
+        for set_preference_key, set_preference_value in set_preferences.items():
+            new_profile.set_preference(set_preference_key, set_preference_value)
+        # ここで当ミドルウェアのインスタンス化を行っている。
         middleware = cls(
             driver_name=driver_name,
             driver_executable_path=driver_executable_path,
             driver_arguments=driver_arguments,
-            browser_executable_path=browser_executable_path
+            browser_executable_path=browser_executable_path,
+            profile=new_profile,  # パラメータにプロファイルを追加してみた。
         )
 
-        crawler.signals.connect(middleware.spider_closed, signals.spider_closed)
+        crawler.signals.connect(
+            middleware.spider_closed, signals.spider_closed)
 
         return middleware
 
@@ -89,15 +106,8 @@ class SeleniumMiddleware:
         if not isinstance(request, SeleniumRequest):
             return None
 
+        # ここで実際にブラウザーでリクエストを実行しているっぽい。
         self.driver.get(request.url)
-
-        ### カスタマイズ
-        # original_window = self.driver.current_window_handle
-        # print('=== 確認中 ',original_window)
-        # new_window = self.driver.window_handles.last
-        # self.driver.switch_to.window(new_window)
-        # print('=== 確認中 ',original_window)
-        ###
 
         for cookie_name, cookie_value in request.cookies.items():
             self.driver.add_cookie(
@@ -134,4 +144,3 @@ class SeleniumMiddleware:
         """Shutdown the driver when spider is closed"""
 
         self.driver.quit()
-

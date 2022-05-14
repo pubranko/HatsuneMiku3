@@ -14,7 +14,7 @@ class AsahiComSitemapSpider(ExtensionsSitemapSpider):
     sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     known_pagination_css_selectors:list[str] = [
-        #'.entryPageNav  a[href]::attr(href)',
+        '.entryPageNav  a[href]',
     ]
 
     selenium_mode: bool = True
