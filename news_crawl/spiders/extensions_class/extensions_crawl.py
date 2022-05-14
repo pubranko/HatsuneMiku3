@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
-
+from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 
 class ExtensionsCrawlSpider(CrawlSpider):
     '''
@@ -51,6 +51,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # パラメータによる抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
+    url_continued: UrlsContinuedSkipCheck
 
 
     def __init__(self, *args, **kwargs):

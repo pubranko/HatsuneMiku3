@@ -180,8 +180,15 @@ INSTALL_ROOT_HANDLER=False
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-#SELENIUM_DRIVER_ARGUMENTS = ['-headless']
-SELENIUM_DRIVER_ARGUMENTS = []
+SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+# ブラウザ・通信の不可軽減のため、独自の設定を追加してみた。
+#   その他の設定については、ここが参考になりそう https://www.programcreek.com/python/example/100026/selenium.webdriver.FirefoxProfile
+#   1:通常、2:禁止
+SELENIUM_DRIVER_SET_PREFERENCE = {
+    'permissions.default.image': 2,                 # 画像のダウンロード禁止
+    'permissions.default.image.animation_mode': 2,  # gitなどのアニメーションのダウンロード禁止
+    'permissions.default.stylesheet': 2,            # cssのダウンロード禁止
+}
 
 # Scrapy-Splashの設定
 SPLASH_URL = 'http://localhost:8050/'
@@ -193,8 +200,9 @@ RETRY_ENABLED = True
 #RETRY_TIMES = 2    requestオブジェクトで直接拡張させたのでここでの設定不要。
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 
-
+#selenimuを並列で動かせないか色々実験中
 SCRAPER_SLOT_MAX_ACTIVE_SIZE = 5000000000
+
 
 '''公式よりミドルウェアの優先順
 {

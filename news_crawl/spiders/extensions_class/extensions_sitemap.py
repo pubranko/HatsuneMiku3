@@ -11,6 +11,7 @@ from lxml.etree import _Element
 from urllib.parse import urlparse, urljoin, parse_qs, unquote
 from urllib.parse import ParseResult
 
+
 from scrapy.spiders import SitemapSpider
 from scrapy.spiders.sitemap import iterloc
 from scrapy.http import Response, Request, TextResponse
@@ -28,6 +29,10 @@ from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMin
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.custom_sitemap import CustomSitemap
+
+from bs4 import BeautifulSoup as bs4
+from bs4.element import Tag
+from bs4.element import ResultSet
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -118,7 +123,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             for loc in self.kwargs_save['direct_crawl_urls']:
                 self.crawl_target_urls.append(loc)  # しかたなくsitemapから取得したことにして後続を実施
                 if self.selenium_mode:
-                    yield SeleniumRequest(url=loc, callback=self.selenium_parse)
+                    yield SeleniumRequest(url=loc, callback=self.selenium_parse,wait_time=2)
                 elif self.splash_mode:
                     yield SplashRequest(url=loc, callback=self.parse,
                                         meta={'max_retry_times': 20},
@@ -168,7 +173,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                         if rule_regex.search(loc):
                             # seleniumモードによる切り替え
                             if self.selenium_mode:
-                                yield SeleniumRequest(url=loc, callback=call_back)
+                                yield SeleniumRequest(url=loc, callback=call_back, wait_time=2)
                             elif self.splash_mode:
                                 yield SplashRequest(url=loc, callback=call_back, meta={'max_retry_times': 20},
                                                     args={
@@ -208,7 +213,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 self.settings['TIMEZONE'])
 
             if entries.type == 'sitemapindex':
-                # if self.lastmod_period.skip_check(date_lastmod):
+                # if self.lastmod_period.skip_check(date_lastmod):  #sitemap側と実際のソースは常に一致するわけではなさそう。
                 #    crwal_flg = False
                 if self.crawling_continued.skip_check(date_lastmod):
                     crwal_flg = False
@@ -232,7 +237,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
                         'source_url': response.url,
                         'lastmod': date_lastmod,
                         'loc': entry['loc']})
-
                     # クロール対象となったurlを保存
                     self.crawl_target_urls.append(entry['loc'])
                 yield entry
@@ -260,14 +264,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         meta = {}
         args = {}
 
-        if self.selenium_mode:
-            r: Any = response.request
-            driver: WebDriver = r.meta['driver']
-            #driver: WebDriver = response.request.meta['driver']
-            # Javascript実行が終了するまで最大30秒間待つように指定
-            driver.set_script_timeout(30)
-            body_dumps = pickle.dumps(driver.page_source)
-        elif self.splash_mode:
+        if self.splash_mode:
             meta = {'max_retry_times': 20}
             args = {
                 'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
@@ -275,24 +272,20 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 'resource_timeout': 10.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
                 'images': 0,  # 画像はダウンロードしない(0)
             }
-            body_dumps = pickle.dumps(response.body)
-        else:
-            body_dumps = pickle.dumps(response.body)
 
         # 既知のページネーションページ内の対象urlを抽出
+        urls:set = set()
+        req:list = []
         for css_selector in self.known_pagination_css_selectors:
             # 既知のページネーションのurlの場合リクエストへ追加
-            for link in response.css(css_selector).getall():
+            links = response.css(f'{css_selector}::attr(href)').getall()
+            for link in links:
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = unquote(response.urljoin(link))
+                # クロール対象となったurlを保存
                 self.pagination_selected_urls.add(url)
                 self.logger.info(f'=== {self.name} 既知ページネーション : {url}')
-                if self.selenium_mode:
-                    yield SeleniumRequest(url=url, callback=self.parse)
-                elif self.splash_mode:
-                    yield SplashRequest(url=url, callback=self.parse, meta=meta, args=args)
-                else:
-                    yield scrapy.Request(url=url, callback=self.parse)
+                urls.add(url)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
         for link in set(response.css('[href]::attr(href)').getall()):
@@ -300,13 +293,16 @@ class ExtensionsSitemapSpider(SitemapSpider):
             link_url: str = unquote(response.urljoin(link))
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
-            if self.pagination_check(response, link_url):
-                if self.selenium_mode:
-                    yield SeleniumRequest(url=link_url, callback=self.parse)
-                elif self.splash_mode:
-                    yield SplashRequest(url=link_url, callback=self.parse, meta=meta, args=args)
-                else:
-                    yield scrapy.Request(url=link_url, callback=self.parse)
+            if self.pagination_check(link_url):
+                urls.add(link_url)
+
+        for url in urls:
+            if self.splash_mode:
+                req.append(SplashRequest(url=url, callback=self.parse, meta=meta, args=args))
+            else:
+                req.append(scrapy.Request(url=url, callback=self.parse))
+        yield from req
+
         ###
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
@@ -323,7 +319,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             url=response.url,
             response_time=datetime.now().astimezone(self.settings['TIMEZONE']),
             response_headers=pickle.dumps(response.headers),
-            response_body=body_dumps,
+            response_body=pickle.dumps(response.body),
             spider_version_info=_info,
             crawling_start_time=self._crawling_start_time,
             source_of_information=source_of_information,
@@ -335,29 +331,47 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         any: Any = response.request
         driver: WebDriver = any.meta['driver']
-        #driver: WebDriver = response.request.meta['driver']
-        # Javascript実行が終了するまで最大30秒間待つように指定
-        driver.set_script_timeout(30)
+
+        driver.set_page_load_timeout(5)
+        #driver.implicitly_wait(15)
+        driver.set_script_timeout(5)
+
+        # ページ内の全リンクを抽出（重複分はsetで削除）
+        # driverから直接リンク要素を取得しても、DOMで参照中に変わってしまうことが発生した。
+        # そのためpage_sourceをもとに一度bs4でparseしてDOMの影響を受けないように対応を行った。
+        #   unknown_links = set([unquote(el.get_attribute("href")) for el in driver.find_elements_by_css_selector('[href]')])
+        soup: bs4 = bs4(driver.page_source, 'lxml')
+        _ = soup.select('[href]')
+        unknown_links = [ a['href'] for a in _]
 
         # 既知のページネーションページ内の対象urlを抽出
+        urls:set = set()
+        req:list = []
         for css_selector in self.known_pagination_css_selectors:
             # 既知のページネーションのurlの場合リクエストへ追加
-            for link in response.css(css_selector).getall():
+            elem = driver.find_elements_by_css_selector(css_selector)
+            known_links = [unquote(el.get_attribute("href")) for el in elem]
+
+            for link in known_links:
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = unquote(response.urljoin(link))
                 self.pagination_selected_urls.add(url)
                 self.logger.info(f'=== {self.name} 既知ページネーション : {url}')
-                yield SeleniumRequest(url=url, callback=self.parse)
+                urls.add(url)
 
-        # ページ内の全リンクを抽出（重複分はsetで削除）
-        for link in set(response.css('[href]::attr(href)').getall()):
+        for link in unknown_links:
             # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
             link_url: str = unquote(response.urljoin(link))
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
-            if self.pagination_check(response, link_url):
-                yield SeleniumRequest(url=link_url, callback=self.parse)
+            if self.pagination_check(link_url):
+                urls.add(link_url)
+
+        for url in urls:
+            req.append(SeleniumRequest(url=url, callback=self.selenium_parse, wait_time=2))
+        yield from req
         ###
+
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
 
@@ -398,7 +412,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         return d
 
-    def pagination_check(self, response: TextResponse, link_url: str) -> bool:
+    def pagination_check(self, link_url: str) -> bool:
         ''' '''
         check_flg: bool = False  # ページネーションのリンクの場合、Trueとする。
         # チェック対象のurlを解析
@@ -408,7 +422,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         # 追加リクエスト済み情報の準備
         pagination_selected_pathes:set = set()
-        #pagination_selected_pathes:list = []
         pagination_selected_same_path_queries:list = []
         for pagination_selected_url in self.pagination_selected_urls:
             _ = urlparse(pagination_selected_url)
