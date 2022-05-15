@@ -75,12 +75,13 @@ def exec(kwargs: dict):
     skip_list = list(range(0, record_count, limit))
     scraped: dict = {}
     scraper_mod: dict = {}
+    old_domain:str = ''
 
     for skip in skip_list:
         records: Cursor = crawler_response.find(
             projection=None,
             filter=filter,
-            sort=[('response_time', ASCENDING)],
+            sort=[('domain', ASCENDING),('response_time', ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
@@ -95,15 +96,15 @@ def exec(kwargs: dict):
             scraped['scrapying_start_time'] = start_time
             scraped['source_of_information'] = record['source_of_information']
 
-            # bs4で解析
+            # response_bodyをbs4で解析
             response_body: str = pickle.loads(record['response_body'])
             soup: bs4 = bs4(response_body, 'lxml')
             scraped['pattern'] = {}
 
-            # ここをドメイン別に取得するようにするにはどうするか？？？
-            scraper_by_domain.record_read(filter={'domain': record['domain']})
-            logger.info(f'=== scrapying_run run  処理対象ドメイン : {record["domain"]}')
-            logger.info(f'=== scrapying_run run  処理対象ドメイン : {len(scraper_by_domain.scraper_by_domain_record)}')
+            # ドメイン別スクレイパー情報をDBより取得
+            if not old_domain == record['domain']:
+                scraper_by_domain.record_read(filter={'domain': record['domain']})
+                logger.info(f'=== scrapying_run run  ドメイン別スクレイパー情報取得 (domain: {record["domain"]})')
 
             for scraper, pattern_list in scraper_by_domain.scrape_item_get():
                 if not scraper in scraper_mod:
@@ -113,7 +114,6 @@ def exec(kwargs: dict):
                     soup=soup, scraper=scraper, scrape_parm=pattern_list,)
                 scraped.update(scraped_result)
                 scraped['pattern'].update(scraped_pattern)
-            print('title: ', scraped['title'])
             #print('date: ',scraped['publish_date'])
             #print('article: ',scraped['article'])
 
@@ -121,3 +121,7 @@ def exec(kwargs: dict):
             error_flg: bool = scraped_record_error_check(scraped)
             if not error_flg:
                 scraped_from_response.insert_one(scraped)
+                logger.info(f'=== scrapying_run run  処理対象url : {record["url"]}')
+
+            # 最後に今回処理を行ったdomainを保存
+            old_domain = record['domain']
