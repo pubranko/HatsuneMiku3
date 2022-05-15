@@ -31,6 +31,12 @@
         ],
         "publish_date_scraper": [
             {
+                "pattern": 3,
+                "css_selecter": "head > meta[name=\"date\"]",
+                "priority": 3,
+                "register_date":"2022-05-15T14:23:00+09:00"
+            },
+            {
                 "pattern": 2,
                 "css_selecter": ".page_datetime.col-sm-12.col-md-12",
                 "priority": 2,

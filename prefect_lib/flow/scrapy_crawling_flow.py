@@ -53,5 +53,5 @@ flow.run(parameters=dict(
         #'url_pattern':'https://www.yomiuri.co.jp/national/20220430-OYT1T50050',
         #'url_pattern':'https://www.yomiuri.co.jp/world/20220429-OYT1T50178',
     },
-    #following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
+    following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
 ))
