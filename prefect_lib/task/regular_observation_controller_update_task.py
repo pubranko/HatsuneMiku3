@@ -8,7 +8,7 @@ from models.mongo_model import MongoModel
 from models.controller_model import ControllerModel
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
-from common_lib.directory_search_spiders import directory_search_spiders
+from common_lib.directory_search_spiders import DirectorySearchSpiders
 
 
 class RegularObservationControllerUpdateTask(ExtensionsTask):
@@ -28,15 +28,19 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
             '=== Regular Observation  Controller Update Task : run : 更新前の登録内容 : ' + str(record))
 
         # 空白除去しカンマ区切りのセットへ変換
-        ptn = re.compile(r'\s|　')
-        _ = ptn.sub('',spiders_name)
-        spiders_name_set = set(_.split(','))
+        #ptn = re.compile(r'\s|　')
+        #_ = ptn.sub('',spiders_name)
+        #spiders_name_set = set(_.split(','))
+
+        # 引数のスパイダー情報リストをセットへ変換（重複削除）
+        spiders_name_set = set(spiders_name)
 
         # 存在するスパイダーのリスト生成
-        spiders_info:list = directory_search_spiders()
+        directory_search_spiders = DirectorySearchSpiders()
         spiders_exist_set:set = set()
-        for spider_info in spiders_info:
-            spiders_exist_set.add(spider_info['spider_name'])
+        for spider_info in directory_search_spiders.spiders_name_list_get():
+            spiders_exist_set.add(spider_info)
+            #spiders_exist_set.add(spider_info['spider_name'])
 
         if in_out == 'in':
             for spider_name in spiders_name_set:

@@ -36,9 +36,7 @@ def scraper(soup: bs4, scraper: str, scrape_parm: list[dict[str, str]]) -> tuple
 
 if __name__ == '__main__':
     '''単体テスト用の設定'''
-    #test_url = 'https://www.yomiuri.co.jp/world/20220401-OYT1T50197/'
-    test_url = 'https://www.epochtimes.jp/2022/05/105910.html'
-    #test_url = 'https://www.sankei.com/article/20220402-4DJ4CTA7MBKVHIH7KX3CA2FYGY/'
+    test_url = 'https://www.asahi.com/articles/ASQ5P42N4Q5PUCVL005.html'
     # 通常サイト用
     request = requests.get(test_url)
     # JavaScript動作後の取得用。Splashを利用。
@@ -58,20 +56,10 @@ if __name__ == '__main__':
               'css_selecter': 'head > meta[property="article:published_time"]'},
          ]}}
 
-    scrape_parm = [
-        {
-            "pattern": 2,
-            "css_selecter": ".page_datetime.col-sm-12.col-md-12",
-        },
-        {
-            "pattern": 2,
-            "css_selecter": ".page_datetime.col-sm-12.col-md-12",
-        },
-        {
-            "pattern": 1,
-            "css_selecter": "head > meta[name=\"date\"]",
-        }
-    ]
+    scrape_parm = [{
+        "pattern": 1,
+        "css_selecter": "head > meta[name=\"pubdate\"]",
+    },]
     scrape_parm = sorted(scrape_parm, key=lambda d: d['pattern'], reverse=True)
     print('\n\n=== scrape_parm ===', scrape_parm)
 

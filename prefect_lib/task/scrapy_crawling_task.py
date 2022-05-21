@@ -5,6 +5,7 @@ from typing import Any
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 import threading
+#from multiprocessing import Process
 path = os.getcwd()
 sys.path.append(path)
 from common_lib.directory_search_spiders import DirectorySearchSpiders
@@ -12,8 +13,10 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
-import pprint
-from twisted.internet import reactor
+#import pprint
+#from twisted.internet import reactor
+#from scrapy.utils.reactor import install_reactor
+#install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
 
 
 class ScrapyCrawlingTask(ExtensionsTask):
@@ -41,28 +44,57 @@ class ScrapyCrawlingTask(ExtensionsTask):
                 f'=== scrapy crwal run : 指定されたspider_nameは存在しませんでした : {error_spider_names}')
             raise ENDRUN(state=state.Failed())
 
-
-
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
         scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
             kwargs['spider_kwargs'])
         # seleniumの使用有無により分けられた単位でマルチスレッド処理を実行する。
         #for separate_spiders_info in directory_search_spiders.separate_spider_using_selenium(args_spiders_name):
-            # threads.append(
-            #     threading.Thread(target=scrapy_crawling_run.custom_runner_run(
-            #         logger=self.logger,
-            #         start_time=self.start_time,
-            #         scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
-            #         spiders_info=separate_spiders_info)))
+        for separate_spiders_info in directory_search_spiders.spiders_info_list_get(args_spiders_name):
+            threads.append(
+                threading.Thread(target=scrapy_crawling_run.custom_crawl_run(
+                    logger=self.logger,
+                    start_time=self.start_time,
+                    scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    spiders_info=separate_spiders_info)))
 
+        '''twisted reactorの制御は難しかった、、、今後の課題とする。とりあえず以下の残骸を残しておく。'''
+        # print('===\n\n １回めのスレッド実行 \n\n')
+        # thread = threading.Thread(target=scrapy_crawling_run.custom_runner_run(
+        #         logger=self.logger,
+        #         start_time=self.start_time,
+        #         scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+        #         spiders_info=directory_search_spiders.separate_spider_using_selenium(args_spiders_name)[0]))
+        # thread.start()
+        # thread.join()
 
-        thread = threading.Thread(target=scrapy_crawling_run.custom_crawl_run(
-                logger=self.logger,
-                start_time=self.start_time,
-                scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
-                spiders_info=directory_search_spiders.separate_spider_using_selenium(args_spiders_name)[0]))
-        thread.start()
-        thread.join()
+        # print('===\n\n ２回めのスレッド実行 \n\n')
+        # #install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')
+        # #reactor.stop()
+        # thread = threading.Thread(target=scrapy_crawling_run.custom_runner_run(
+        #         logger=self.logger,
+        #         start_time=self.start_time,
+        #         scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+        #         spiders_info=directory_search_spiders.separate_spider_using_selenium(args_spiders_name)[0]))
+        # thread.start()
+        # thread.join()
+
+        # print('===\n\n １回めのプロセス実行 \n\n')
+        # process = Process(target=scrapy_crawling_run.custom_crawl_run(
+        #         logger=self.logger,
+        #         start_time=self.start_time,
+        #         scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+        #         spiders_info=directory_search_spiders.separate_spider_using_selenium(args_spiders_name)[0]))
+        # process.start()
+        # process.join()
+
+        # print('===\n\n ２回めのプロセス実行 \n\n')
+        # process = Process(target=scrapy_crawling_run.custom_crawl_run(
+        #         logger=self.logger,
+        #         start_time=self.start_time,
+        #         scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+        #         spiders_info=directory_search_spiders.separate_spider_using_selenium(args_spiders_name)[0]))
+        # process.start()
+        # process.join()
 
         #for thread in threads:
         #    print('start ',thread)
