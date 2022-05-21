@@ -17,5 +17,5 @@ class AsahiComSitemapSpider(ExtensionsSitemapSpider):
         '.entryPageNav  a[href]',
     ]
 
-    selenium_mode: bool = True
-    sitemap_rules = [(r'.*', 'selenium_parse')]
+    # selenium_mode: bool = True
+    # sitemap_rules = [(r'.*', 'selenium_parse')]

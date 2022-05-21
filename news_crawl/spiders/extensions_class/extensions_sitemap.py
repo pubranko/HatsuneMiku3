@@ -4,7 +4,7 @@ import pickle
 import scrapy
 import re
 from typing import Union, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil import parser
 from lxml.etree import _Element
 
@@ -213,8 +213,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 self.settings['TIMEZONE'])
 
             if entries.type == 'sitemapindex':
-                # if self.lastmod_period.skip_check(date_lastmod):  #sitemap側と実際のソースは常に一致するわけではなさそう。
-                #    crwal_flg = False
+                # sitemap側と実際のソースは常に一致するわけではなさそう。
+                # バッファとして2日間分範囲を広げてチェックする。
+                if self.lastmod_period.skip_check(date_lastmod + timedelta(days=2)):
+                   crwal_flg = False
                 if self.crawling_continued.skip_check(date_lastmod):
                     crwal_flg = False
             else:
@@ -332,9 +334,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
         any: Any = response.request
         driver: WebDriver = any.meta['driver']
 
-        driver.set_page_load_timeout(5)
+        driver.set_page_load_timeout(15)
         #driver.implicitly_wait(15)
-        driver.set_script_timeout(5)
+        driver.set_script_timeout(15)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
         # driverから直接リンク要素を取得しても、DOMで参照中に変わってしまうことが発生した。

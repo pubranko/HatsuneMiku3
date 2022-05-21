@@ -36,9 +36,6 @@ class DirectorySearchSpiders:
         引数に渡されたパス内にあるスパイダークラスを読み込み、リストにして返す。
         リスト内には、クラス名、インスタンス、クロール先のドメイン名、スパイダー名の辞書を格納。
         '''
-        class_list: list = []
-        #spiders_info: dict[str, dict[str, Any]] = {}
-
         # 引数で渡されたパス内のpythonモジュールファイル名を取得し、パス＋ファイル名を生成する。(fpath)
         # 拡張子を除去＆ファイルパスのセパレータ (Unix系なら'/') を '.' に置き換え
         # モジュールとして読み込み
@@ -65,7 +62,7 @@ class DirectorySearchSpiders:
                     if 'allowed_domains' in members:
                         # allowed_domainsリスト内の要素数がゼロの場合、ドメインが設定されていないスパイダーなので除外。
                         if len(members['allowed_domains']) == 0:
-                            select_flg: bool = False
+                            select_flg = False
                         else:
                             domain = members['allowed_domains'][0]
                             domain_name = members['_domain_name']
@@ -73,7 +70,7 @@ class DirectorySearchSpiders:
                             selenium_mode = members['selenium_mode'] if 'selenium_mode' in members else False
                             splash_mode = members['splash_mode'] if 'splash_mode' in members else False
                     else:
-                        select_flg: bool = False
+                        select_flg = False
                 else:
                     select_flg = False
 
@@ -91,11 +88,41 @@ class DirectorySearchSpiders:
             del mod  # 不要になったモジュールを削除(メモリ節約)
 
     def spiders_name_list_get(self) -> list:
+        '''
+        クラス変数に保存されている、スパイダー名のリストを返す。
+        '''
         return list(self.spiders_info.keys())
+
+    def spiders_info_list_get(self, target_spiders_name: set) -> list[list[dict[str, Any]]]:
+        '''
+        引数(spiders_name)で指定された対象スパイダーのスパイダー情報リストを返す。
+        ＜データイメージ＞
+            result = [[spider_info, spider_info]]
+            spider_info = [{'class_instans': *, 'class_name': *, 'domain': *, 'domain_name': *, 'selenium_mode': *, 'splash_mode': *}]
+        '''
+        result: list[list[dict[str, Any]]] = []
+        non_selenium: list[dict[str, Any]] = []
+        for spider_name, spider_attr in self.spiders_info.items():
+            # 対象スパイダー以外は除外
+            if not spider_name in target_spiders_name:
+                continue
+            # seleniumuを使っている場合は単独、それ以外は非selenium用へ集約
+            # if spider_attr['selenium_mode']:
+            #     result.append([spider_attr])
+            # else:
+            #     non_selenium.append(spider_attr)
+            non_selenium.append(spider_attr)
+        #非seleniumのスパイダーがあった場合
+        if len(non_selenium):
+            result.append(non_selenium)
+
+        print('=== result ',result)
+
+        return result
 
     def separate_spider_using_selenium(self, target_spiders_name: set) -> list[list[dict[str, Any]]]:
         '''
-        引数(spiders_name)で指定された対象スパイダーに対して、
+        引数(spiders_name)で指定された対象スパイダーセットに対して、
         seleniumを使用しているスパイダーは単独、それ以外は１つにまとめたリストを返す。
         ＜データイメージ＞
             result = [[spider_info],  # selenium使用
