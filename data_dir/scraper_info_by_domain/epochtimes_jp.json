@@ -17,6 +17,18 @@
         ],
         "article_scraper": [
             {
+                "pattern": 4,
+                "css_selecter": ".main_content .post_content > p",
+                "priority": 4,
+                "register_date":"2022-05-22T23:00:00+09:00"
+            },
+            {
+                "pattern": 3,
+                "css_selecter": ".one_post >.active >.post_content > p",
+                "priority": 3,
+                "register_date":"2022-05-22T23:00:00+09:00"
+            },
+            {
                 "pattern": 2,
                 "css_selecter": ".middle_part > .text",
                 "priority": 2,
