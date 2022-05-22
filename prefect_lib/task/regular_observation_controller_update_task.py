@@ -27,11 +27,6 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
         self.logger.info(
             '=== Regular Observation  Controller Update Task : run : 更新前の登録内容 : ' + str(record))
 
-        # 空白除去しカンマ区切りのセットへ変換
-        #ptn = re.compile(r'\s|　')
-        #_ = ptn.sub('',spiders_name)
-        #spiders_name_set = set(_.split(','))
-
         # 引数のスパイダー情報リストをセットへ変換（重複削除）
         spiders_name_set = set(spiders_name)
 
@@ -40,7 +35,6 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
         spiders_exist_set:set = set()
         for spider_info in directory_search_spiders.spiders_name_list_get():
             spiders_exist_set.add(spider_info)
-            #spiders_exist_set.add(spider_info['spider_name'])
 
         if in_out == 'in':
             for spider_name in spiders_name_set:

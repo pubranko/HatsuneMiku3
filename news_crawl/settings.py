@@ -200,11 +200,6 @@ RETRY_ENABLED = True
 #RETRY_TIMES = 2    requestオブジェクトで直接拡張させたのでここでの設定不要。
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 
-#selenimuを並列で動かせないか色々実験中
-SCRAPER_SLOT_MAX_ACTIVE_SIZE = 5000000000
-
-# 効果あったらいいな〜、、、10->50
-REACTOR_THREADPOOL_MAXSIZE = 50
 '''デフォルトセッティングのパス
 .venv/lib/python3.8/site-packages/scrapy/settings/default_settings.py
 '''

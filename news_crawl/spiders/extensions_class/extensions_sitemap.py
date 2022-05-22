@@ -7,11 +7,11 @@ from typing import Union, Any
 from datetime import datetime, timedelta
 from dateutil import parser
 from lxml.etree import _Element
-
 from urllib.parse import urlparse, urljoin, parse_qs, unquote
 from urllib.parse import ParseResult
-
-
+from bs4 import BeautifulSoup as bs4
+from bs4.element import Tag
+from bs4.element import ResultSet
 from scrapy.spiders import SitemapSpider
 from scrapy.spiders.sitemap import iterloc
 from scrapy.http import Response, Request, TextResponse
@@ -22,6 +22,7 @@ from scrapy_splash.response import SplashTextResponse
 from selenium.webdriver.remote.webdriver import WebDriver
 from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
+#
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
@@ -30,9 +31,6 @@ from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContin
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.custom_sitemap import CustomSitemap
 
-from bs4 import BeautifulSoup as bs4
-from bs4.element import Tag
-from bs4.element import ResultSet
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
