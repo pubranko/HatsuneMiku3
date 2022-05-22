@@ -106,11 +106,6 @@ class DirectorySearchSpiders:
             # 対象スパイダー以外は除外
             if not spider_name in target_spiders_name:
                 continue
-            # seleniumuを使っている場合は単独、それ以外は非selenium用へ集約
-            # if spider_attr['selenium_mode']:
-            #     result.append([spider_attr])
-            # else:
-            #     non_selenium.append(spider_attr)
             non_selenium.append(spider_attr)
         #非seleniumのスパイダーがあった場合
         if len(non_selenium):

@@ -53,16 +53,12 @@ class RegularObservationTask(ExtensionsTask):
         self.logger.info(f'=== 定期観測対象スパイダー : {str(crawling_target_spiders_name)}')
         self.logger.info(f'=== 定期観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
 
-
         thread = threading.Thread(
             target=scrapy_crawling_run.custom_crawl_run(
                 logger=self.logger,
                 start_time=self.start_time,
                 scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
                 spiders_info=crawling_target_spiders))
-
-        # thread = threading.Thread(
-        #     target=scrapy_crawling_run.continued_run(kwargs))
 
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
         thread.start()

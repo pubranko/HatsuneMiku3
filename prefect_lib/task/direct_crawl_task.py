@@ -43,12 +43,8 @@ class DirectCrawlTask(ExtensionsTask):
             self.logger.error(
                 '=== Direct crwal run : 指定されたspider_nameは存在しませんでした : ' + spider_name)
             raise ENDRUN(state=state.Failed())
-        print('===spider_name ',spider_name)
 
-        #spiders_info = directory_search_spiders.spiders_info_list_get(set(spider_name))
         spider_info = directory_search_spiders.spiders_info[spider_name]
-        print('===あれ？\n',spider_info)
-        #spiders_info = directory_search_spiders.spiders_info
 
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
         scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
@@ -56,7 +52,6 @@ class DirectCrawlTask(ExtensionsTask):
 
         self.logger.info(f'=== ダイレクト 対象スパイダー : {spider_name}')
         self.logger.info(f'=== ダイレクト run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
-
 
         thread = threading.Thread(
             target=scrapy_crawling_run.custom_crawl_run(
@@ -68,11 +63,5 @@ class DirectCrawlTask(ExtensionsTask):
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
         thread.start()
         thread.join()
-
-        # kwargs['urls'] = urls
-        # for spider in directory_search_spiders.spiders_name_list_get():
-        #     if spider['spider_name'] == spider_name:
-        #         kwargs['class_instans'] = spider['class_instans']
-        #         scrapy_crawling_run.direct_crawl_run(kwargs)
 
         self.closed()

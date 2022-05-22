@@ -1,18 +1,8 @@
 from __future__ import annotations
-from errno import EKEYEXPIRED
-import os
-import sys
-import logging
-from logging import Logger
-from typing import Any, Union
-import pickle
 from bs4 import BeautifulSoup as bs4
 from bs4.element import Tag
-from bs4.element import ResultSet
-from datetime import datetime
 from dateutil.parser import parse
 from prefect_lib.settings import TIMEZONE
-import time
 import requests
 
 
