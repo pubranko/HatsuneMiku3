@@ -15,10 +15,10 @@ def scraped_record_error_check(record:dict) -> bool:
             error_flg = True
             logger.error(
                 '=== エラー：' + item + 'なし : ' + str(record[log_item]))
-        elif record[item] == None:
+        elif len(str(record[item])) == 0 or record[item] == None:
             error_flg = True
             logger.error(
-                '=== エラー：' + item + ' = None :' + str(record[log_item]))
+                '=== エラー：' + item + ' = データなし :' + str(record[log_item]))
 
     global error_flg
     error_flg = False

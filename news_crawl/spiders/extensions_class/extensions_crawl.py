@@ -14,6 +14,7 @@ from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMin
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 
+
 class ExtensionsCrawlSpider(CrawlSpider):
     '''
     CrawlSpiderの機能を拡張したクラス。
