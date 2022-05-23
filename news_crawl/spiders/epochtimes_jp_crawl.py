@@ -3,10 +3,7 @@ import re
 import urllib.parse
 import pickle
 from datetime import datetime
-<<<<<<< HEAD
 from time import sleep
-=======
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 from typing import Pattern, Any
 from bs4.element import ResultSet
 from bs4 import BeautifulSoup as bs4
@@ -29,12 +26,8 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-<<<<<<< HEAD
 from common_lib.login_info_get import login_info_get
 
-=======
-from time import sleep
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 
 class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
     name: str = 'epochtimes_jp_crawl'
@@ -152,10 +145,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み(selenium版)
         '''
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
         driver.set_page_load_timeout(15)
@@ -168,7 +157,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
         driver.switch_to_frame(iframe)
 
-<<<<<<< HEAD
         # ログイン情報を取得する。
         try:
             yaml_file = login_info_get()
@@ -181,9 +169,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             user = yaml_file[self.allowed_domains[0]]['user']
             password = yaml_file[self.allowed_domains[0]]['password']
 
-
-=======
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
         try:
             elem: WebElement = driver.find_element_by_css_selector('#mypage')       #ログイン前なら存在
         except NoSuchElementException:  #既にログイン中ならpass
@@ -202,17 +187,10 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             # ユーザー名（email）入力
             elem: WebElement = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ymkemail')))
-<<<<<<< HEAD
             elem.send_keys(user)
             # パスワード入力
             elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
             elem.send_keys(password)
-=======
-            elem.send_keys('ユーザー')
-            # パスワード入力
-            elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
-            elem.send_keys('パスワード')
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
             # ログインボタン押下
             elem: WebElement = driver.find_element_by_css_selector('#ymk-login-btn')
             elem.click()
@@ -239,10 +217,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
-<<<<<<< HEAD
-=======
-
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 
             next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
             next_page_element = f'.main_content > .left_col > .pagination > a[href="{next_page_url}"]'
@@ -253,92 +227,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             _ = driver.find_elements_by_css_selector(
                 f'.main_content > .left_col > .posts_list .post_title > a[href]')
             links: list = [link.get_attribute("href") for link in _]
-<<<<<<< HEAD
-=======
-        # 各カテゴリー別に前回取得済みのurls情報を保存
-        last_time_urls: list = []
-
-        # ループ条件
-        # 無制限にクロールしないよう、標準設定を3ページ目までとする。
-        pages: dict = self.pages_setting(1, 3)
-        start_page: int = pages['start_page']
-        end_page: int = pages['end_page']
-
-        urls_list: list = []
-        soup = bs4(response.text, 'html.parser')
-
-        self.logger.info(
-            f'=== parse_start_response 現在解析中のURL = {response.url}')
-        # 現在の処理中のurlを３分割。（ヘッダー、ページ、フッター）
-        pattern: Pattern = re.compile(
-            r'https://www.epochtimes.jp/category/[0-9]{3}/')
-        _ = pattern.sub('', response.url)
-        pattern: Pattern = re.compile(r'\.html')
-        now_page: int = int(pattern.sub('', _))
-
-        url_header: str = re.findall(
-            r'https://www.epochtimes.jp/category/[0-9]{3}/', response.url)[0]
-        url_footer: str = re.findall(r'\.html', response.url)[0]
-
-        # 各カテゴリーの最初のページ、and、前回からの続きの指定がある場合
-        # 前回のまでのクロール情報からurlsを各カテゴリー別に保存する。
-        if response.url in self.start_urls and 'continued' in self.kwargs_save:
-            last_time_urls: list = [
-                _['loc'] for _ in self._crawl_point[url_header]['urls']]
-
-        end_flg = False
-
-        # 現在のページ内の記事のリンクをリストへ保存
-        # １件目のアンカーと２件目以降のアンカーを取得。（１ページ目だけ１件目が<table>内に無い）
-        # 絶対パスに変換する。その際、リダイレクト先のURLへ直接リンクするよう、ドメイン/pを付与する。
-        anchors: ResultSet = soup.select(
-            '.category-left > a[href],table.table.table-hover tr > td[style] > a[href]')
-        # ページ内リンクは通常30件。それ以外の場合はワーニングメール通知
-        if not len(anchors) == 30:
-            #self.layout_change_notice(response)
-            self.logger.warning(
-                f'=== parse_start_response 1ページ内で取得できた件数が想定の30件と異なる。確認要。 ( {len(anchors)} 件)')
-
-        for anchor in anchors:
-            full_path: str = f'https://www.epochtimes.jp/p{anchor.get("href")}'
-            urls_list.append({'loc': full_path, 'lastmod': ''})
-            # 前回からの続きの指定がある場合
-            if 'continued' in self.kwargs_save:
-                # 前回取得したurlが確認できたら確認済み（削除）にする。
-                if full_path in last_time_urls:
-                    last_time_urls.remove(full_path)
-                # 前回の１ページ目のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-                if len(last_time_urls) == 0:
-                    self.logger.info(
-                        f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})')
-                    end_flg = True
-                    break
-
-        self.logger.info(
-            f'=== parse_start_response リンク件数 = {len(urls_list)}')
-
-        start_request_debug_file_generate(
-            self.name, response.url, urls_list, self.kwargs_save)
-
-        # 終了ページを超えたら終了する。
-        if now_page + 1 > end_page:
-            end_flg = True
-
-        # 各カテゴリーの最初のページの場合、次回に向け現在クロール中のカテゴリーの情報を更新する。
-        # ・1ページ目の10件をcontrollerへ保存
-        # ・Keyとなるurlには、http〜各カテゴリー(url_header)までの一部とする。
-        if response.url in self.start_urls:
-            self._crawl_point[url_header] = {
-                'urls': urls_list[0:10],
-                'crawling_start_time': self._crawling_start_time.isoformat()
-            }
-
-        # 続きがある場合、次のページを読み込む
-        if end_flg == False:
-            url_next: str = url_header + str(now_page + 1) + url_footer
->>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
-=======
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
             self.logger.info(
                 f'=== ページ内の記事件数 = {len(links)}')
             # ページ内記事は通常30件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）

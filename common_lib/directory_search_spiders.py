@@ -29,7 +29,6 @@ class DirectorySearchSpiders:
                             'selenium_mode': True,
                             'splash_mode': False},}
     '''
-<<<<<<< HEAD
 
     def __init__(self, directory_path: str = 'news_crawl/spiders') -> None:
         self.directory_path = directory_path
@@ -72,45 +71,6 @@ class DirectorySearchSpiders:
                             splash_mode = members['splash_mode'] if 'splash_mode' in members else False
                     else:
                         select_flg = False
-=======
-    class_list: list = []
-
-    # 引数で渡されたパス内のpythonモジュールファイル名を取得し、パス＋ファイル名を生成する。(fpath)
-    # 拡張子を除去＆ファイルパスのセパレータ (Unix系なら'/') を '.' に置き換え
-    # モジュールとして読み込み
-    for file_path in glob.glob(os.path.join(directory_path, '*.py')):
-        mod_path = os.path.splitext(file_path)[0].replace(os.path.sep, '.')
-        mod = importlib.import_module(mod_path)
-
-        # 読み込んだモジュールに含まれるクラス名とクラスインスタンスを呼び出す
-        for class_name, class_instans in inspect.getmembers(mod, inspect.isclass):
-
-            print(f'=== 開始{class_name}')
-            # 末尾がSpiderのクラスに限定する。
-            # ただしSpider用のクラスや継承用のクラスは除外する。
-            ptn = re.compile(r'Spider$')  #
-            exclusion_list: list = ['ExtensionsSitemapSpider', 'ExtensionsCrawlSpider',
-                                    'ExtensionsXmlFeedSpider', 'CloseSpider']
-            select_flg: bool = True
-            domain: str = ''
-            domain_name: str = ''
-            spider_name: str = ''
-            selenium_mode: bool = False
-            splash_mode: bool = False
-            if ptn.search(class_name) and \
-                    class_name not in exclusion_list:
-                members: dict = class_instans.__dict__
-                if 'allowed_domains' in members:
-                    # allowed_domainsリスト内の要素数がゼロの場合、ドメインが設定されていないスパイダーなので除外。
-                    if len(members['allowed_domains']) == 0:
-                        select_flg: bool = False
-                    else:
-                        domain = members['allowed_domains'][0]
-                        domain_name = members['_domain_name']
-                        spider_name = members['name']
-                        selenium_mode = members['selenium_mode'] if 'selenium_mode' in members else False
-                        splash_mode = members['splash_mode'] if 'splash_mode' in members else False
->>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
                 else:
                     select_flg = False
 
@@ -155,7 +115,6 @@ class DirectorySearchSpiders:
 
         return result
 
-<<<<<<< HEAD
     def separate_spider_using_selenium(self, target_spiders_name: set) -> list[list[dict[str, Any]]]:
         '''
         引数(spiders_name)で指定された対象スパイダーセットに対して、
@@ -181,19 +140,6 @@ class DirectorySearchSpiders:
         #非seleniumのスパイダーがあった場合
         if len(non_selenium):
             result.append(non_selenium)
-=======
-            # 対象のクラスの場合、クラス名、インスタンス、ドメイン名、スパイダー名のdictを生成
-            if select_flg:
-                class_list.append({
-                    'class_name': class_name,
-                    'class_instans': class_instans,
-                    'domain': domain,
-                    'domain_name': domain_name,
-                    'spider_name': spider_name,
-                    'selenium_mode': selenium_mode,
-                    'splash_mode': splash_mode,
-                })
->>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
 
         print('=== result ',result)
 
@@ -213,11 +159,8 @@ class DirectorySearchSpiders:
         # if len(non_selenium):
         #     result.append(non_selenium)
 
-<<<<<<< HEAD
         # return result
 
-=======
->>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
 if __name__ == "__main__":
     # execute only if run as a script
     directory_search_spiders = DirectorySearchSpiders()

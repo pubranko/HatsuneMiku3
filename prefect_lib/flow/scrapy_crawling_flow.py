@@ -48,11 +48,8 @@ flow.run(parameters=dict(
         #'lastmod_period_minutes': '60,',
         #'lastmod_period_minutes': '3840,3780',
         'pages': '1,1',
-<<<<<<< HEAD
         'continued':'Yes',
-=======
         #'continued':'Yes',
->>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
         # 'direct_crawl_urls':[],
         #'crawl_point_non_update':'Yes',
         #'url_pattern':'https://www.yomiuri.co.jp/national/20220430-OYT1T50050',
