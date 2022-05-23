@@ -3,6 +3,7 @@ import re
 import urllib.parse
 import pickle
 from datetime import datetime
+from time import sleep
 from typing import Pattern, Any
 from bs4.element import ResultSet
 from bs4 import BeautifulSoup as bs4
@@ -12,6 +13,7 @@ from scrapy.http import TextResponse
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import Rule
 from scrapy_selenium import SeleniumRequest
+from scrapy.exceptions import CloseSpider
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
@@ -24,7 +26,8 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-from time import sleep
+from common_lib.login_info_get import login_info_get
+
 
 class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
     name: str = 'epochtimes_jp_crawl'
@@ -154,6 +157,19 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
         driver.switch_to_frame(iframe)
 
+        # ログイン情報を取得する。
+        try:
+            yaml_file = login_info_get()
+            yaml_file[self.allowed_domains[0]]['user']
+            yaml_file[self.allowed_domains[0]]['password']
+        except Exception as e:
+            self.logger.critical(f'指定したYAMLファイルがない、またはファイルの中よりユーザー・パスワードが取得できませんでした。{e}')
+            raise CloseSpider()
+        else:
+            user = yaml_file[self.allowed_domains[0]]['user']
+            password = yaml_file[self.allowed_domains[0]]['password']
+
+
         try:
             elem: WebElement = driver.find_element_by_css_selector('#mypage')       #ログイン前なら存在
         except NoSuchElementException:  #既にログイン中ならpass
@@ -172,10 +188,10 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             # ユーザー名（email）入力
             elem: WebElement = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ymkemail')))
-            elem.send_keys('ユーザー')
+            elem.send_keys(user)
             # パスワード入力
             elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
-            elem.send_keys('パスワード')
+            elem.send_keys(password)
             # ログインボタン押下
             elem: WebElement = driver.find_element_by_css_selector('#ymk-login-btn')
             elem.click()
@@ -202,7 +218,6 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
-
 
             next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
             next_page_element = f'.main_content > .left_col > .pagination > a[href="{next_page_url}"]'
