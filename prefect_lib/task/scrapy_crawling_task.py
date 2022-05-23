@@ -33,9 +33,20 @@ class ScrapyCrawlingTask(ExtensionsTask):
         threads: list[threading.Thread] = []
         directory_search_spiders = DirectorySearchSpiders()
 
+<<<<<<< HEAD
         # spidersディレクトリより取得した一覧に存在するかチェック
         args_spiders_name = set(kwargs['spider_names'])
         for args_spider_name in args_spiders_name:
+=======
+        threads:list[threading.Thread] =[]
+
+        spiders_info: list = directory_search_spiders()
+        spiders_info_name_list = [x['spider_name'] for x in spiders_info]
+
+        # 引数で渡されたスパイダー名リストを順に処理(重複があった場合はsetで削除)
+        spider_names_set = set(kwargs['spider_names'])
+        for spider_name in spider_names_set:
+>>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
             # spidersディレクトリより取得した一覧に存在するかチェック
             if not args_spider_name in directory_search_spiders.spiders_name_list_get():
                 error_spider_names.append(args_spider_name)
@@ -43,6 +54,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
             self.logger.error(
                 f'=== scrapy crwal run : 指定されたspider_nameは存在しませんでした : {error_spider_names}')
             raise ENDRUN(state=state.Failed())
+<<<<<<< HEAD
 
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
         scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
@@ -127,5 +139,45 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
             ### 本格開発までsolrへの連動を一時停止 ###
             # solr_news_clip_save_run.check_and_save(kwargs)
+=======
+        else:
+            kwargs['spider_run_list'] = spider_run_list
+
+            この辺作りかけ。スパイダーの情報収集後、seleniumとそれ以外でリストをわけないとだめだね。
+
+            # マルチスレッド実行
+            # selenium_mode=Trueのスパイダーは単独で実行。それ以外のスパイダーはまとめて実行。
+            for idx, a in enumerate(spider_run_list):
+                kwargs['spider_run_list']
+                threads[idx] = threading.Thread(
+                    target=scrapy_crawling_run.custom_crawl_run(kwargs))
+                # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
+                threads[idx].start()
+
+            # 各スレッドが終了するまで待機
+            for idx, a in enumerate(['a']):
+                threads[idx].join()
+
+
+
+            if kwargs['following_processing_execution'] == 'Yes':
+                # 必要な引数設定
+                kwargs['start_time'] = self.start_time
+                kwargs['mongo'] = self.mongo
+                kwargs['domain'] = None
+                kwargs['crawling_start_time_from'] = self.start_time
+                kwargs['crawling_start_time_to'] = self.start_time
+                kwargs['urls'] = []
+                kwargs['scrapying_start_time_from'] = self.start_time
+                kwargs['scrapying_start_time_to'] = self.start_time
+                kwargs['scraped_save_start_time_from'] = self.start_time
+                kwargs['scraped_save_start_time_to'] = self.start_time
+
+                scrapying_run.exec(kwargs)
+                scraped_news_clip_master_save_run.check_and_save(kwargs)
+
+                ### 本格開発までsolrへの連動を一時停止 ###
+                # solr_news_clip_save_run.check_and_save(kwargs)
+>>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
 
         self.closed()
