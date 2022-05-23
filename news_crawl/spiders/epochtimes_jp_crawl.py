@@ -3,7 +3,10 @@ import re
 import urllib.parse
 import pickle
 from datetime import datetime
+<<<<<<< HEAD
 from time import sleep
+=======
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 from typing import Pattern, Any
 from bs4.element import ResultSet
 from bs4 import BeautifulSoup as bs4
@@ -26,8 +29,12 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
+<<<<<<< HEAD
 from common_lib.login_info_get import login_info_get
 
+=======
+from time import sleep
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 
 class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
     name: str = 'epochtimes_jp_crawl'
@@ -146,6 +153,9 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         取得したレスポンスよりDBへ書き込み(selenium版)
         '''
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
         driver.set_page_load_timeout(15)
@@ -158,6 +168,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
         driver.switch_to_frame(iframe)
 
+<<<<<<< HEAD
         # ログイン情報を取得する。
         try:
             yaml_file = login_info_get()
@@ -171,6 +182,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             password = yaml_file[self.allowed_domains[0]]['password']
 
 
+=======
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
         try:
             elem: WebElement = driver.find_element_by_css_selector('#mypage')       #ログイン前なら存在
         except NoSuchElementException:  #既にログイン中ならpass
@@ -189,10 +202,17 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             # ユーザー名（email）入力
             elem: WebElement = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ymkemail')))
+<<<<<<< HEAD
             elem.send_keys(user)
             # パスワード入力
             elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
             elem.send_keys(password)
+=======
+            elem.send_keys('ユーザー')
+            # パスワード入力
+            elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
+            elem.send_keys('パスワード')
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
             # ログインボタン押下
             elem: WebElement = driver.find_element_by_css_selector('#ymk-login-btn')
             elem.click()
@@ -219,6 +239,10 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
+<<<<<<< HEAD
+=======
+
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
 
             next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
             next_page_element = f'.main_content > .left_col > .pagination > a[href="{next_page_url}"]'
@@ -229,6 +253,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             _ = driver.find_elements_by_css_selector(
                 f'.main_content > .left_col > .posts_list .post_title > a[href]')
             links: list = [link.get_attribute("href") for link in _]
+<<<<<<< HEAD
 =======
         # 各カテゴリー別に前回取得済みのurls情報を保存
         last_time_urls: list = []
@@ -312,6 +337,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         if end_flg == False:
             url_next: str = url_header + str(now_page + 1) + url_footer
 >>>>>>> 9e662a5f4c9fb102137ee28aaf08ae8778c8456f
+=======
+>>>>>>> 09aea8511e3e17405c973148f3d5026c38bd4cd2
             self.logger.info(
                 f'=== ページ内の記事件数 = {len(links)}')
             # ページ内記事は通常30件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
