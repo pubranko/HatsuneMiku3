@@ -1,19 +1,23 @@
 from __future__ import annotations
 import pickle
 import scrapy
+from typing import Union, Any
 from datetime import datetime
 from scrapy.spiders import CrawlSpider
-from scrapy.http import Response
+from scrapy.http import Response, Request, TextResponse
+from urllib.parse import unquote
 from news_crawl.items import NewsCrawlItem
 from models.mongo_model import MongoModel
-from news_crawl.spiders.common.spider_init import spider_init
-from news_crawl.spiders.common.spider_closed import spider_closed
 from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
+from scrapy_splash import SplashRequest
+from scrapy_splash.response import SplashTextResponse
+from news_crawl.spiders.common.spider_init import spider_init
+from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
-
+from news_crawl.spiders.common.pagination_check import PaginationCheck
 
 class ExtensionsCrawlSpider(CrawlSpider):
     '''
@@ -47,12 +51,18 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # splashモード
     splash_mode: bool = False
 
-    crawl_urls_list: list = []
+    # 一覧ページの情報を保存 [{'source_url': '', 'lastmod': '', 'loc': ''},,,]
+    crawl_urls_list: list[dict[str,Any]] = []
+
+    # クロール対象となったurlリスト[response.url,,,]
+    crawl_target_urls: list[str] = []
+
 
     # パラメータによる抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
     url_continued: UrlsContinuedSkipCheck
+    pagination_check: PaginationCheck
 
 
     def __init__(self, *args, **kwargs):
@@ -63,21 +73,46 @@ class ExtensionsCrawlSpider(CrawlSpider):
 
         spider_init(self, *args, **kwargs)
 
+        self.pagination_check = PaginationCheck()
+
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(
                 url, callback=self._parse,  # dont_filter=True
             )
 
-    def parse_news(self, response: Response):
+    def parse_news(self, response: TextResponse):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        pagination: ResultSet = self.pagination_check(response)
-        if len(pagination) > 0:
-            self.logger.info(
-                f"=== parse_news 次のページあり → リクエストに追加 : {pagination[0].get('href')}")
-            yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news)
+        #pagination: ResultSet = self.pagination_check(response)
+        # if len(pagination) > 0:
+        #     self.logger.info(
+        #         f"=== parse_news 次のページあり → リクエストに追加 : {pagination[0].get('href')}")
+        #     yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news)
+
+        # selenium、splash、通常モードにより処理を切り分ける
+        meta = {}
+        args = {}
+
+        urls: set = set()
+        req: list = []
+        # ページ内の全リンクを抽出（重複分はsetで削除）
+        for link in set(response.css('[href]::attr(href)').getall()):
+            # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
+            link_url: str = unquote(response.urljoin(link))
+            # リンクのurlが対象としたurlの別ページで抽出されていなかった場合リクエストへ追加
+            if self.pagination_check.check(link_url, self.crawl_target_urls, self.logger, self.name):
+                urls.add(link_url)
+
+        for url in urls:
+            if self.splash_mode:
+                req.append(SplashRequest(
+                    url=url, callback=self.parse, meta=meta, args=args))
+            else:
+                req.append(scrapy.Request(url=url, callback=self.parse))
+        yield from req
+
 
         _info = self.name + ':' + str(self._spider_version) + ' / ' \
             + 'extensions_crawl:' + str(self._extensions_crawl_version)
@@ -100,12 +135,12 @@ class ExtensionsCrawlSpider(CrawlSpider):
             source_of_information=source_of_information,
         )
 
-    def pagination_check(self, response: Response) -> ResultSet:
-        '''(拡張メソッド)
-        次ページがあれば、BeautifulSoupのResultSetで返す。
-        このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
-        '''
-        return ResultSet(response.text, [])
+    # def pagination_check(self, response: Response) -> ResultSet:
+    #     '''(拡張メソッド)
+    #     次ページがあれば、BeautifulSoupのResultSetで返す。
+    #     このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
+    #     '''
+    #     return ResultSet(response.text, [])
 
     def closed(self, spider):
         '''spider終了処理'''

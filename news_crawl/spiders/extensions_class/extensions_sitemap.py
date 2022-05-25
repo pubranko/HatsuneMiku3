@@ -2,16 +2,12 @@ from __future__ import annotations
 from copy import deepcopy
 import pickle
 import scrapy
-import re
 from typing import Union, Any
 from datetime import datetime, timedelta
 from dateutil import parser
 from lxml.etree import _Element
-from urllib.parse import urlparse, urljoin, parse_qs, unquote
-from urllib.parse import ParseResult
+from urllib.parse import unquote
 from bs4 import BeautifulSoup as bs4
-from bs4.element import Tag
-from bs4.element import ResultSet
 from scrapy.spiders import SitemapSpider
 from scrapy.spiders.sitemap import iterloc
 from scrapy.http import Response, Request, TextResponse
@@ -20,17 +16,17 @@ from scrapy_selenium import SeleniumRequest
 from scrapy_splash import SplashRequest
 from scrapy_splash.response import SplashTextResponse
 from selenium.webdriver.remote.webdriver import WebDriver
-from news_crawl.items import NewsCrawlItem
-from models.mongo_model import MongoModel
 #
+from news_crawl.items import NewsCrawlItem
+from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
+from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
+from news_crawl.spiders.common.pagination_check import PaginationCheck
+from news_crawl.spiders.common.custom_sitemap import CustomSitemap
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
-from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
-from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-from news_crawl.spiders.common.custom_sitemap import CustomSitemap
-
+from models.mongo_model import MongoModel
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -78,6 +74,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # パラメータによる抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
+    pagination_check: PaginationCheck
     # seleniumモード
     selenium_mode: bool = False
     #sitemap_rules = [(r'.*', 'selenium_parse')]
@@ -91,11 +88,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # irregular             : イレギラーなサイト用
     sitemap_type = 'nomal'
 
-    # sitemap情報を保存
-    crawl_urls_list: list = []
+    # sitemap情報を保存 [{'source_url': response.url, 'lastmod': date_lastmod, 'loc': entry['loc']},,,]
+    crawl_urls_list: list[dict[str,Any]] = []
 
-    # クロール対象となったsitemapのurlリスト
-    crawl_target_urls: list = []
+    # クロール対象となったsitemapのurlリスト[response.url,,,]
+    crawl_target_urls: list[str] = []
 
     # 既知のページネーションがある場合、ここにcssセレクター形式で設定する。
     # 注意）href属性の値を取得するように指定すること。
@@ -112,6 +109,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         spider_init(self, *args, **kwargs)
 
+        self.pagination_check = PaginationCheck()
+
     def start_requests(self):
         '''(オーバーライド)
         引数にdirect_crawl_urlsがある場合、sitemapを無視して渡されたurlsをクロールさせる機能を追加。
@@ -119,9 +118,10 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         if 'direct_crawl_urls' in self.kwargs_save:
             for loc in self.kwargs_save['direct_crawl_urls']:
-                self.crawl_target_urls.append(loc)  # しかたなくsitemapから取得したことにして後続を実施
+                # しかたなくsitemapから取得したことにして後続を実施
+                self.crawl_target_urls.append(loc)
                 if self.selenium_mode:
-                    yield SeleniumRequest(url=loc, callback=self.selenium_parse,wait_time=2)
+                    yield SeleniumRequest(url=loc, callback=self.selenium_parse, wait_time=2)
                 elif self.splash_mode:
                     yield SplashRequest(url=loc, callback=self.parse,
                                         meta={'max_retry_times': 20},
@@ -214,7 +214,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 # sitemap側と実際のソースは常に一致するわけではなさそう。
                 # バッファとして2日間分範囲を広げてチェックする。
                 if self.lastmod_period.skip_check(date_lastmod + timedelta(days=2)):
-                   crwal_flg = False
+                    crwal_flg = False
                 if self.crawling_continued.skip_check(date_lastmod):
                     crwal_flg = False
             else:
@@ -274,8 +274,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
             }
 
         # 既知のページネーションページ内の対象urlを抽出
-        urls:set = set()
-        req:list = []
+        urls: set = set()
+        req: list = []
         for css_selector in self.known_pagination_css_selectors:
             # 既知のページネーションのurlの場合リクエストへ追加
             links = response.css(f'{css_selector}::attr(href)').getall()
@@ -293,12 +293,13 @@ class ExtensionsSitemapSpider(SitemapSpider):
             link_url: str = unquote(response.urljoin(link))
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
-            if self.pagination_check(link_url):
+            if self.pagination_check.check(link_url, self.crawl_target_urls, self.logger, self.name):
                 urls.add(link_url)
 
         for url in urls:
             if self.splash_mode:
-                req.append(SplashRequest(url=url, callback=self.parse, meta=meta, args=args))
+                req.append(SplashRequest(
+                    url=url, callback=self.parse, meta=meta, args=args))
             else:
                 req.append(scrapy.Request(url=url, callback=self.parse))
         yield from req
@@ -333,7 +334,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         driver: WebDriver = any.meta['driver']
 
         driver.set_page_load_timeout(15)
-        #driver.implicitly_wait(15)
+        # driver.implicitly_wait(15)
         driver.set_script_timeout(15)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
@@ -342,11 +343,11 @@ class ExtensionsSitemapSpider(SitemapSpider):
         #   unknown_links = set([unquote(el.get_attribute("href")) for el in driver.find_elements_by_css_selector('[href]')])
         soup: bs4 = bs4(driver.page_source, 'lxml')
         _ = soup.select('[href]')
-        unknown_links = [ a['href'] for a in _]
+        unknown_links = [a['href'] for a in _]
 
         # 既知のページネーションページ内の対象urlを抽出
-        urls:set = set()
-        req:list = []
+        urls: set = set()
+        req: list = []
         for css_selector in self.known_pagination_css_selectors:
             # 既知のページネーションのurlの場合リクエストへ追加
             elem = driver.find_elements_by_css_selector(css_selector)
@@ -364,11 +365,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
             link_url: str = unquote(response.urljoin(link))
             # リンクのurlがsitemapで対象としたurlの別ページ、かつ、既知のページネーションで
             # 抽出されていなかった場合リクエストへ追加
-            if self.pagination_check(link_url):
+            if self.pagination_check.check(link_url, self.crawl_target_urls, self.logger, self.name):
                 urls.add(link_url)
 
         for url in urls:
-            req.append(SeleniumRequest(url=url, callback=self.selenium_parse, wait_time=2))
+            req.append(SeleniumRequest(
+                url=url, callback=self.selenium_parse, wait_time=2))
         yield from req
         ###
 
@@ -412,93 +414,99 @@ class ExtensionsSitemapSpider(SitemapSpider):
         '''
         return d
 
-    def pagination_check(self, link_url: str) -> bool:
-        ''' '''
-        check_flg: bool = False  # ページネーションのリンクの場合、Trueとする。
-        # チェック対象のurlを解析
-        link_parse: ParseResult = urlparse(link_url)
-        # 解析したクエリーをdictへ変換 page=2&a=1&b=2 -> {'page': ['2'], 'a': ['1'], 'b': ['2']}
-        link_query: dict = parse_qs(link_parse.query)
+    # def temp_pagination_check(self, link_url: str) -> bool:
+    #     ''' '''
+    #     check_flg: bool = False  # ページネーションのリンクの場合、Trueとする。
+    #     # チェック対象のurlを解析
+    #     link_parse: ParseResult = urlparse(link_url)
+    #     # 解析したクエリーをdictへ変換 page=2&a=1&b=2 -> {'page': ['2'], 'a': ['1'], 'b': ['2']}
+    #     link_query: dict = parse_qs(link_parse.query)
 
-        # 追加リクエスト済み情報の準備
-        pagination_selected_pathes:set = set()
-        pagination_selected_same_path_queries:list = []
-        for pagination_selected_url in self.pagination_selected_urls:
-            _ = urlparse(pagination_selected_url)
-            pagination_selected_pathes.add(_.path)
-            if link_parse.path == _.path:
-                pagination_selected_same_path_queries.append(parse_qs(_.query))
+    #     # 追加リクエスト済み情報の準備
+    #     pagination_selected_pathes: set = set()
+    #     pagination_selected_same_path_queries: list = []
+    #     for pagination_selected_url in self.pagination_selected_urls:
+    #         _ = urlparse(pagination_selected_url)
+    #         pagination_selected_pathes.add(_.path)
+    #         if link_parse.path == _.path:
+    #             pagination_selected_same_path_queries.append(parse_qs(_.query))
 
-        # sitemapから取得したurlより順にチェック
-        for _ in self.crawl_target_urls:
-            # sitemapから取得したurlを解析
-            crawl_target_parse: ParseResult = urlparse(_)
-            # netloc（hostnameだけでなくportも含む）が一致すること
-            if crawl_target_parse.netloc == link_parse.netloc:
-                # まだ同一ページの追加リクエストされていない場合（path部分で判定）
-                if not link_parse.path in pagination_selected_pathes:
-                    # パスの末尾にページが付与されているケースの場合、追加リクエストの対象とする。
-                    # 例）https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/
-                    #     https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/2/
-                    _ = re.compile(r'/[0-9]{1,3}/*$')
-                    if re.search(_, link_parse.path):
-                        # pathの末尾のページ情報を削除
-                        link_type1 = _.sub('', link_parse.path)    # 例）〜OYT1T50226/2/ -> 〜OYT1T50226
-                        # 末尾のスラッシュがあれば削除
-                        _ = re.compile(r'/$')
-                        crawl_type1 = _.sub('', crawl_target_parse.path)
-                        # ページ情報部を除いて比較し一致した場合
-                        if crawl_type1 == link_type1:
-                            self.logger.info(
-                                f'=== {self.name} ページネーションtype1 : {link_url}')
-                            check_flg = True
+    #     # sitemapから取得したurlより順にチェック
+    #     for _ in self.crawl_target_urls:
+    #         # sitemapから取得したurlを解析
+    #         crawl_target_parse: ParseResult = urlparse(_)
+    #         # netloc（hostnameだけでなくportも含む）が一致すること
+    #         if crawl_target_parse.netloc == link_parse.netloc:
+    #             # まだ同一ページの追加リクエストされていない場合（path部分で判定）
+    #             if not link_parse.path in pagination_selected_pathes:
+    #                 # パスの末尾にページが付与されているケースの場合、追加リクエストの対象とする。
+    #                 # 例）https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/
+    #                 #     https://www.sankei.com/article/20210321-VW5B7JJG7JKCBG5J6REEW6ZTBM/2/
+    #                 _ = re.compile(r'/[0-9]{1,3}/*$')
+    #                 if re.search(_, link_parse.path):
+    #                     # pathの末尾のページ情報を削除
+    #                     # 例）〜OYT1T50226/2/ -> 〜OYT1T50226
+    #                     link_type1 = _.sub('', link_parse.path)
+    #                     # 末尾のスラッシュがあれば削除
+    #                     _ = re.compile(r'/$')
+    #                     crawl_type1 = _.sub('', crawl_target_parse.path)
+    #                     # ページ情報部を除いて比較し一致した場合
+    #                     if crawl_type1 == link_type1:
+    #                         self.logger.info(
+    #                             f'=== {self.name} ページネーションtype1 : {link_url}')
+    #                         check_flg = True
 
-                    # 拡張子除去後の末尾にページが付与されているケースの場合、追加リクエストの対象とする。
-                    # 例）https://www.sankei.com/politics/news/210521/plt2105210030-n1.html
-                    #     https://www.sankei.com/politics/news/210521/plt2105210030-n2.html
-                    _ = re.compile(r'[^0-9][0-9]{1,3}\.(html|htm)$')
-                    if re.search(_, link_parse.path):
-                        link_type2 = _.sub('', link_parse.path) # 例）〜n1.html -> 〜n
-                        crawl_type2 = _.sub('', crawl_target_parse.path)
-                        # 末尾の拡張子やページ情報を除いて比較し一致した場合
-                        if crawl_type2 == link_type2:
-                            self.logger.info(
-                                f'=== {self.name} ページネーションtype2 : {link_url}')
-                            check_flg = True
+    #                 # 拡張子除去後の末尾にページが付与されているケースの場合、追加リクエストの対象とする。
+    #                 # 例）https://www.sankei.com/politics/news/210521/plt2105210030-n1.html
+    #                 #     https://www.sankei.com/politics/news/210521/plt2105210030-n2.html
+    #                 _ = re.compile(r'[^0-9][0-9]{1,3}\.(html|htm)$')
+    #                 if re.search(_, link_parse.path):
+    #                     # 例）〜n1.html -> 〜n
+    #                     link_type2 = _.sub('', link_parse.path)
+    #                     crawl_type2 = _.sub('', crawl_target_parse.path)
+    #                     # 末尾の拡張子やページ情報を除いて比較し一致した場合
+    #                     if crawl_type2 == link_type2:
+    #                         self.logger.info(
+    #                             f'=== {self.name} ページネーションtype2 : {link_url}')
+    #                         check_flg = True
 
-                # クエリーにページが付与されているケースの場合、追加リクエストの対象とする。
-                # ただし、以下の場合は対象外。
-                # ・既に同一ページの追加リクエスト済みの場合。
-                # ・１ページ目の場合。※sitemap側でリクエスト済みのため。
-                # 例）https://webronza.asahi.com/national/articles/2022042000004.html
-                #     https://webronza.asahi.com/national/articles/2022042000004.html?a=b&c=d
-                #     https://webronza.asahi.com/national/articles/2022042000004.html?page=1&a=b&e=f
-                #     https://webronza.asahi.com/national/articles/2022042000004.html?page=1&m=n&g=h
-                #     https://webronza.asahi.com/national/articles/2022042000004.html?page=2&a=b&e=f
-                #     https://webronza.asahi.com/national/articles/2022042000004.html?page=2&m=n&g=h
-                if crawl_target_parse.path == link_parse.path:
-                    # リンクのクエリーにページ指定と思われるkeyの存在チェック （複数該当することは無いことを祈る、、、）
-                    page_keys = ['page', 'pagination', 'pager', 'p']
-                    link_query_selected_items:list[tuple] = []
-                    for link_query_key,link_query_value in link_query.items():
-                        if  link_query_key in page_keys:
-                            link_query_selected_items.append((link_query_key,link_query_value))
+    #             # クエリーにページが付与されているケースの場合、追加リクエストの対象とする。
+    #             # ただし、以下の場合は対象外。
+    #             # ・既に同一ページの追加リクエスト済みの場合。
+    #             # ・１ページ目の場合。※sitemap側でリクエスト済みのため。
+    #             # 例）https://webronza.asahi.com/national/articles/2022042000004.html
+    #             #     https://webronza.asahi.com/national/articles/2022042000004.html?a=b&c=d
+    #             #     https://webronza.asahi.com/national/articles/2022042000004.html?page=1&a=b&e=f
+    #             #     https://webronza.asahi.com/national/articles/2022042000004.html?page=1&m=n&g=h
+    #             #     https://webronza.asahi.com/national/articles/2022042000004.html?page=2&a=b&e=f
+    #             #     https://webronza.asahi.com/national/articles/2022042000004.html?page=2&m=n&g=h
+    #             if crawl_target_parse.path == link_parse.path:
+    #                 # リンクのクエリーにページ指定と思われるkeyの存在チェック （複数該当することは無いことを祈る、、、）
+    #                 page_keys = ['page', 'pagination', 'pager', 'p']
+    #                 link_query_selected_items: list[tuple] = []
+    #                 for link_query_key, link_query_value in link_query.items():
+    #                     if link_query_key in page_keys:
+    #                         link_query_selected_items.append(
+    #                             (link_query_key, link_query_value))
 
-                    # linkにpege系クエリーがあった場合、
-                    for link_query_selected_item in link_query_selected_items:
-                        check_flg = True
-                        for same_path_query in pagination_selected_same_path_queries:
-                            if link_query_selected_item[0] in same_path_query: #keyが一致
-                                if link_query_selected_item[1][0] == same_path_query[link_query_selected_item[0]][0]: #valueが一致(同一ページ)した場合は対象外
-                                    check_flg = False
-                                elif link_query_selected_item[1][0] == str(1):   #page=1は対象外
-                                    check_flg = False
-                        if check_flg:
-                            self.logger.info(
-                                f'=== {self.name} ページネーションtype3 : {link_url}')
+    #                 # linkにpege系クエリーがあった場合、
+    #                 for link_query_selected_item in link_query_selected_items:
+    #                     check_flg = True
+    #                     for same_path_query in pagination_selected_same_path_queries:
+    #                         # keyが一致
+    #                         if link_query_selected_item[0] in same_path_query:
+    #                             # valueが一致(同一ページ)した場合は対象外
+    #                             if link_query_selected_item[1][0] == same_path_query[link_query_selected_item[0]][0]:
+    #                                 check_flg = False
+    #                             # page=1は対象外
+    #                             elif link_query_selected_item[1][0] == str(1):
+    #                                 check_flg = False
+    #                     if check_flg:
+    #                         self.logger.info(
+    #                             f'=== {self.name} ページネーションtype3 : {link_url}')
 
-        # クロール対象となったurlを保存
-        if check_flg:
-            self.pagination_selected_urls.add(link_url)
+    #     # クロール対象となったurlを保存
+    #     if check_flg:
+    #         self.pagination_selected_urls.add(link_url)
 
-        return check_flg
+    #     return check_flg

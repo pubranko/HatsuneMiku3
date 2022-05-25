@@ -130,6 +130,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
                         {'loc': url, 'lastmod': '', 'source_url': driver.current_url})
+                    self.crawl_target_urls.append(url)
 
             # debug指定がある場合、現ページの１０件をデバック用ファイルに保存
             start_request_debug_file_generate(
