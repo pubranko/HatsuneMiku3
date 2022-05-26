@@ -37,6 +37,7 @@ jmespath==0.10.0
 Kivy==2.0.0
 Kivy-Garden==0.1.4
 locket==0.2.1
+loginform==1.2.0
 lxml==4.6.3
 marshmallow==3.13.0
 marshmallow-oneofschema==3.0.1
