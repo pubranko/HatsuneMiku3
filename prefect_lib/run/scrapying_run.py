@@ -63,11 +63,7 @@ def exec(kwargs: dict):
     logger.info(f'=== crawler_responseへのfilter: {str(filter)}')
 
     # スクレイピング対象件数を確認
-    record_count = crawler_response.find(
-        projection=None,
-        filter=filter,
-        sort=[('domain', ASCENDING)],
-    ).count()
+    record_count = crawler_response.count(filter=filter)
     logger.info(f'=== crawler_response スクレイピング対象件数 : {str(record_count)}')
 
     # 件数制限でスクレイピング処理を実施

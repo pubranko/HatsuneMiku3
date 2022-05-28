@@ -84,7 +84,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             conditions.append(
                 {'domain': scraper_info_by_domain_data.domain_get()})
             filter: Any = {'$and': conditions}
-            record_count = news_clip_master.find(filter=filter).count()
+            record_count = news_clip_master.count(filter=filter)
             self.logger.info(
                 f'=== ScrapyingPatternReportTask run news_clip_master domain = {scraper_info_by_domain_data.domain_get()},  件数 = {str(record_count)}')
 
@@ -150,7 +150,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
 
         scraper_info_by_domain_records: Cursor = scraper_info_by_domain.find()
         self.logger.info(
-            f'=== ドメイン別スクレイパー情報({scraper_info_by_domain_records.count()})')
+            f'=== ドメイン別スクレイパー情報({scraper_info_by_domain.count()})')
 
         scraper_info_list: list = []
         for scraper_info_by_domain_record in scraper_info_by_domain_records:

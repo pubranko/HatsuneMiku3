@@ -1,5 +1,6 @@
 from email import generator
 from numpy import generic
+from typing import Union
 from pymongo import collection
 from models.mongo_model import MongoModel
 from pymongo.cursor import Cursor
@@ -16,6 +17,28 @@ class MongoCommonModel(object):
     def __init__(self, mongo: MongoModel):
         self.mongo = mongo
 
+    def count(self, filter:Union[dict,None]=None):
+        '''
+        コレクションのカウント。
+        絞り込み条件がある場合、filterを指定してください。
+        コレクション内ドキュメント総数のカウントであれば、filterにはNoneを指定してください。
+        '''
+        if type(filter) is dict:
+            return self.count_documents(filter)
+        else:
+            return self.estimated_document_count()
+
+    def count_documents(self, filter:dict):
+        '''
+        コレクション内の条件付き件数のカウント。
+        絞り込み条件がある場合、filterを指定してください。
+        '''
+        return self.mongo.mongo_db[self.collection_name].count_documents(filter=filter)
+
+    def estimated_document_count(self):
+        '''コレクション内のドキュメント総数のカウント'''
+        return self.mongo.mongo_db[self.collection_name].estimated_document_count()
+
     def find_one(self, projection=None, filter=None):
         return self.mongo.mongo_db[self.collection_name].find_one(projection=projection, filter=filter)
 
@@ -27,11 +50,15 @@ class MongoCommonModel(object):
         self.mongo.mongo_db[self.collection_name].insert_one(item)
 
     def insert(self, items: list):
-        self.mongo.mongo_db[self.collection_name].insert(items)
+        self.mongo.mongo_db[self.collection_name].insert_many(items)
 
-    def update(self, filter, record: dict) -> None:
-        self.mongo.mongo_db[self.collection_name].update(
+    def update_one(self, filter, record: dict) -> None:
+        self.mongo.mongo_db[self.collection_name].update_one(
             filter, record, upsert=True)
+
+    # def update_many(self, filter, record: dict) -> None:
+    #     self.mongo.mongo_db[self.collection_name].update_many(
+    #         filter, record, upsert=True)
 
     def delete_many(self, filter) -> int:
         result = self.mongo.mongo_db[self.collection_name].delete_many(
@@ -56,7 +83,8 @@ class MongoCommonModel(object):
                 pass
         '''
         # 対象件数を確認
-        record_count = self.find(filter=filter).count()
+        #record_count = self.find(filter=filter).count()
+        record_count = self.mongo.mongo_db[self.collection_name].count_documents(filter=filter)
         # 100件単位で処理を実施
         skip_list = list(range(0, record_count, limit))
         for skip in skip_list:

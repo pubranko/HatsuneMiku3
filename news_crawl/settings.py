@@ -180,7 +180,8 @@ INSTALL_ROOT_HANDLER=False
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+#SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+SELENIUM_DRIVER_ARGUMENTS = []
 # ブラウザ・通信の不可軽減のため、独自の設定を追加してみた。
 #   その他の設定については、ここが参考になりそう https://www.programcreek.com/python/example/100026/selenium.webdriver.FirefoxProfile
 #   1:通常、2:禁止

@@ -6,8 +6,7 @@ from importlib import import_module
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
 from scrapy.http import HtmlResponse
-from selenium.webdriver.support.ui import WebDriverWait
-
+from selenium.webdriver.support.wait import WebDriverWait
 from scrapy_selenium.http import SeleniumRequest
 
 # カスタム

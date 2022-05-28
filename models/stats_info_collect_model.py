@@ -26,4 +26,4 @@ class StatsInfoCollectModel(MongoCommonModel):
                     {status_key: record[status_key]})
             filter: Any = {'$and': conditions}
 
-            self.update(filter=filter, record=record)
+            self.update_one(filter, {"$set":record})

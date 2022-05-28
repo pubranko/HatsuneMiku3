@@ -140,10 +140,10 @@ class StatsAnalysisReportTask(ExtensionsTask):
             f'=== StatsAnalysisReportTask run 基準日from ~ to : {self.stats_analysis_report_input.base_date_get()}')
 
         # 入力パラメータのレポート期間内の統計情報集計レコードを取得
-        stats_info_collect_records: Cursor = self.stats_info_collect_get()
+        stats_info_collect_records, record_count = self.stats_info_collect_get()
 
         # レコードがあれば
-        if stats_info_collect_records.count():
+        if record_count:
             # 統計情報集計レコードよりデータフレームを復元する。
             collect_data = StatsInfoCollectData()
             for stats_info_collect_record in stats_info_collect_records:
@@ -209,7 +209,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 終了処理
         self.closed()
 
-    def stats_info_collect_get(self) -> Cursor:
+    def stats_info_collect_get(self) -> tuple[Cursor,int]:
         '''
         mongoDBより指定期間内の統計情報集計レコードを取得して返す。
         '''
@@ -221,14 +221,17 @@ class StatsAnalysisReportTask(ExtensionsTask):
         conditions.append({'start_time': {'$lt': base_date_to}})
         log_filter: Any = {'$and': conditions}
 
+        record_count:int = stats_info_collect_model.count(filter=log_filter)
+
         stats_info_collect_records: Cursor = stats_info_collect_model.find(
             filter=log_filter,
             projection={'_id': 0, 'parameter': 0}
         )
-        self.logger.info(
-            f'=== 統計情報レポート件数({stats_info_collect_records.count()})')
 
-        return stats_info_collect_records
+        self.logger.info(
+            f'=== 統計情報レポート件数({record_count})')
+
+        return stats_info_collect_records, record_count
 
     def collect_result_analysis_report_edit_header(
             self, ws: Worksheet,            # レポートの出力先のワークシート

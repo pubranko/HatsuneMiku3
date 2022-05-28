@@ -16,7 +16,7 @@ from common_lib.timezone_recovery import timezone_recovery
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 
 
-def check_and_save(kwargs:dict):
+def check_and_save(kwargs: dict):
     '''あとで'''
     global logger
     start_time: datetime = kwargs['start_time']
@@ -45,9 +45,7 @@ def check_and_save(kwargs:dict):
     logger.info('=== news_clip_master へのfilter: ' + str(filter))
 
     # 対象件数を確認
-    record_count = news_clip_master.find(
-        filter=filter,
-    ).count()
+    record_count = news_clip_master.count(filter=filter)
     logger.info('=== solr の news_clip への登録チェック対象件数 : ' + str(record_count))
 
     solr_news_clip = SolrNewsClip(logger)
@@ -58,7 +56,7 @@ def check_and_save(kwargs:dict):
     for skip in skip_list:
         master_records: Cursor = news_clip_master.find(
             filter=filter,
-            sort=[('response_time',ASCENDING)],
+            sort=[('response_time', ASCENDING)],
         ).skip(skip).limit(limit)
 
         for master_record in master_records:
@@ -79,7 +77,7 @@ def check_and_save(kwargs:dict):
                 for solr_recode in solr_results.docs:
                     # 重複チェック
                     if master_record['title'] == solr_recode['title'] and \
-                            master_record['article'] == solr_recode['article']: # and \
+                            master_record['article'] == solr_recode['article']:  # and \
                         logger.info('=== solrに登録済みのためスキップ: ' +
                                     str(new_record['url']))
                     else:

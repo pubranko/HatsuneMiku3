@@ -29,21 +29,25 @@ with Flow(
         'backup_dir_from', required=True,)
     backup_dir_to = Parameter(
         'backup_dir_to', required=True,)
+    prefix = Parameter(
+        'prefix', required=True,)
     task = MongoImportSelectorTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(collections_name=collections_name,
+                  prefix=prefix,
                   backup_dir_from=backup_dir_from,
-                  backup_dir_to=backup_dir_to)
+                  backup_dir_to=backup_dir_to,)
 
 flow.run(parameters=dict(
     collections_name=[
-        # 'crawler_response',
-        # 'scraped_from_response',
-        # 'news_clip_master',
+        'crawler_response',
+        'scraped_from_response',
+        'news_clip_master',
         'crawler_logs',
-        # 'asynchronous_report',
-        # 'controller',
+        'asynchronous_report',
+        'controller',
     ],
+    prefix='test',
     backup_dir_from='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
-    backup_dir_to='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    backup_dir_to='2022-05',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
 ))

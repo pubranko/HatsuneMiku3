@@ -54,9 +54,9 @@ class ScraperInfoUploaderTask(ExtensionsTask):
                 self.logger.error(
                     f'=== ScraperInfoUploaderTask run エラー({file_name}) : {error_info[0]["msg"]}')
             else:
-                scraper_info_by_domain_model.update(
+                scraper_info_by_domain_model.update_one(
                     filter={'domain': scraper_info['domain']},
-                    record=scraper_info)
+                    record={"$set":scraper_info})
 
             # 処理の終わったファイルオブジェクトを削除
             del file, scraper_info

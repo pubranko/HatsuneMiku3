@@ -87,7 +87,7 @@ def check(kwargs: dict):
                 )
 
                 # crawler_response側に存在しないクロール対象urlがある場合
-                if response_records.count() == 0:
+                if crawler_response.count(filter=master_filter) == 0:
                     response_async_list.append(crawl_url)
                     # 非同期ドメイン集計カウントアップ
                     response_async_domain_aggregate[log_record['domain']] += 1
@@ -113,7 +113,7 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'news_crawl_async',
                 'start_time': start_time,
-                'parameter':{
+                'parameter': {
                     'domain': domain,
                     'start_time_from': start_time_from,
                     'start_time_to': start_time_to,
@@ -124,7 +124,8 @@ def check(kwargs: dict):
             logger.error(
                 f'=== 同期チェック結果(crawler -> response) : NG({counter})')
         else:
-            logger.info(f'=== 同期チェック(crawler -> response)結果 : OK(件数 : {len(response_sync_list)})')
+            logger.info(
+                f'=== 同期チェック(crawler -> response)結果 : OK(件数 : {len(response_sync_list)})')
 
         return response_sync_list, response_async_list, response_async_domain_aggregate
 
@@ -149,7 +150,7 @@ def check(kwargs: dict):
             )
 
             # news_clip_master側に存在しないcrawler_responseがある場合
-            if master_records.count() == 0:
+            if news_clip_master.count(filter=master_filter) == 0:
                 if not 'news_clip_master_register' in response_sync:
                     master_async_list.append(response_sync['url'])
 
@@ -179,7 +180,7 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'news_clip_master_async',
                 'start_time': start_time,
-                'parameter':{
+                'parameter': {
                     'domain': domain,
                     'start_time_from': start_time_from,
                     'start_time_to': start_time_to,
@@ -189,7 +190,8 @@ def check(kwargs: dict):
             counter = f'エラー({len(master_async_list)})/正常({len(master_sync_list)})'
             logger.error(f'=== 同期チェック結果(response -> master) : NG({counter})')
         else:
-            logger.info(f'=== 同期チェック結果(response -> master) : OK(件数 : {len(master_sync_list)})')
+            logger.info(
+                f'=== 同期チェック結果(response -> master) : OK(件数 : {len(master_sync_list)})')
         return master_sync_list, master_async_list, master_async_domain_aggregate
 
     def solr_news_clip_sync_check() -> Tuple[list, list, dict]:
@@ -242,7 +244,7 @@ def check(kwargs: dict):
             asynchronous_report_model.insert_one({
                 'record_type': 'solr_news_clip_async',
                 'start_time': start_time,
-                'parameter':{
+                'parameter': {
                     'domain': domain,
                     'start_time_from': start_time_from,
                     'start_time_to': start_time_to,
@@ -252,7 +254,8 @@ def check(kwargs: dict):
             counter = f'エラー({len(solr_async_list)})/正常({len(solr_sync_list)})'
             logger.error(f'=== 同期チェック結果(master -> solr) : NG({counter})')
         else:
-            logger.info('=== 同期チェック結果(master -> solr) : OK(件数 : {len(solr_sync_list)})')
+            logger.info(
+                '=== 同期チェック結果(master -> solr) : OK(件数 : {len(solr_sync_list)})')
 
         return solr_sync_list, solr_async_list, solr_async_domain_aggregate
 
@@ -275,7 +278,9 @@ def check(kwargs: dict):
     response_sync_list, response_async_list, response_async_domain_aggregate = crawler_response_sync_check()
     # crawler_responseとnews_clip_masterが同期しているかチェックする。
     master_sync_list, master_async_list, master_async_domain_aggregate = news_clip_master_sync_check()
-    solr_sync_list, solr_async_list, solr_async_domain_aggregate = solr_news_clip_sync_check()
+
+    # 当分の間solrとの同期チェックは中止。solr側の本格開発が始まってから開放予定。
+    #solr_sync_list, solr_async_list, solr_async_domain_aggregate = solr_news_clip_sync_check()
 
     title: str = '【クローラー同期チェック：非同期発生】' + start_time.isoformat()
     message: str = ''
@@ -296,13 +301,14 @@ def check(kwargs: dict):
             if item[1] > 0:
                 message = message + item[0] + ' : ' + str(item[1]) + ' 件\n'
 
-    # solrへの送信ミス分のurlがあれば
-    if len(solr_async_list) > 0:
-        # メール通知用メッセージ追記
-        message = message + '以下のドメインでnews_clip_masterにあるにもかかわらず、solr_news_clip側に登録されていないケースがあります。\n'
-        for item in solr_async_domain_aggregate.items():
-            if item[1] > 0:
-                message = message + item[0] + ' : ' + str(item[1]) + ' 件\n'
+    # 当分の間solrとの同期チェックは中止。solr側の本格開発が始まってから開放予定。
+    # # solrへの送信ミス分のurlがあれば
+    # if len(solr_async_list) > 0:
+    #     # メール通知用メッセージ追記
+    #     message = message + '以下のドメインでnews_clip_masterにあるにもかかわらず、solr_news_clip側に登録されていないケースがあります。\n'
+    #     for item in solr_async_domain_aggregate.items():
+    #         if item[1] > 0:
+    #             message = message + item[0] + ' : ' + str(item[1]) + ' 件\n'
 
     # エラーがあった場合エラー通知を行う。
     if not message == '':

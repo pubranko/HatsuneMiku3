@@ -107,8 +107,8 @@ class ExtensionsTask(Task):
 
         self.log_check()
         resource_check()
-        self.mongo.close()
         self.log_save()
+        self.mongo.close()
         os.remove(self.log_file_path)  # 終了後ログファイルを削除
 
     def run(self,):

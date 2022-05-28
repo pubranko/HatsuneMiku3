@@ -232,15 +232,16 @@ class LogViewer(tkinter.Frame):
                     r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} ERROR ')
                 pattern_warning = re.compile(
                     r'[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} WARNING')
-                log_level_selecter:list = []
+                log_level_selecter: list = []
                 if condition_items.log_level_value == 0:
-                    log_level_selecter = [pattern_traceback, pattern_critical, ]
+                    log_level_selecter = [
+                        pattern_traceback, pattern_critical, ]
                 elif condition_items.log_level_value == 1:
                     log_level_selecter = [pattern_traceback,
-                                pattern_critical, pattern_error]
+                                          pattern_critical, pattern_error]
                 elif condition_items.log_level_value == 2:
                     log_level_selecter = [pattern_traceback, pattern_critical,
-                                pattern_error, pattern_warning]
+                                          pattern_error, pattern_warning]
                 if len(log_level_selecter):
                     conditions.append({'logs': {'$in': log_level_selecter}})
 
@@ -252,8 +253,7 @@ class LogViewer(tkinter.Frame):
             print('mongoDB検索フィルター : ', self.filter)
 
             # 検索対象の件数、ページ数を確認
-            self.record_count.set(self.crawler_log.find(
-                filter=self.filter,).count())
+            self.record_count.set(self.crawler_log.count(filter=self.filter))
             # 小数点以下切り上げ
             self.max_page_count.set(-(-self.record_count.get() //
                                     self.number_of_lines))
@@ -494,10 +494,12 @@ class LogViewer(tkinter.Frame):
         limit: int = self.number_of_lines
         skip_list = list(range(0, record_count, limit))
 
-        return self.crawler_log.find(
+        record = self.crawler_log.find(
             filter=self.filter,
             sort=[('start_time', DESCENDING)],
         ).skip(skip_list[page - 1]).limit(limit)
+
+        return record
 
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''

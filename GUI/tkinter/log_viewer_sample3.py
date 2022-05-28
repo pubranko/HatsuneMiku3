@@ -124,7 +124,7 @@ class LogViewer(tkinter.Frame):
             self.filter = None
 
         # 対象件数を確認
-        record_count = self.crawler_log.find(filter=self.filter,).count()
+        record_count = self.crawler_log.count(filter=self.filter)
 
         records: Cursor = self.log_list_get(1, record_count)
 

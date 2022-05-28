@@ -12,7 +12,7 @@ from scrapy_splash.response import SplashJsonResponse
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider

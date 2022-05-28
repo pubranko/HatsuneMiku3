@@ -17,7 +17,7 @@ from scrapy_selenium import SeleniumRequest
 from scrapy.exceptions import CloseSpider
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
@@ -157,7 +157,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # ログインフォーム部のiframe内に入る
         iframe: WebElement = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
-        driver.switch_to_frame(iframe)
+        driver.switch_to.frame(iframe)
 
         # ログイン情報を取得する。
         try:
@@ -184,7 +184,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             # ログインフォームのiframに入る
             iframe2: WebElement = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#modal-COMMON-content > p > iframe')))
-            driver.switch_to_frame(iframe2)
+            driver.switch_to.frame(iframe2)
 
             # ユーザー名（email）入力
             elem: WebElement = WebDriverWait(driver, 15).until(
@@ -207,7 +207,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         try:
             iframe3: WebElement = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
-            driver.switch_to_frame(iframe3)
+            driver.switch_to.frame(iframe3)
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ep_user_name'))) #ログイン後なら存在
             driver.switch_to.default_content()

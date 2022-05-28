@@ -196,8 +196,7 @@ class LogViewer(tkinter.Frame):
             print('self.filter : ', self.filter)
 
             # 対象件数、ページ数を確認
-            self.record_count.set(self.crawler_log.find(
-                filter=self.filter,).count())
+            self.record_count.set(self.crawler_log.count(filter=self.filter))
             # 小数点以下切り上げ
             self.max_page_count.set(-(-self.record_count.get() // 10))
 
@@ -276,25 +275,27 @@ class LogViewer(tkinter.Frame):
             self.next_page_button['state'] = 'normal'
             self.last_page_button['state'] = 'normal'
 
-        records = self.log_list_get(
+        (records, line_count) = self.log_list_get(
             self.current_page.get(), self.record_count.get())
-        self.logs_line_edit(self.logs_frame, self.logs_table, records)
+        self.logs_line_edit(
+            self.logs_frame, self.logs_table, records, line_count)
 
-    def logs_line_edit(self, logs_frame, logs_table, records: Cursor):
+    def logs_line_edit(self, logs_frame, logs_table, records: Cursor, line_count: int):
         # 各レコードを明細エリアへ編集
         for idx, record in enumerate(records):
             # レコードの更新
             self.logs_table[idx + 1][0]['text'] = str(idx + 1)
             self.logs_table[idx + 1][1]['text'] = record['_id']
             self.logs_table[idx + 1][2]['text'] = record['record_type']
-            self.logs_table[idx + 1][3]['text'] = record['domain'] if 'domain' in record else ''
+            self.logs_table[idx +
+                            1][3]['text'] = record['domain'] if 'domain' in record else ''
             self.logs_table[idx + 1][4]['text'] = '詳細表示'
             self.logs_table[idx + 1][4]['command'] = partial(
                 self.log_view, record['_id'])
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。
-        amari = self.current_page.get() * 10 - records.count()
+        amari = self.current_page.get() * 10 - line_count
         idx = 11
         if amari > 0:
             idx = 9
@@ -360,17 +361,17 @@ class LogViewer(tkinter.Frame):
                 value_object[idx].grid(
                     row=idx, column=1, sticky=tkinter.EW, ipadx=500)
 
-    def log_list_get(self, page: int, record_count: int) -> Cursor:
+    def log_list_get(self, page: int, record_count: int) -> tuple[Cursor, int]:
         # 件数制限で順に取得
         limit: int = 10
         skip_list = list(range(0, record_count, limit))
-
+        line_count: int = self.crawler_log.count(filter=self.filter)
         records: Cursor = self.crawler_log.find(
             filter=self.filter,
             sort=[('start_time', DESCENDING)],
         ).skip(skip_list[page - 1]).limit(limit)
 
-        return records
+        return records, line_count
 
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''

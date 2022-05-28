@@ -51,11 +51,16 @@ class ScrapyCrawlingTask(ExtensionsTask):
         #for separate_spiders_info in directory_search_spiders.separate_spider_using_selenium(args_spiders_name):
         for separate_spiders_info in directory_search_spiders.spiders_info_list_get(args_spiders_name):
             threads.append(
-                threading.Thread(target=scrapy_crawling_run.custom_crawl_run(
+                threading.Thread(target=scrapy_crawling_run.custom_runner_run(
                     logger=self.logger,
                     start_time=self.start_time,
                     scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
                     spiders_info=separate_spiders_info)))
+                # threading.Thread(target=scrapy_crawling_run.custom_crawl_run(
+                #     logger=self.logger,
+                #     start_time=self.start_time,
+                #     scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                #     spiders_info=separate_spiders_info)))
 
         '''twisted reactorの制御は難しかった、、、今後の課題とする。とりあえず以下の残骸を残しておく。'''
         # print('===\n\n １回めのスレッド実行 \n\n')

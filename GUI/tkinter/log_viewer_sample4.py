@@ -196,7 +196,7 @@ class LogViewer(tkinter.Frame):
             print('self.filter : ', self.filter)
 
             # 対象件数、ページ数を確認
-            self.record_count.set(self.crawler_log.find(filter=self.filter,).count())
+            self.record_count.set(self.crawler_log.count(filter=self.filter))
             self.page_count.set(-(-self.record_count.get() // 10))
 
             # 件数制限で順に取得

@@ -49,7 +49,7 @@ class ControllerModel(MongoCommonModel):
         else:
             record[spider_name] = next_point_info
 
-        self.update({'domain': domain_name}, record,)
+        self.update_one({'domain': domain_name}, {"$set":record},)
 
     def crawling_stop_domain_list_get(self,) -> list:
         '''
@@ -80,7 +80,7 @@ class ControllerModel(MongoCommonModel):
         else:
             record['crawling_stop_domain_list'] = crawling_stop_domain_list
 
-        self.update({'document_type': 'stop_controller'}, record,)
+        self.update_one({'document_type': 'stop_controller'}, {"$set":record},)
 
     def scrapying_stop_domain_list_get(self,) -> list:
         '''
@@ -111,7 +111,7 @@ class ControllerModel(MongoCommonModel):
         else:
             record['scrapying_stop_domain_list'] = scrapying_stop_domain_list
 
-        self.update({'document_type': 'stop_controller'}, record,)
+        self.update_one({'document_type': 'stop_controller'}, {"$set":record},)
 
     def regular_observation_spider_name_set_get(self,) -> set:
         '''
@@ -140,5 +140,5 @@ class ControllerModel(MongoCommonModel):
         else:
             record['spiders_name_set'] = list(spiders_name_set)
 
-        self.update(
-            {'document_type': 'regular_observation_controller'}, record,)
+        self.update_one(
+            {'document_type': 'regular_observation_controller'}, {"$set":record},)

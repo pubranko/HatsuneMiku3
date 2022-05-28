@@ -20,8 +20,8 @@ class CrawlerResponseModel(MongoCommonModel):
         # ※sort使用時、indexがないとメモリ不足となるため。
         index_list: list = []
         # indexes['key']のデータイメージ => SON([('_id', 1)])、SON([('response_time', 1)])
-        index_list = [
-            indexes['key'].keys()[0] for indexes in self.mongo.mongo_db[self.collection_name].list_indexes()]
+        for indexes in self.mongo.mongo_db[self.collection_name].list_indexes():
+            index_list = [idx for idx in indexes['key']]
 
         if not 'response_time' in index_list:
             self.mongo.mongo_db[self.collection_name].create_index(
@@ -38,7 +38,7 @@ class CrawlerResponseModel(MongoCommonModel):
         else:
             record['news_clip_master_register'] = news_clip_master_register
 
-        self.update(
+        self.update_one(
             {'url': url, 'response_time': response_time},
-            record,
+            {"$set":record},
         )

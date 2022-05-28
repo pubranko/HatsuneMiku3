@@ -77,8 +77,13 @@ def custom_runner_run(logger: Logger, start_time: datetime, scrapy_crawling_kwar
             url_pattern=scrapy_crawling_kwargs['url_pattern'],
             )
     run = runner.join()
-    #run.addBoth(lambda _: reactor.stop())
-    #reactor.run()
+    reac:Any = reactor
+    run.addBoth(lambda _: reac.stop())
+    reac.run()
+
+    # run = runner.join()
+    # run.addBoth(lambda _: reactor.stop())
+    # reactor.run()
 
     #reac: Any = reactor
     #run.addBoth(lambda _: reactor.stop())

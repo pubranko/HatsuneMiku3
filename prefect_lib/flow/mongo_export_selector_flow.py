@@ -29,7 +29,7 @@ with Flow(
         default=[
             'asynchronous_report', 'controller', 'crawler_logs', 'crawler_response', 'news_clip_master'
         ])
-    export_dir_extended_name = Parameter('export_dir_extended_name', required=False,)
+    prefix = Parameter('prefix', required=False,)
 
     export_period_from = Parameter('export_period_from', required=False,)
     export_period_to = Parameter('export_period_to', required=False,)
@@ -41,7 +41,7 @@ with Flow(
     result = task(collections_name=collections_name,
                   export_period_from=export_period_from,
                   export_period_to=export_period_to,
-                  export_dir_extended_name=export_dir_extended_name,
+                  prefix=prefix,
                   crawler_response__registered=crawler_response__registered,
                   )
 
@@ -55,8 +55,8 @@ flow.run(parameters=dict(
         'asynchronous_report',
         'controller',
     ],
-    export_dir_extended_name='scraper_mae',   # export先のフォルダyyyy-mmの先頭に拡張した名前を付与する(半角空白使用禁止。testや臨時でエクスポートしたい時などに使う)
-    export_period_from='2021-10',  # 月次エクスポートを行うデータの基準年月
-    export_period_to='2022-04',  # 月次エクスポートを行うデータの基準年月
+    prefix='test',   # export先のフォルダyyyy-mmの先頭に拡張した名前を付与する。
+    export_period_from='2022-02',  # 月次エクスポートを行うデータの基準年月
+    export_period_to='2022-05',  # 月次エクスポートを行うデータの基準年月
     crawler_response__registered=True,   # crawler_responseの場合、登録済みになったレコードのみエクスポートする場合True、登録済み以外のレコードも含めてエクスポートする場合False
 ))

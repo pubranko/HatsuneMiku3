@@ -129,25 +129,28 @@ class StatsInfoCollectData:
             # 例）robotstxt/response_status_count/403、robotstxt/response_status_count/200 など
             # 例）downloader/response_status_count/200、downloader/response_status_count/404 など
             if 'robotstxt/response_status_count/' in key:
-                self.robots_df = self.robots_df.append({
+                _ = pd.DataFrame([{
                     'record_type': 'robots_response_status',
                     'start_time': start_time,
                     'time_period_hour': start_time.strftime('%H'),
                     'spider_name': spider_name,
                     'robots_response_status': str(key).replace('robotstxt/response_status_count/', ''),
                     'count': value,
-                }, ignore_index=True)
+                }])
+                #self.robots_df = self.robots_df.append(_, ignore_index=True)
+                self.robots_df = pd.concat([self.robots_df, _], ignore_index=True)
             if 'downloader/response_status_count/' in key:
-                self.downloader_df = self.downloader_df.append({
+                _ = pd.DataFrame([{
                     'record_type': 'downloader_response_status',
                     'start_time': start_time,
                     'time_period_hour': start_time.strftime('%H'),
                     'spider_name': spider_name,
                     'downloader_response_status': str(key).replace('downloader/response_status_count/', ''),
                     'count': value,
-                }, ignore_index=True)
+                }])
+                self.downloader_df = pd.concat([self.downloader_df, _], ignore_index=True)
 
-        self.spider_df = self.spider_df.append({
+        _ = pd.DataFrame([{
             'record_type': 'spider_stats',
             'start_time': start_time,
             'time_period_hour': start_time.strftime('%H'),
@@ -164,19 +167,32 @@ class StatsInfoCollectData:
             'retry/count': stats['retry/count'] if 'retry/count' in stats else 0,
             'item_scraped_count': stats['item_scraped_count'] if 'item_scraped_count' in stats else 0,
             'finish_reason': stats['finish_reason'] if 'finish_reason' in stats else 0,
-        }, ignore_index=True)
+        }])
+        self.spider_df = pd.concat([self.spider_df, _], ignore_index=True)
 
     def dataframe_recovery(self, stats_info_collect_record: dict) -> None:
         '''引数のレコードを基にpandasのデータフレームを復元する。'''
+        
+        record_df = pd.DataFrame([stats_info_collect_record])
+        
         if stats_info_collect_record['record_type'] == 'robots_response_status':
-            self.robots_df = self.robots_df.append(
-                stats_info_collect_record, ignore_index=True)
+            self.robots_df = pd.concat([self.robots_df,record_df],
+                ignore_index=True)
         elif stats_info_collect_record['record_type'] == 'downloader_response_status':
-            self.downloader_df = self.downloader_df.append(
-                stats_info_collect_record, ignore_index=True)
+            self.downloader_df = pd.concat([self.downloader_df,record_df],
+                ignore_index=True)
         elif stats_info_collect_record['record_type'] == 'spider_stats':
-            self.spider_df = self.spider_df.append(
-                stats_info_collect_record, ignore_index=True)
+            self.spider_df = pd.concat([self.spider_df,record_df],
+                ignore_index=True)
+        # if stats_info_collect_record['record_type'] == 'robots_response_status':
+        #     self.robots_df = self.robots_df.append(
+        #         stats_info_collect_record, ignore_index=True)
+        # elif stats_info_collect_record['record_type'] == 'downloader_response_status':
+        #     self.downloader_df = self.downloader_df.append(
+        #         stats_info_collect_record, ignore_index=True)
+        # elif stats_info_collect_record['record_type'] == 'spider_stats':
+        #     self.spider_df = self.spider_df.append(
+        #         stats_info_collect_record, ignore_index=True)
 
     def date_time_set_index(self, columns: str, df: pd.DataFrame):
         '''

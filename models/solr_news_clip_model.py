@@ -3,7 +3,7 @@ from dateutil import parser
 import pysolr
 import os
 from typing import Union
-from collections import ItemsView
+from collections.abc import ItemsView
 import logging
 from logging import Logger
 

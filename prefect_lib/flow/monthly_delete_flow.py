@@ -46,6 +46,6 @@ flow.run(parameters=dict(
         'news_clip_master',
         'controller',
     ],
-    delete_period_from='2021-09',  # 月次削除を行うデータの基準年月
-    delete_period_to='2021-09',  # 月次削除を行うデータの基準年月
+    delete_period_from='2022-02',  # 月次削除を行うデータの基準年月
+    delete_period_to='2022-05',  # 月次削除を行うデータの基準年月
 ))

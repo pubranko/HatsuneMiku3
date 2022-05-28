@@ -99,13 +99,14 @@ class StatsInfoCollectTask(ExtensionsTask):
 
         filter: Any = {'$and': conditions}
 
+        count = crawler_logs.count(filter=filter)
         crawler_logs_records: Cursor = crawler_logs.find(
             filter=filter,
             # idやcrawl_urls_listは不要
             projection={'_id': 0, 'crawl_urls_list': 0}
         )
         self.logger.info(
-            f'=== クローラーログ対象件数({crawler_logs_records.count()})')
+            f'=== クローラーログ対象件数({count})')
 
         for crawler_logs_record in crawler_logs_records:
             crawler_logs_data.spider_stats_store(

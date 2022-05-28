@@ -1,7 +1,8 @@
-from pymongo import MongoClient
+#from pymongo import MongoClient
+from pymongo.mongo_client import MongoClient
 from pymongo.database import Database
 import os
-
+from urllib.parse import quote_plus
 
 class MongoModel(object):
     '''
@@ -21,11 +22,12 @@ class MongoModel(object):
         self.__mongo_db_name = os.environ['MONGO_USE_DB']
         self.__mongo_user = os.environ['MONGO_USER']
         self.__mongo_pass = os.environ['MONGO_PASS']
+
+        uri = f'mongodb://{quote_plus(self.__mongo_user)}:{quote_plus(self.__mongo_pass)}@{self.__mongo_uri}/{self.__mongo_db_name}'
         self.__mongo_client = MongoClient(
-            self.__mongo_uri, int(self.__mongo_port),
+            host=uri, port=int(self.__mongo_port),
         )
         self.mongo_db = self.__mongo_client[self.__mongo_db_name]
-        self.mongo_db.authenticate(self.__mongo_user, self.__mongo_pass)
 
     def close(self):
         '''

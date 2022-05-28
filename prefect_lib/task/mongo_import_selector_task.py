@@ -29,6 +29,9 @@ class MongoImportSelectorTask(ExtensionsTask):
 
         collections_name: list = kwargs['collections_name']
 
+        if not kwargs['prefix']:
+            kwargs['prefix'] = ''
+
         # エクスポート基準年月の月初、月末を求める。
         _ = str(kwargs['backup_dir_from']).split('-')
         base_monthly_from: date = date(
@@ -46,11 +49,21 @@ class MongoImportSelectorTask(ExtensionsTask):
         file_list: list = glob.glob(os.path.join(BACKUP_BASE_DIR, '**', '*'))
         for file in file_list:
             path_info = file.split(os.sep)
-            if re.match(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[1]):
-                _ = str(path_info[1]).split('-')
+            # path_info[1] = backup_files
+            # path_info[2] = 2022-02、または、prefix_2022-02
+            # if kwargs["prefix"] == '':
+            #     _ = path_info[2]
+            # else:
+            #     _ = f'{kwargs["prefix"]}_{path_info[2]}'
+            if re.search(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[2]):
+                if kwargs["prefix"] == '':
+                    _ = path_info[2]
+                else:
+                    _ = path_info[2].replace(f'{kwargs["prefix"]}_','')
+                yyyy_mm = str(_).split('-')
                 base_monthly: date = date(
-                    int(_[0]), int(_[1][0:2]), 1) + relativedelta(day=99)
-                _ = path_info[2].split('-')
+                    int(yyyy_mm[0]), int(yyyy_mm[1]), 1) + relativedelta(day=99)
+                _ = path_info[3].split('-')
                 collection_name: str = _[1]
 
                 import_files_info.append({
