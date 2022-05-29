@@ -13,7 +13,6 @@ from scrapy_selenium.http import SeleniumRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
-import random
 ###
 
 
@@ -57,7 +56,7 @@ class SeleniumMiddleware:
 
         driver_kwargs = {
             'executable_path': driver_executable_path,
-            f'{driver_name}_options': driver_options
+            'options': driver_options
         }
 
         self.driver = driver_class(**driver_kwargs)
@@ -108,7 +107,14 @@ class SeleniumMiddleware:
         # ここで実際にブラウザーでリクエストを実行しているっぽい。
         self.driver.get(request.url)
 
-        for cookie_name, cookie_value in request.cookies.items():
+        # 型ヒントでエラーとなるためカスタマイズ
+        cookies:dict = {}
+        if type(request.cookies) is list:
+            cookies:dict = request.cookies[0]
+        elif type(request.cookies) is dict:
+            cookies:dict = request.cookies
+
+        for cookie_name,cookie_value in cookies.items():
             self.driver.add_cookie(
                 {
                     'name': cookie_name,

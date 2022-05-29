@@ -48,9 +48,7 @@ def check_and_save(kwargs: dict):
     logger.info('=== scraped_from_response へのfilter: ' + str(filter))
 
     # 対象件数を確認
-    record_count = scraped_from_response.find(
-        filter=filter,
-    ).count()
+    record_count = scraped_from_response.count(filter=filter,)
     logger.info('=== news_clip_master への登録チェック対象件数 : ' + str(record_count))
 
     # 100件単位で処理を実施
@@ -67,16 +65,15 @@ def check_and_save(kwargs: dict):
             # データチェック
             if not scraped_record_error_check(record):
                 # 重複チェック
-                news_clip_records = news_clip_master.find(
-                    filter={'$and': [
+                filter={'$and': [
                         {'url': record['url']},
                         {'title': record['title']},
                         {'article': record['article']},
-                    ]},
-                )
+                    ]}
+                news_clip_records = news_clip_master.find(filter=filter)
 
                 # 重複するレコードがなければ保存する。
-                if news_clip_records.count() == 0:
+                if news_clip_master.count(filter) == 0:
                     record['scraped_save_start_time'] = start_time
                     news_clip_master.insert_one(record)
                     logger.info('=== news_clip_master への登録 : ' + record['url'])

@@ -321,11 +321,11 @@ class LogViewer(tkinter.Frame):
         self.pagenate(page_adjustment)
 
         # 上記で指定したページのログを取得
-        records = self.logs_list_get(
+        records,records_count = self.logs_list_get(
             self.current_page.get(), self.record_count.get())
 
         # 上記で取得したログを明細ウィジェットへ編集
-        self.logs_detail_edit(self.logs_frame, self.logs_table, records)
+        self.logs_detail_edit(self.logs_frame, self.logs_table, records, records_count)
 
     def pagenate(self, page_adjustment):
         '''
@@ -356,7 +356,7 @@ class LogViewer(tkinter.Frame):
             self.next_page_button['state'] = 'normal'
             self.last_page_button['state'] = 'normal'
 
-    def logs_detail_edit(self, logs_frame, logs_table, records: Cursor):
+    def logs_detail_edit(self, logs_frame, logs_table, records: Cursor, records_count:int):
         '''
         各レコードをログ明細エリアへ編集
         '''
@@ -412,7 +412,7 @@ class LogViewer(tkinter.Frame):
 
         # 余った明細エリアは空欄で埋める。
         # あまりの明細がなければ何もしない。
-        amari = self.current_page.get() * self.number_of_lines - records.count()
+        amari = self.current_page.get() * self.number_of_lines - records_count
         idx = self.number_of_lines + 1
         if amari > 0:
             idx = self.number_of_lines - 1
@@ -489,17 +489,18 @@ class LogViewer(tkinter.Frame):
                 # 次の行ポインターへ
                 row_pointer += 1
 
-    def logs_list_get(self, page: int, record_count: int) -> Cursor:
+    def logs_list_get(self, page: int, record_count: int) -> tuple[Cursor,int]:
         '''指定されたページに表示する分のログを取得して返す'''
         limit: int = self.number_of_lines
         skip_list = list(range(0, record_count, limit))
 
+        record_count = self.crawler_log.count(filter=self.filter)
         record = self.crawler_log.find(
             filter=self.filter,
             sort=[('start_time', DESCENDING)],
         ).skip(skip_list[page - 1]).limit(limit)
 
-        return record
+        return record,record_count
 
     def log_get(self, mondo_id: str) -> Any:
         '''ログを１件取得'''

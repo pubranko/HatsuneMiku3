@@ -42,41 +42,43 @@ class FirstObservationTask(ExtensionsTask):
                 crawling_target_spiders.append(spider_info)
                 crawling_target_spiders_name.append(spider_name)
 
-        # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-        scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
-            'lastmod_period_minutes': '60,',
-            'pages': '1,3', })
+        if len(crawling_target_spiders_name):
+            # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
+            scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
+                'lastmod_period_minutes': '60,',
+                'pages': '1,3', })
+            self.logger.info(f'=== 初回観測対象スパイダー : {str(crawling_target_spiders_name)}')
+            self.logger.info(f'=== 初回観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
 
-        self.logger.info(f'=== 初回観測対象スパイダー : {str(crawling_target_spiders_name)}')
-        self.logger.info(f'=== 初回観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+            thread = threading.Thread(
+                target=scrapy_crawling_run.custom_runner_run(
+                    logger=self.logger,
+                    start_time=self.start_time,
+                    scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    spiders_info=crawling_target_spiders))
 
-        thread = threading.Thread(
-            target=scrapy_crawling_run.custom_crawl_run(
-                logger=self.logger,
-                start_time=self.start_time,
-                scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
-                spiders_info=crawling_target_spiders))
+            # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
+            thread.start()
+            thread.join()
 
-        # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
-        thread.start()
-        thread.join()
+            kwargs: dict = {}
+            kwargs['start_time'] = self.start_time
+            kwargs['mongo'] = self.mongo
+            kwargs['domain'] = None
+            kwargs['urls'] = []
+            kwargs['crawling_start_time_from'] = self.start_time
+            kwargs['crawling_start_time_to'] = self.start_time
+            kwargs['scrapying_start_time_from'] = self.start_time
+            kwargs['scrapying_start_time_to'] = self.start_time
+            kwargs['scraped_save_start_time_from'] = self.start_time
+            kwargs['scraped_save_start_time_to'] = self.start_time
 
-        kwargs: dict = {}
-        kwargs['start_time'] = self.start_time
-        kwargs['mongo'] = self.mongo
-        kwargs['domain'] = None
-        kwargs['urls'] = []
-        kwargs['crawling_start_time_from'] = self.start_time
-        kwargs['crawling_start_time_to'] = self.start_time
-        kwargs['scrapying_start_time_from'] = self.start_time
-        kwargs['scrapying_start_time_to'] = self.start_time
-        kwargs['scraped_save_start_time_from'] = self.start_time
-        kwargs['scraped_save_start_time_to'] = self.start_time
-
-        scrapying_run.exec(kwargs)
-        scraped_news_clip_master_save_run.check_and_save(kwargs)
-        ### 本格開発までsolrへの連動を一時停止 ###
-        # solr_news_clip_save_run.check_and_save(kwargs)
+            scrapying_run.exec(kwargs)
+            scraped_news_clip_master_save_run.check_and_save(kwargs)
+            ### 本格開発までsolrへの連動を一時停止 ###
+            # solr_news_clip_save_run.check_and_save(kwargs)
+        else:
+            self.logger.warn(f'=== 初回観測対象スパイダーなし')
 
         # 終了処理
         self.closed()

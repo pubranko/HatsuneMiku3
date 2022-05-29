@@ -54,7 +54,7 @@ class RegularObservationTask(ExtensionsTask):
         self.logger.info(f'=== 定期観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
 
         thread = threading.Thread(
-            target=scrapy_crawling_run.custom_crawl_run(
+            target=scrapy_crawling_run.custom_runner_run(
                 logger=self.logger,
                 start_time=self.start_time,
                 scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),

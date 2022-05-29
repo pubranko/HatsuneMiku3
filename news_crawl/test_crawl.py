@@ -7,4 +7,7 @@ args = sys.argv
 #args 
 
 #execute(argv=['scrapy','crawl', args[1]])
-execute(argv=args[1:])
+try:
+    execute(argv=args[1:])
+except:
+    print('=== 例外が発生した、、、')
