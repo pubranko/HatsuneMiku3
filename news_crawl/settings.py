@@ -36,6 +36,7 @@ CONCURRENT_REQUESTS = 100
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
 DOWNLOAD_DELAY = 3
+
 # The download delay setting will honor only one of:
 # webサイトのドメインごとに、同時平行処理するリクエストの最大値
 #CONCURRENT_REQUESTS_PER_DOMAIN = 100
@@ -76,14 +77,31 @@ SPIDER_MIDDLEWARES = {
 # ダウンロードのミドルウェアを自作のものを使いたい場合、以下の設定を変える。
 DOWNLOADER_MIDDLEWARES = {
     #'news_crawl.middlewares.NewsCrawlDownloaderMiddleware': 543,
+    #splash用
+    # 'scrapy_splash.SplashCookiesMiddleware': 723,
+    # 'scrapy_splash.SplashMiddleware': 725,
     #selenium用 -> カスタムバージョン
-    'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 800,
+    #'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 800,
     #selenium用
     #'scrapy_selenium.SeleniumMiddleware': 800,
-    #splash用
-    'scrapy_splash.SplashCookiesMiddleware': 723,
-    'scrapy_splash.SplashMiddleware': 725,
-    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
+
+    # defalt_settings.pyより
+    # Engine side
+    # 'scrapy.downloadermiddlewares.robotstxt.RobotsTxtMiddleware': 100,
+    # 'scrapy.downloadermiddlewares.httpauth.HttpAuthMiddleware': 300,
+    # 'scrapy.downloadermiddlewares.downloadtimeout.DownloadTimeoutMiddleware': 350,
+    # 'scrapy.downloadermiddlewares.defaultheaders.DefaultHeadersMiddleware': 400,
+    # 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': 500,
+    # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': 550,
+    # 'scrapy.downloadermiddlewares.ajaxcrawl.AjaxCrawlMiddleware': 560,
+    # 'scrapy.downloadermiddlewares.redirect.MetaRefreshMiddleware': 580,
+    # 'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 590,
+    # 'scrapy.downloadermiddlewares.redirect.RedirectMiddleware': 600,
+    # 'scrapy.downloadermiddlewares.cookies.CookiesMiddleware': 700,
+    # 'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 750,
+    # 'scrapy.downloadermiddlewares.stats.DownloaderStats': 850,
+    # 'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 900,
+    # Downloader side
 }
 
 # Enable or disable extensions
@@ -174,13 +192,13 @@ LOG_DATEFORMAT = '%Y-%m-%d %H:%M:%S'
 #LOG_SHORT_NAMES = False
 # LogStats による統計の各ログ出力間の間隔(秒単位)。
 #LOGSTATS_INTERVAL = 60.0
-install_root_handler=False
 INSTALL_ROOT_HANDLER=False
 
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+#SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+SELENIUM_DRIVER_ARGUMENTS = []
 # ブラウザ・通信の不可軽減のため、独自の設定を追加してみた。
 #   その他の設定については、ここが参考になりそう https://www.programcreek.com/python/example/100026/selenium.webdriver.FirefoxProfile
 #   1:通常、2:禁止

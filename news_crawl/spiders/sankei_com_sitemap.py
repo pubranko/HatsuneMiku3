@@ -20,12 +20,18 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
         '/feeds/google-sitemap/',
         ]
 
+    #splash_mode: bool = True
     selenium_mode: bool = True
     sitemap_rules = [(r'.*', 'selenium_parse')]
-    #splash_mode: bool = True
+    custom_settings = {
+        'DOWNLOADER_MIDDLEWARES' : {
+            'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 585,
+        }
+    }
 
     sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     known_pagination_css_selectors:list[str] = [
         '.pagination  a[href]',
     ]
+

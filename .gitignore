@@ -131,5 +131,10 @@ dmypy.json
 ### 拡張してみた
 .vscode/launch.json
 news_crawl/exclusive_work/*
-data_dir/*
-!/data_dir/scraper_info_by_domain/
+data_dir/backup_files/*
+data_dir/debug/*
+data_dir/direct_crawl_files/*
+data_dir/login_info/*
+data_dir/logs/*
+data_dir/*report*
+#!/data_dir/scraper_info_by_domain/

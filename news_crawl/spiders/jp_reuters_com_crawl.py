@@ -34,6 +34,9 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
     custom_settings: dict = {
         'DEPTH_LIMIT': 0,
         'DEPTH_STATS_VERBOSE': True,
+        'DOWNLOADER_MIDDLEWARES' : {
+            'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 585,
+        },
     }
 
     # rules = (
