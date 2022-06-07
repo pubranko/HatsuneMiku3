@@ -19,6 +19,7 @@ from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawl
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.lua_script_get import lua_script_get
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
+from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 
 
 class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
@@ -34,7 +35,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
     custom_settings: dict = {
         'DEPTH_LIMIT': 0,
         'DEPTH_STATS_VERBOSE': True,
-        'DOWNLOADER_MIDDLEWARES' : {
+        'DOWNLOADER_MIDDLEWARES': {
             'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 585,
         },
     }
@@ -106,7 +107,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
             driver.set_page_load_timeout(5)
-            #driver.implicitly_wait(15)
+            # driver.implicitly_wait(15)
             driver.set_script_timeout(5)
 
             next_page_element = f'div.control-nav > a.control-nav-next[href="?view=page&page={self.page + 1}&pageSize=10"]'
@@ -129,7 +130,12 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                 self.all_urls_list.append({'loc': url, 'lastmod': ''})
                 # 前回からの続きの指定がある場合、
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
+
                 if self.url_continued.skip_check(url):
+                    pass
+                elif url_pattern_skip_check(url, self.kwargs_save):
+                    pass
+                else:
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
                         {'loc': url, 'lastmod': '', 'source_url': driver.current_url})
@@ -140,7 +146,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
                 self.name, driver.current_url, self.all_urls_list[-10:], self.kwargs_save)
 
             # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-            if self.url_continued.crwal_flg == False:
+            if self.url_continued.skip_flg == True:
                 self.logger.info(
                     f'=== parse_start_response 前回の続きまで再取得完了 ({driver.current_url})', )
                 self.page = self.end_page + 1
@@ -155,9 +161,9 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
         for _ in self.crawl_urls_list:
             yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
-        # 次回向けに1ページ目の10件をcontrollerへ保存する
+        # 次回向けに1ページ目の5件をcontrollerへ保存する
         self._crawl_point[self.base_url] = {
-            'urls': self.all_urls_list[0:10],
+            'urls': self.all_urls_list[0:self.url_continued.check_count],
             'crawling_start_time': self._crawling_start_time
         }
 
@@ -184,11 +190,15 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             # 前回からの続きの指定がある場合、
             # 前回取得したurlが確認できたら確認済み（削除）にする。
             if self.url_continued.skip_check(url):
+                pass
+            elif url_pattern_skip_check(url, self.kwargs_save):
+                pass
+            else:
                 self.crawl_urls_list.append(
                     {'loc': url, 'lastmod': '', 'source_url': response.url})
 
         # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-        if self.url_continued.crwal_flg == False:
+        if self.url_continued.skip_flg == False:
             self.logger.info(
                 f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})', )
             self.page = self.end_page + 1
@@ -220,8 +230,8 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
             for _ in self.crawl_urls_list:
                 yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
-            # 次回向けに1ページ目の10件をcontrollerへ保存する
+            # 次回向けに1ページ目の5件をcontrollerへ保存する
             self._crawl_point[self.base_url] = {
-                'urls': self.all_urls_list[0:10],
+                'urls': self.all_urls_list[0:self.url_continued.check_count],
                 'crawling_start_time': self._crawling_start_time
             }

@@ -1,3 +1,5 @@
 {
-    "python.formatting.provider": "autopep8"
+    "terminal.integrated.cwd": "/home/mikuras/004_atelier/003_BrownieAtelier",
+    "jupyter.notebookFileRoot": "/home/mikuras/004_atelier/003_BrownieAtelier"
+    // "python.formatting.provider": "autopep8"
 }

@@ -17,7 +17,9 @@ from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
+from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.pagination_check import PaginationCheck
+
 
 class ExtensionsCrawlSpider(CrawlSpider):
     '''

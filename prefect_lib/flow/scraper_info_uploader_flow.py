@@ -31,8 +31,9 @@ with Flow(
 
 flow.run(parameters=dict(
     scraper_info_by_domain_files=[
-        "epochtimes_jp.json",
-        #'yomiuri_co_jp.json',
+        "mainichi_jp.json",
+        #"epochtimes_jp.json",
+        'yomiuri_co_jp.json',
         #'yomiuri_co_jp_e1.json',
         #'yomiuri_co_jp_e2.json',
         #'yomiuri_co_jp_e3.json',

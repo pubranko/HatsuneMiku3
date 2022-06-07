@@ -9,12 +9,13 @@ from common_lib.timezone_recovery import timezone_recovery
 
 class UrlsContinuedSkipCheck(object):
     '''
-    続きからクロール
+    前回の続きからクロールさせるためのチェックを行う。
     '''
     crawl_point_save: dict = {}
     last_time_urls: list = []
     kwargs_save: dict = {}
-    crwal_flg: bool = True
+    skip_flg: bool = False
+    check_count: int = 10
 
     def __init__(self, crawl_point: dict, base_url: str, kwargs: dict) -> None:
         '''
@@ -30,17 +31,18 @@ class UrlsContinuedSkipCheck(object):
     def skip_check(self, url:str) -> bool:
         '''
         前回の続きの指定がある場合、前回のクロールポイントの５件のurlまで読み込みが完了しているか判定を行う。
-        （完了→False、未完→True）
-        前回の続きの指定がない場合、常にTrueを返す。
+        ・前回のクロールポイントまで読み込みが完了していた場合、引数のurlをスキップ対象（True）とする。
+        ・上記以外の場合、引数のurlをスキップ対象外（False）とする。
+        ・ただし、前回の続きの指定がない場合、常にスキップ対象外（False）を返す。
         ※前回のクロールポイントには10件のurlがあるが、url取得中に更新されトップページへ移動している可能性がある。
           無限ループに陥らないように5/10件で完了とさせる。
         '''
         if 'continued' in self.kwargs_save:
-            if len(self.last_time_urls) <= 5:
-                self.crwal_flg = False
+            if len(self.last_time_urls) <= self.check_count / 2:
+                self.skip_flg = True
 
             if url in self.last_time_urls:
                 self.last_time_urls.remove(url)
 
-        return self.crwal_flg
+        return self.skip_flg
 

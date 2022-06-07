@@ -23,15 +23,10 @@ from common_lib.timezone_recovery import timezone_recovery
 from prefect_lib.scraper.article_scraper import scraper as artcle_scraper
 from prefect_lib.scraper.publish_date_scraper import scraper as publish_date_scraper
 from prefect_lib.scraper.title_scraper import scraper as title_scraper
-
-from collections.abc import Iterable
-path = os.getcwd()
-sys.path.append(path)
 from prefect_lib.settings import DEBUG_FILE_DIR
 
 
 logger: Logger = logging.getLogger('prefect.run.scrapying_deco')
-
 
 start_time: datetime = datetime.now()
 mongo: MongoModel = MongoModel()

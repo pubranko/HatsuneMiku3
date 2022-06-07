@@ -1,0 +1,41 @@
+{
+    "domain": "mainichi.jp",
+    "scrape_items": {
+        "title_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > title",
+                "priority": 2,
+                "register_date":"2022-06-05T22:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "title",
+                "priority": 1,
+                "register_date":"2022-06-05T22:00:00+09:00"
+            }
+        ],
+        "article_scraper": [
+            {
+                "pattern": 1,
+                "css_selecter": "#articledetail-body > p",
+                "priority": 1,
+                "register_date":"2022-06-05T22:00:00+09:00"
+            }
+        ],
+        "publish_date_scraper": [
+            {
+                "pattern": 2,
+                "css_selecter": "head > meta[name=\"lastupdate\"]",
+                "priority": 2,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            },
+            {
+                "pattern": 1,
+                "css_selecter": "head > meta[name=\"firstcreate\"]",
+                "priority": 1,
+                "register_date":"2022-04-16T14:00:00+09:00"
+            }
+        ]
+    }
+}
