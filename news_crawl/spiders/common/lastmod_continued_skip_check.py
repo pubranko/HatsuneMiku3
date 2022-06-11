@@ -30,12 +30,16 @@ class LastmodContinuedSkipCheck(object):
 
     def skip_check(self, lastmod: datetime) -> bool:
         '''
+        前回の続きの指定がある場合、前回のクロール時点のlastmod（最終更新日時）と比較を行う。
+        ・前回のクロール時点lastmodより新しい場合、スキップ対象外（False）とする。
+        ・上記以外の場合、引数のurlをスキップ対象（True）とする。
+        ・ただし、前回の続きの指定がない場合、常にスキップ対象外（False）を返す。
         '''
-        crwal_flg: bool = False
+        skip_flg: bool = False
         if 'continued' in self.kwargs_save and self.kwargs_save['continued'] == 'Yes':
             if lastmod < self.latest_lastmod:
-                crwal_flg = True
-        return crwal_flg
+                skip_flg = True
+        return skip_flg
 
     def max_lastmod_dicision(self, in_the_page_max_lastmod: datetime) -> datetime:
         '''

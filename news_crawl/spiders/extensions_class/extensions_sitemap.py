@@ -72,7 +72,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     domain_lastmod: Union[datetime, None] = None
 
     # パラメータによる抽出処理のためのクラス
-    crawling_continued: LastmodContinuedSkipCheck
+    lastmod_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
     pagination_check: PaginationCheck
     # seleniumモード
@@ -215,14 +215,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 # バッファとして2日間分範囲を広げてチェックする。
                 if self.lastmod_period.skip_check(date_lastmod + timedelta(days=2)):
                     crwal_flg = False
-                if self.crawling_continued.skip_check(date_lastmod):
+                if self.lastmod_continued.skip_check(date_lastmod):
                     crwal_flg = False
             else:
                 if url_pattern_skip_check(entry['loc'], self.kwargs_save):
                     crwal_flg = False
                 if self.lastmod_period.skip_check(date_lastmod):
                     crwal_flg = False
-                if self.crawling_continued.skip_check(date_lastmod):
+                if self.lastmod_continued.skip_check(date_lastmod):
                     crwal_flg = False
 
             # クロール対象となった場合
@@ -248,7 +248,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if type(self.lastmod_period.lastmod_period_minutes_to) == datetime:
                 self.domain_lastmod = self.lastmod_period.lastmod_period_minutes_to
             else:
-                self.domain_lastmod = self.crawling_continued.max_lastmod_dicision(
+                self.domain_lastmod = self.lastmod_continued.max_lastmod_dicision(
                     parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))
             # クロールポイントを更新する。
             self._crawl_point = {

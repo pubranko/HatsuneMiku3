@@ -88,7 +88,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
     def parse_start_response(self, response: TextResponse):
         ''' (拡張メソッド)
-        取得したレスポンスよりDBへ書き込み(selenium版)
+        取得したレスポンスよりDBへ書き込み
         '''
         while self.page <= self.end_page:
             self.logger.info(

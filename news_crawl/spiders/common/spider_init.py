@@ -100,5 +100,5 @@ def spider_init(
     # チェック用クラスの初期化＆スパイダーのクラス変数に保存
     spider.lastmod_period = LastmodPeriodMinutesSkipCheck(
         spider, spider._crawling_start_time, kwargs)
-    spider.crawling_continued = LastmodContinuedSkipCheck(
+    spider.lastmod_continued = LastmodContinuedSkipCheck(
         spider._crawl_point, kwargs)

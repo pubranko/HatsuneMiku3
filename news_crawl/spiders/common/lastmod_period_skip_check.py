@@ -26,13 +26,16 @@ class LastmodPeriodMinutesSkipCheck(object):
                     f'=== lastmod_period_minutesのtoより計算した時間: {self.lastmod_period_minutes_to.isoformat()}')
 
     def skip_check(self, lastmod: datetime) -> bool:
-        '''lastmodの期間指定があり、期間外の場合はFalseを返す'''
-        crwal_flg: bool = False
+        '''
+        lastmodの期間指定があり、指定期間内であればクロール対象としてスキップ対象外(False)を返す。
+        期間外の場合はスキップ対象(True)を返す。
+        '''
+        skip_flg: bool = False
         if self.lastmod_period_minutes_from:
             if lastmod < self.lastmod_period_minutes_from:
-                crwal_flg = True
+                skip_flg = True
         if self.lastmod_period_minutes_to:
             if lastmod > self.lastmod_period_minutes_to:
-                crwal_flg = True
+                skip_flg = True
 
-        return crwal_flg
+        return skip_flg
