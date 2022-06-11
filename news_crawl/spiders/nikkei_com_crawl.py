@@ -65,51 +65,39 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
         self.end_page: int = self.pages['end_page']
         self.page: int = self.start_page
         self.all_urls_list: list = []
-
         self.url_continued = UrlsContinuedSkipCheck(
             self._crawl_point, self.start_urls[0], self.kwargs_save)
 
-        # start_urlsを再構築
-        # 例）https://www.epochtimes.jp/latest
-        #     -> https://www.epochtimes.jp/latest/1, https://www.epochtimes.jp/latest/2
-        # 記事の開始位置をページより計算して求める。
-        page_range = range(self.start_page, self.end_page + 1)
-        start_article_list = []
-        for page in page_range:
-            #start_article_list.append((page * 30) - 29)    # [1,31,61,91,,,]
-            self.start_urls = [f'https://www.nikkei.com/news/category/?bn={(page * 30) - 29}']
-
-        # if idx == 0:
-        #     self.start_urls = [f'{self.start_urls[0]}?bn={start_article}']
-        # else:
-        #     self.next_urls = [f'{self.start_urls[0]}?bn={p}' for p in start_article]
-
     def start_requests(self):
         ''' '''
-        # for url in self.start_urls:
-        #     yield scrapy.Request(
-        #         url=url,
-        #         callback=self.parse_start_response)
+        ### start_urlsをベースにページに合わせたurlを生成
+        # 例）https://www.nikkei.com/news/category/
+        #     -> https://www.nikkei.com/news/category/?bn=5,
+        # 記事の開始位置をページより計算して求める。
         yield scrapy.Request(
-            url=self.start_urls[0],
+            url=f'{self.start_urls[0]}?bn={(self.start_page * 30) - 29}',
             callback=self.parse_start_response)
 
     def parse_start_response(self, response: TextResponse):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        #while self.page <= self.end_page:
-        for a in self.start_urls[1:]:
+        while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {response.url}')
-
-            next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
 
             # ページ内の対象urlを抽出
             #CONTENTS_MAIN > div:nth-child(1) > ul > li:nth-child(1) > h3 > span > span.m-miM32_itemTitleText > a
             #CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]
+            #CONTENTS_MAIN > div > h3 > a[href]
+
+            #CONTENTS_MAIN > div > h3.m-miM09_title > a[href]::attr(href)
+            #CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]
+
             links = response.css(
-                f'#CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]::attr(href)').getall()
+                f'#CONTENTS_MAIN > div > h3.m-miM09_title > a[href]::attr(href)').getall()
+            links.extend(response.css(
+                f'#CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]::attr(href)').getall())
             self.logger.info(
                 f'=== ページ内の記事件数 = {len(links)}')
             # ページ内記事は通常30件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
@@ -149,6 +137,7 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
             self.page += 1
             if self.page <= self.end_page:
                 # 要素を表示するようスクロールしてクリック
+                next_page_url = f'{self.start_urls[0]}?bn={(self.start_page * 30) - 29}'
                 yield scrapy.Request(url=next_page_url, callback=self.parse_start_response)
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
