@@ -1,4 +1,3 @@
-from __future__ import annotations
 import os
 from models.mongo_model import MongoModel
 from models.mongo_common_model import MongoCommonModel

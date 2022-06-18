@@ -1,4 +1,3 @@
-from __future__ import annotations
 from calendar import month
 from copy import deepcopy
 import re

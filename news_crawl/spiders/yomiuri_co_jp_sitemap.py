@@ -1,4 +1,3 @@
-from __future__ import annotations
 from tabnanny import check
 from pydantic import UrlUserInfoError
 from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider

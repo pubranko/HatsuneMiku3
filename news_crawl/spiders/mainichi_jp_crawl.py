@@ -1,4 +1,3 @@
-from __future__ import annotations
 import urllib.parse
 import scrapy
 from datetime import datetime

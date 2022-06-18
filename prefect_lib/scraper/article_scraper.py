@@ -1,4 +1,3 @@
-from __future__ import annotations
 from errno import EKEYEXPIRED
 import os
 import sys

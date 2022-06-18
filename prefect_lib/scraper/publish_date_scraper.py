@@ -1,4 +1,3 @@
-from __future__ import annotations
 from bs4 import BeautifulSoup as bs4
 from bs4.element import Tag
 from dateutil.parser import parse

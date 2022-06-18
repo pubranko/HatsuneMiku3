@@ -1,4 +1,3 @@
-from __future__ import annotations
 from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
 from lxml.etree import _Element
 from typing import Any
