@@ -79,7 +79,6 @@ class LogViewerValidator(BaseModel):
     # 型変換
     #####################################
     def datetime_from(self):
-        print('datetime from ',self.date_from,self.time_from)
         return parser.parse(self.date_from + self.time_from).astimezone(TIMEZONE)
     def datetime_to(self):
         return parser.parse(self.date_to + self.time_to).astimezone(TIMEZONE)

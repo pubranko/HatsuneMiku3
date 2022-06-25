@@ -131,7 +131,7 @@ dmypy.json
 ### 拡張してみた
 .vscode/launch.json
 .vscode/jupyter_env.json
-news_crawl/exclusive_work/*
+app/news_crawl/exclusive_work/*
 data_dir/backup_files/*
 data_dir/debug/*
 data_dir/direct_crawl_files/*

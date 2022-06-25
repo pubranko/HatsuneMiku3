@@ -26,8 +26,11 @@ class StopControllerUpdateTask(ExtensionsTask):
             record: list = controller.scrapying_stop_domain_list_get()
         else:
             self.logger.error(
-                '=== Stop Controller Update Task : run : destinationパラメータエラー : ')
+                f'=== Stop Controller Update Task : run : destinationパラメータエラー : {destination}')
             raise ENDRUN(state=state.Failed())
+
+        self.logger.info(
+            f'=== Stop Controller Update Task : run : 更新前の登録状況 : {record}')
 
         if in_out == 'in':
             pass
@@ -38,17 +41,24 @@ class StopControllerUpdateTask(ExtensionsTask):
                 record.remove(domain)
             else:
                 self.logger.error(
-                    '=== Stop Controller Update Task : run : domainパラメータエラー : ')
+                    f'=== Stop Controller Update Task : run : domainの登録がありません : {domain}')
                 raise ENDRUN(state=state.Failed())
         else:
             self.logger.error(
-                '=== Stop Controller Update Task : run : in_outパラメータエラー : ')
+                f'=== Stop Controller Update Task : run : in_outパラメータエラー : {in_out}')
             raise ENDRUN(state=state.Failed())
 
+        # domainの重複除去
+        _ = list(set(record))
+
+        # 更新した内容でアップデート
         if destination == 'crawling':
-            controller.crawling_stop_domain_list_update(record)
+            controller.crawling_stop_domain_list_update(_)
         else:
-            controller.scrapying_stop_domain_list_update(record)
+            controller.scrapying_stop_domain_list_update(_)
+
+        self.logger.info(
+            f'=== Stop Controller Update Task : run : 更新後の登録状況 : {_}')
 
         # 終了処理
         self.closed()

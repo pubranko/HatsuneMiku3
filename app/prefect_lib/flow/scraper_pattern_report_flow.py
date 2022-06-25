@@ -1,6 +1,8 @@
 import os
 import sys
 from datetime import datetime
+# from prefect import Flow
+# from prefect import Flow, task, Parameter
 from prefect.core.flow import Flow
 from prefect.core.parameter import Parameter
 from prefect.core.parameter import DateTimeParameter
@@ -12,21 +14,26 @@ sys.path.append(path)
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
-from prefect_lib.task.stats_info_collect_task import StatsInfoCollectTask
+from prefect_lib.task.scraper_pattern_report_task import ScrapyingPatternReportTask
 
 '''
-基準日(base_date)のログより集計を行う。
-※基準日の指定がない場合、前日を基準日とする。
+各スクレイピング項目の抽出パターンの使用状況をレポートとして出力する。
 '''
 with Flow(
-    name='Stats info collect flow',
+    name='Scraper pattern info report flow',
     state_handlers=[flow_status_change],
 ) as flow:
+    report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
     base_date = DateTimeParameter('base_date', required=False,)
-    task = StatsInfoCollectTask(
+    task = ScrapyingPatternReportTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
-    result = task(base_date=base_date,)
+    result = task(report_term=report_term,
+                  base_date=base_date,)
 
 flow.run(parameters=dict(
-    base_date=datetime(2022, 5, 22).astimezone(TIMEZONE),
+    #report_term='daily',
+    report_term='weekly',
+    #report_term='monthly',
+    #report_term='yearly',
+    base_date=datetime(2022, 6, 26).astimezone(TIMEZONE),   # 左記基準日の前日分のデータが対象となる。
 ))

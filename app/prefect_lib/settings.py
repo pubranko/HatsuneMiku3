@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta, timezone
 
+
 import scrapy
 # タイムゾーン
 TIMEZONE = timezone(timedelta(hours=9), 'JST')
@@ -10,7 +11,12 @@ TIMEZONE = timezone(timedelta(hours=9), 'JST')
 NOTICE_LEVEL: str = 'WARNING'
 
 # データ類の保存ベースディレクトリ
-DATA_DIR = 'data_dir'
+# DATA_DIR = 'data_dir'
+# DATA_DIR = os.environ['PREFECT__DATA_DIR_PATH']
+DATA_DIR = os.path.abspath(os.environ['PREFECT__DATA_DIR_PATH'])
+
+# DATA_DIR = 'data_dir'
+DATA_DIR_LOGS = os.path.join(DATA_DIR, 'logs')
 # バックアップファイルを保存するベースディレクトリパス
 #BACKUP_BASE_DIR = 'backup_files'
 BACKUP_BASE_DIR:str = os.path.join(DATA_DIR, 'backup_files')

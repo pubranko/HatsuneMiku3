@@ -110,8 +110,6 @@ class DirectorySearchSpiders:
         if len(non_selenium):
             result.append(non_selenium)
 
-        print('=== result ',result)
-
         return result
 
     def separate_spider_using_selenium(self, target_spiders_name: set) -> list[list[dict[str, Any]]]:
@@ -139,8 +137,6 @@ class DirectorySearchSpiders:
         #非seleniumのスパイダーがあった場合
         if len(non_selenium):
             result.append(non_selenium)
-
-        print('=== result ',result)
 
         return result
         # result: list = []
