@@ -25,7 +25,6 @@ ARG EMAIL_FROM
 ARG EMAIL_TO
 ARG EMAIL_PASS
 ARG PRECECT_AUTH
-ARG APP_PATH
 
 # こんな感じでbuildコマンドで渡した引数をコンテナに動的に設定できそう。
 # mongoDBへのアクセス情報
@@ -98,13 +97,17 @@ RUN ls -l
 WORKDIR /app
 
 # ホストOSからアプリをコピー
-RUN echo ${APP_PATH}
-COPY ${APP_PATH} /app/
+COPY app/ /app/
+COPY data_dir/ /data_dir/
+COPY container_start.sh /
 RUN pwd
 RUN ls -l
 
 # アプリ内でpython仮想環境構築
 WORKDIR /app
+RUN pwd
+RUN ls -l
+
 RUN python3.10 -m venv .venv
 RUN . .venv/bin/activate
 RUN pip install -r requirements.txt
@@ -112,15 +115,15 @@ RUN pip install -r requirements.txt
 #VOLUME 命令は指定した名前でマウントポイントを作成し、他のホストやコンテナから外部マウント可能なボリュームにします
 # VOLUME /app/data_dir
 
-# ユーザー変更
-USER ${OS_USER}
-
 # 更新時に使われたが、その後不要となったものの一括削除
 RUN apt autoremove
 # キャッシュされているがインストールされていないdebファイルを削除
 RUN apt autoclean
 
+# ユーザー変更
+USER ${OS_USER}
+
 ENTRYPOINT []
 
 # コンテナ起動時に以下のシェルを実行
-CMD ["bash","./container_start.sh"]
+CMD ["bash","/container_start.sh"]
