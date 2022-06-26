@@ -12,8 +12,8 @@ NOTICE_LEVEL: str = 'WARNING'
 
 # データ類の保存ベースディレクトリ
 # DATA_DIR = 'data_dir'
-# DATA_DIR = os.environ['PREFECT__DATA_DIR_PATH']
-DATA_DIR = os.path.abspath(os.environ['PREFECT__DATA_DIR_PATH'])
+# DATA_DIR = os.environ['PREFECT_DATA_DIR_PATH']
+DATA_DIR = os.path.abspath(os.environ['PREFECT_DATA_DIR_PATH'])
 
 # DATA_DIR = 'data_dir'
 DATA_DIR_LOGS = os.path.join(DATA_DIR, 'logs')

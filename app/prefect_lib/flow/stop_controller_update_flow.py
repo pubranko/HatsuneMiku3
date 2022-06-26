@@ -18,7 +18,7 @@ from prefect_lib.task.stop_controller_update_task import StopControllerUpdateTas
 スクレイピング対象のドメインの登録・削除を行う。
 '''
 with Flow(
-    name='Stop Controller Update Flow',
+    name='[ENTRY_003] Stop Controller Update Flow',
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=True)()   #登録・削除したいドメインを指定
@@ -28,19 +28,3 @@ with Flow(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain, in_out=in_out,
                   destination=destination)
-
-# domain、crawling_start_time_*による絞り込みは任意
-flow.run(parameters=dict(
-    # domain='epochtimes.jp',
-    # in_out='in',
-    # destination='crawling',
-    # domain='epochtimes.jp',
-    # in_out='out',
-    # destination='crawling',
-    # domain='sankei.com',
-    # in_out='in',
-    # destination='scrapying',
-    domain='sankei.com',
-    in_out='out',
-    destination='crawling',
-))

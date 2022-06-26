@@ -6,6 +6,34 @@ FROM ubuntu:20.04
 #LABEL repository="https://github.com/docker-solr/docker-solr"
 LABEL maintainer="BrownieAtelier-test"
 
+# タイムゾーン設定
+ENV TZ Asia/Tokyo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# リポジトリ一覧を更新、インストール済みのパッケージ更新
+RUN apt update
+RUN apt -y upgrade
+# RUN apt -y install build-essential curl git zlib1g-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget vim systemd
+RUN apt -y install build-essential libssl-dev wget
+
+
+# Selenium用にgeckodriverを取得して配置
+RUN wget -P /usr/local/bin/ "https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz"
+RUN tar -zxvf /usr/local/bin/geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin
+
+# pythonまわりのインストール
+RUN apt -y install software-properties-common
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt -y install python3.10
+RUN apt -y install python3.10-venv
+RUN apt -y install python3-pip
+# 完了後PPAの削除
+RUN add-apt-repository --remove ppa:deadsnakes/ppa
+# 更新時に使われたが、その後不要となったものの一括削除
+RUN apt autoremove
+# キャッシュされているがインストールされていないdebファイルを削除
+RUN apt autoclean
+
 # CLI 上から引数を代入するキーを指定するコマンド。
 # ARG <key> といった感じに書いておいて、 --build-arg <key>=<value> オプションで代入することで、
 # Dockerfile 内で の値は使い回しすることができる。
@@ -25,6 +53,8 @@ ARG EMAIL_FROM
 ARG EMAIL_TO
 ARG EMAIL_PASS
 ARG PRECECT_AUTH
+ARG PREFECT_DATA_DIR_PATH
+# ARG PRECECT_PROJECT
 
 # こんな感じでbuildコマンドで渡した引数をコンテナに動的に設定できそう。
 # mongoDBへのアクセス情報
@@ -38,7 +68,9 @@ ENV EMAIL_FROM ${EMAIL_FROM}
 ENV EMAIL_TO ${EMAIL_TO}
 ENV EMAIL_PASS ${EMAIL_PASS}
 # Prefect情報
+ENV PREFECT_DATA_DIR_PATH ${PREFECT_DATA_DIR_PATH}
 ENV PRECECT_AUTH ${PRECECT_AUTH}
+# ENV PRECECT_PROJECT ${PRECECT_PROJECT}
 # solr用の情報は後日実装するときに。
 
 # mongoDB関連：環境変数設定
@@ -55,30 +87,6 @@ ENV PREFECT__LOGGING__LEVEL "INFO"
 ENV PREFECT__LOGGING__FORMAT "%(asctime)s %(levelname)s [%(name)s] : %(message)s"
 ENV PREFECT__LOGGING__DATEFMT "%Y-%m-%d %H:%M:%S"
 
-# タイムゾーン設定
-ENV TZ Asia/Tokyo
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# リポジトリ一覧を更新、インストール済みのパッケージ更新
-RUN apt update
-RUN apt -y upgrade
-# RUN apt -y install build-essential curl git zlib1g-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget vim systemd
-RUN apt -y install build-essential libssl-dev wget
-
-
-# Selenium用にgeckodriverを取得して配置
-RUN wget -P /usr/local/bin/ "https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz"
-RUN tar -zxvf /usr/local/bin/geckodriver-v0.31.0-linux64.tar.gz
-
-# pythonまわりのインストール
-RUN apt -y install software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt -y install python3.10
-RUN apt -y install python3.10-venv
-RUN apt -y install python3-pip
-# 完了後PPAの削除
-RUN add-apt-repository --remove ppa:deadsnakes/ppa
-
 # rootユーザパスワード
 RUN echo 'root:'${OS_ROOT_PASS} | chpasswd
 # 新規グループ・ユーザーを作成。
@@ -90,7 +98,6 @@ RUN echo ${OS_USER}':'${OS_PASS} | chpasswd
 # RUN echo 'Defaults visiblepw' >> /etc/sudoers
 # RUN echo 'iganari ALL=(ALL) NOPASSWD:ALL' >> /etc/sud
 
-
 WORKDIR /
 RUN ls -l
 # アプリ用ディレクトリ作成
@@ -98,30 +105,32 @@ WORKDIR /app
 
 # ホストOSからアプリをコピー
 COPY app/ /app/
-COPY data_dir/ /data_dir/
 COPY container_start.sh /
-RUN pwd
-RUN ls -l
+COPY data_dir/ /data_dir/
+# data_dirのオーナー・グループをOS_USERへ変更
+RUN chown ${OS_USER}:${OS_USER} -R /data_dir
 
 # アプリ内でpython仮想環境構築
-WORKDIR /app
+RUN python3.10 -m venv .venv
+RUN pwd
+RUN ls -la
+RUN "." /app/.venv/bin/activate
+ENV PYTHONPATH "/app:/app/.venv/bin/"
+RUN pwd
+RUN /app/.venv/bin/pip3.10 install -r requirements.txt
+
+################################################
+### ここよりOSユーザーへ変更。権限などに注意 ###
+################################################
+USER ${OS_USER}
+
 RUN pwd
 RUN ls -l
 
-RUN python3.10 -m venv .venv
-RUN . .venv/bin/activate
-RUN pip install -r requirements.txt
+WORKDIR /app
 
-#VOLUME 命令は指定した名前でマウントポイントを作成し、他のホストやコンテナから外部マウント可能なボリュームにします
-# VOLUME /app/data_dir
-
-# 更新時に使われたが、その後不要となったものの一括削除
-RUN apt autoremove
-# キャッシュされているがインストールされていないdebファイルを削除
-RUN apt autoclean
-
-# ユーザー変更
-USER ${OS_USER}
+# #VOLUME 命令は指定した名前でマウントポイントを作成し、他のホストやコンテナから外部マウント可能なボリュームにします
+# # VOLUME /app/data_dir
 
 ENTRYPOINT []
 

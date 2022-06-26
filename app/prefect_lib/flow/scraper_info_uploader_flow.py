@@ -20,7 +20,7 @@ mongoDBのインポートを行う。
 ・対象の年月を指定できる。範囲を指定した場合、月ごとにエクスポートを行う。
 '''
 with Flow(
-    name='Scraper info uploader flow',
+    name='[ENTRY_001] Scraper info uploader flow',
     state_handlers=[flow_status_change],
 ) as flow:
     scraper_info_by_domain_files = Parameter(
@@ -28,20 +28,3 @@ with Flow(
     task = ScraperInfoUploaderTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(scraper_info_by_domain_files=scraper_info_by_domain_files)
-
-flow.run(parameters=dict(
-    scraper_info_by_domain_files=[
-        "nikkei_com.json",
-        #"mainichi_jp.json",
-        #"epochtimes_jp.json",
-        #'yomiuri_co_jp.json',
-        #'yomiuri_co_jp_e1.json',
-        #'yomiuri_co_jp_e2.json',
-        #'yomiuri_co_jp_e3.json',
-        #'yomiuri_co_jp_e4.json',
-        #'yomiuri_co_jp_e5.json',
-        #'yomiuri_co_jp_e6.json',
-        #'yomiuri_co_jp_e7.json',
-        #'yomiuri_co_jp.json',
-    ],
-))

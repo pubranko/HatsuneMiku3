@@ -20,7 +20,7 @@ mongoDBのインポートを行う。
 ・対象の年月を指定できる。範囲を指定した場合、月ごとにエクスポートを行う。
 '''
 with Flow(
-    name='Mongo import selector flow',
+    name='[MONGO_004] Mongo import selector flow',
     state_handlers=[flow_status_change],
 ) as flow:
     collections_name = Parameter(
@@ -37,17 +37,3 @@ with Flow(
                   prefix=prefix,
                   backup_dir_from=backup_dir_from,
                   backup_dir_to=backup_dir_to,)
-
-flow.run(parameters=dict(
-    collections_name=[
-        'crawler_response',
-        'scraped_from_response',
-        'news_clip_master',
-        'crawler_logs',
-        'asynchronous_report',
-        'controller',
-    ],
-    prefix='test',
-    backup_dir_from='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
-    backup_dir_to='2022-05',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
-))

@@ -19,14 +19,10 @@ from prefect_lib.task.stats_info_collect_task import StatsInfoCollectTask
 ※基準日の指定がない場合、前日を基準日とする。
 '''
 with Flow(
-    name='Stats info collect flow',
+    name='[STATS_001] Stats info collect flow',
     state_handlers=[flow_status_change],
 ) as flow:
     base_date = DateTimeParameter('base_date', required=False,)
     task = StatsInfoCollectTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(base_date=base_date,)
-
-flow.run(parameters=dict(
-    base_date=datetime(2022, 6, 25).astimezone(TIMEZONE),
-))

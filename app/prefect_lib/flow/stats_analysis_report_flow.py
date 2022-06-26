@@ -20,7 +20,7 @@ from prefect_lib.task.stats_analysis_report_task import StatsAnalysisReportTask
 各種実行結果を解析しレポートとして出力する。
 '''
 with Flow(
-    name='Execution result analysis report flow',
+    name='[STATS_002] Stats nalysis report flow',
     state_handlers=[flow_status_change],
 ) as flow:
     report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
@@ -31,12 +31,3 @@ with Flow(
     result = task(report_term=report_term,
                   totalling_term=totalling_term,
                   base_date=base_date,)
-
-flow.run(parameters=dict(
-    #report_term='daily',
-    report_term='weekly',
-    #report_term='monthly',
-    #report_term='yearly',
-    totalling_term='daily',
-    base_date=datetime(2022, 6, 26).astimezone(TIMEZONE),   # 左記基準日の前日分のデータが対象となる。
-))

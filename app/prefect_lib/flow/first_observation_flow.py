@@ -18,12 +18,10 @@ from prefect_lib.task.first_observation_task import FirstObservationTask
 ②前回クロール情報がないスパイダー
 '''
 with Flow(
-    name='First observation flow',
+    name='[CRAWL_001] First observation flow',
     state_handlers=[flow_status_change],
 ) as flow:
 
     task = FirstObservationTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task()
-
-flow.run()

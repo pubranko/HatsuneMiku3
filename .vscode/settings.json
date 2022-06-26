@@ -1,5 +1,6 @@
 {
-    // "terminal.integrated.cwd": "/home/mikuras/004_atelier/003_BrownieAtelier/app",
-    "jupyter.notebookFileRoot": "/home/mikuras/004_atelier/003_BrownieAtelier/app",
+    "terminal.integrated.cwd": "app",
+    "jupyter.notebookFileRoot": "app",
+    // "jupyter.notebookFileRoot": "/home/mikuras/004_atelier/003_BrownieAtelier/app",
     // "python.formatting.provider": "autopep8"
 }

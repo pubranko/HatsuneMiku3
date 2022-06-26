@@ -16,11 +16,9 @@ from prefect_lib.task.regular_observation_task import RegularObservationTask
 定期観測を行う。
 '''
 with Flow(
-    name='Regular observation flow',
+    name='[CRAWL_002] Regular observation flow',
     state_handlers=[flow_status_change],
 ) as flow:
     task = RegularObservationTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task()
-
-flow.run()

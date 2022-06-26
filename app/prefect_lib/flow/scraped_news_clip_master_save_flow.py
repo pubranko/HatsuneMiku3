@@ -19,7 +19,7 @@ from prefect_lib.task.scraped_news_clip_master_save_task import ScrapedNewsClipM
 ・対象のドメイン、スクレイピング時間を指定できる。
 '''
 with Flow(
-    name='Scraped news clip master save flow',
+    name='[CRAWL_006] Scraped news clip master save flow',
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=False)()
@@ -31,13 +31,3 @@ with Flow(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(domain=domain, scrapying_start_time_from=scrapying_start_time_from,
                   scrapying_start_time_to=scrapying_start_time_to)
-
-# domain、scrapying_start_time_*による絞り込みは任意
-flow.run(parameters=dict(
-    #domain='kyodo.co.jp',
-    #domain='epochtimes.jp',
-    scrapying_start_time_from=datetime(2022, 2, 11, 17, 10, 0).astimezone(TIMEZONE),
-    #scrapying_start_time_to=datetime(2021, 8, 21, 10, 18, 12, 160000).astimezone(TIMEZONE),
-    #scrapying_start_time_from=datetime(2021, 9, 25, 15, 26, 37, 344148).astimezone(TIMEZONE),
-    #scrapying_start_time_to=datetime(2021, 9, 25, 15, 26, 37, 344148).astimezone(TIMEZONE),
-))

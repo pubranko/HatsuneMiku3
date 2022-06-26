@@ -20,7 +20,7 @@ from prefect_lib.task.monthly_delete_task import MonthlyDeleteTask
 ・範囲指定もできる。
 '''
 with Flow(
-    name='Monthly delete flow',
+    name='[MONGO_002] Monthly delete flow',
     state_handlers=[flow_status_change],
 ) as flow:
     collections_name = Parameter(
@@ -36,16 +36,3 @@ with Flow(
         delete_period_from=delete_period_from,
         delete_period_to=delete_period_to,
         )
-
-flow.run(parameters=dict(
-    collections_name=[
-        'crawler_response',
-        'crawler_logs',
-        'asynchronous_report',
-        'scraped_from_response',
-        'news_clip_master',
-        'controller',
-    ],
-    delete_period_from='2022-02',  # 月次削除を行うデータの基準年月
-    delete_period_to='2022-05',  # 月次削除を行うデータの基準年月
-))

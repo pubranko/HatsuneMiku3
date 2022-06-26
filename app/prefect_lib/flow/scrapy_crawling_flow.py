@@ -20,7 +20,7 @@ scrapyによるクロールを実行する。
 ・後続のスクレイピング〜news_clipへの登録まで一括で実行するか選択できる。
 '''
 with Flow(
-    name='Scrapy crawling flow',
+    name='[CRAWL_003] Scrapy crawling flow',
     state_handlers=[flow_status_change],
 ) as flow:
     spider_names = Parameter('spider_names')()
@@ -31,32 +31,3 @@ with Flow(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(spider_names=spider_names, spider_kwargs=spider_kwargs,
                   following_processing_execution=following_processing_execution)
-
-flow.run(parameters=dict(
-    spider_names=[
-        #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
-        #'epochtimes_jp_sitemap',
-        #'epochtimes_jp_crawl',
-        #'kyodo_co_jp_sitemap',
-        # 'yomiuri_co_jp_sitemap',
-        #'sankei_com_sitemap',
-        # 'asahi_com_sitemap',
-        'jp_reuters_com_crawl',
-        #'mainichi_jp_crawl',
-        # 'nikkei_com_crawl',
-    ],
-    spider_kwargs={
-        'debug': 'Yes',
-        #'lastmod_period_minutes': '60,',
-        #'lastmod_period_minutes': '3840,3780',
-        'pages': '1,2',
-        #'continued':'Yes',
-        # 'direct_crawl_urls':[],
-        #'crawl_point_non_update':'Yes',
-        #'url_pattern':'https://www.yomiuri.co.jp/national/20220430-OYT1T50050',
-        #'url_pattern':'https://mainichi.jp/articles/20220607/k00/00m/050/362000c',
-        #'url_pattern':'https://jp.reuters.com/article/euronext-tech-idJPKBN2NO0TB',
-        #'url_pattern':'https://www.epochtimes.jp/2022/06/107648.html',
-    },
-    following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
-))

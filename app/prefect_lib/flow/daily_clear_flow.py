@@ -17,11 +17,9 @@ from prefect_lib.task.daily_clear_task import DailyClearTask
 ・scraped_from_responseをクリアする。
 '''
 with Flow(
-    name='Mongo import selector flow',
+    name='[MONGO_001] Mongo import selector flow',
     state_handlers=[flow_status_change],
 ) as flow:
     task = DailyClearTask(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task()
-
-flow.run()

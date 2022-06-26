@@ -21,7 +21,7 @@ from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 ③ニュースクリップマスターとニュースクリップ(news_clip_master -> news_clip(solr))
 '''
 with Flow(
-    name='Crawl urls sync check flow',
+    name='[CHECK_001] Crawl urls sync check flow',
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=False)()
@@ -34,12 +34,3 @@ with Flow(
     result = task(domain=domain,
                   start_time_from=start_time_from,
                   start_time_to=start_time_to)
-
-# domain、start_time_*による絞り込みは任意
-flow.run(parameters=dict(
-    #domain='sankei.com',
-    #start_time_from=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
-    #start_time_to=datetime(2021, 9, 25, 11, 8, 28, 286000).astimezone(TIMEZONE),
-    #urls=['https://www.sankei.com/article/20210829-2QFVABFPMVIBNHSINK6TBYWEXE/?outputType=theme_tokyo2020',]
-))
-#2021-08-29T13:33:48.503Z

@@ -20,7 +20,7 @@ from prefect_lib.task.scraper_pattern_report_task import ScrapyingPatternReportT
 各スクレイピング項目の抽出パターンの使用状況をレポートとして出力する。
 '''
 with Flow(
-    name='Scraper pattern info report flow',
+    name='[STATS_003] Scraper pattern info report flow',
     state_handlers=[flow_status_change],
 ) as flow:
     report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly
@@ -29,11 +29,3 @@ with Flow(
         log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
     result = task(report_term=report_term,
                   base_date=base_date,)
-
-flow.run(parameters=dict(
-    #report_term='daily',
-    report_term='weekly',
-    #report_term='monthly',
-    #report_term='yearly',
-    base_date=datetime(2022, 6, 26).astimezone(TIMEZONE),   # 左記基準日の前日分のデータが対象となる。
-))
