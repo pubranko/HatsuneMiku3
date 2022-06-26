@@ -12,6 +12,7 @@ class ScrapedNewsClipMasterSaveTask(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
 
         kwargs['mongo'] = self.mongo
         kwargs['start_time'] = self.start_time

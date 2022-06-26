@@ -11,6 +11,7 @@ class CrawlUrlsSyncCheckTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''''''
+        self.run_init()
 
         kwargs['start_time'] = self.start_time
         kwargs['mongo'] = self.mongo

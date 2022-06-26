@@ -19,6 +19,8 @@ class ScraperInfoUploaderTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''''''
+        self.run_init()
+
         self.logger.info(f'=== ScraperInfoUploaderTask run kwargs : {str(kwargs)}')
 
         scraper_info_by_domain_model = ScraperInfoByDomainModel(self.mongo)

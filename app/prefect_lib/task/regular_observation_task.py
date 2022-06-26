@@ -18,6 +18,8 @@ class RegularObservationTask(ExtensionsTask):
 
     def run(self):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
+
         directory_search_spiders = DirectorySearchSpiders()
         controller: ControllerModel = ControllerModel(self.mongo)
         spider_name_set: set = controller.regular_observation_spider_name_set_get()

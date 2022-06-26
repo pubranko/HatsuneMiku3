@@ -15,6 +15,7 @@ class StopControllerUpdateTask(ExtensionsTask):
 
     def run(self, domain: str, in_out: str, destination: str):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
 
         self.logger.info('=== Stop Controller Update Task run kwargs : ' +
                     str(domain) + '/' + str(in_out) + '/' + str(destination))

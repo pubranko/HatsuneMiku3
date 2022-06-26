@@ -26,6 +26,8 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
+
         kwargs['logger'] = self.logger
         self.logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
 

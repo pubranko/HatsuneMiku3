@@ -117,8 +117,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''' '''
-        self.start_time
-        self.mongo
+        self.run_init()
+
         self.logger.info(
             f'=== StatsAnalysisReportTask run kwargs : {kwargs}')
 

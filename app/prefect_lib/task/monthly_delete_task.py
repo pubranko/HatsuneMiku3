@@ -35,6 +35,8 @@ class MonthlyDeleteTask(ExtensionsTask):
                 f'=== {collection_name} 削除対象件数 : {str(delete_count)}')
 
         #####################################################
+        self.run_init()
+
         self.logger.info(f'=== Monthly delete task run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']

@@ -19,6 +19,8 @@ class FirstObservationTask(ExtensionsTask):
 
     def run(self):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
+
         # 初回観測の対象spiders_infoを抽出
         directory_search_spiders = DirectorySearchSpiders()
         controller: ControllerModel = ControllerModel(self.mongo)

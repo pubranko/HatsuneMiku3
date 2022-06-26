@@ -18,6 +18,7 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
 
     def run(self, spiders_name: str, in_out: str,):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
 
         self.logger.info('=== Regular Observation Controller Update Task run kwargs : ' +
                     str(spiders_name) + '/' + str(in_out))

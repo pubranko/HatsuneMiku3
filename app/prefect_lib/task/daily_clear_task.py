@@ -19,6 +19,8 @@ class DailyClearTask(ExtensionsTask):
             self.logger.info(f'=== DailyClearTask run delete_non_filter : 削除件数({collection_name}) : {delete_count}件')
 
         ###################################################################################
+        self.run_init()
+
         collections_name: list = ['scraped_from_response']
 
         for collection_name in collections_name:

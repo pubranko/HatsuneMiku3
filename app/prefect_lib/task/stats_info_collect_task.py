@@ -29,9 +29,8 @@ class StatsInfoCollectTask(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
 
-        self.start_time
-        self.mongo
         self.logger.info(
             f'=== StatsInfoCollectTask run kwargs : {kwargs}')
 

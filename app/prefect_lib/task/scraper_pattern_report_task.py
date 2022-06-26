@@ -48,8 +48,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''' '''
-        self.start_time
-        self.mongo
+        self.run_init()
+
         self.logger.info(
             f'=== ScrapyingPatternReportTask run kwargs : {kwargs}')
 

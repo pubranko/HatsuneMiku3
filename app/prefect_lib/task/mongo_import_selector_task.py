@@ -25,6 +25,8 @@ class MongoImportSelectorTask(ExtensionsTask):
 
     def run(self, **kwargs):
         ''''''
+        self.run_init()
+
         self.logger.info(f'=== MongoImportSelectorTask run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']

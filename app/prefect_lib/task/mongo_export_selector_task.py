@@ -146,6 +146,8 @@ class MongoExportSelectorTask(ExtensionsTask):
                 os.chmod(file_path, 0o444)
 
         #####################################################
+        self.run_init()
+
         self.logger.info(f'=== MongoExportSelector run kwargs : {str(kwargs)}')
 
         collections_name: list = kwargs['collections_name']

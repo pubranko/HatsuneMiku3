@@ -19,8 +19,6 @@ from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
 from prefect_lib.settings import TIMEZONE
 from prefect_lib.settings import NOTICE_LEVEL
-from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
-
 
 
 class ExtensionsTask(Task):
@@ -41,9 +39,6 @@ class ExtensionsTask(Task):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.log_file_path = LOG_FILE_PATH
-        self.logger.info(
-            f'=== ExtensionsTask __init__ log_file_path : {self.log_file_path}')
         # ログファイルパス
         # if log_file_path:
         #     self.log_file_path = log_file_path
@@ -119,8 +114,22 @@ class ExtensionsTask(Task):
         self.mongo.close()
         os.remove(self.log_file_path)  # 終了後ログファイルを削除
 
+    def run_init(self):
+        from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
+        # ログファイル
+        self.log_file_path = LOG_FILE_PATH
+        self.logger.info(
+            f'=== ExtensionsTask run_init log_file_path : {self.log_file_path}')
+        # 開始時間
+        self.start_time=datetime.now().astimezone(TIMEZONE)
+        self.logger.info(
+            f'=== ExtensionsTask run_init start_time : {self.start_time}')
+
     def run(self,):
         '''(ここはオーバーライドすることを前提とする。)
         ここがprefectで起動するメイン処理
         '''
+        self.run_init()
         pass
+        self.closed()
+

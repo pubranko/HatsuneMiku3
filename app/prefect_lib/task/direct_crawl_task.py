@@ -17,6 +17,7 @@ class DirectCrawlTask(ExtensionsTask):
     '''
     def run(self, **kwargs):
         '''Direct Crawl Task'''
+        self.run_init()
 
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger

@@ -13,6 +13,7 @@ class ScrapyingTask(ExtensionsTask):
 
     def run(self, **kwargs):
         '''ここがprefectで起動するメイン処理'''
+        self.run_init()
 
         kwargs['start_time'] = self.start_time
         kwargs['mongo'] = self.mongo
