@@ -8,8 +8,6 @@ from prefect.engine import signals
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE
-from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
 from prefect_lib.task.scrapy_crawling_task import ScrapyCrawlingTask
 
@@ -27,7 +25,6 @@ with Flow(
     spider_kwargs = Parameter('spider_kwargs')()
     following_processing_execution = Parameter(
         'following_processing_execution', default='No')()
-    task = ScrapyCrawlingTask(
-        log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
+    task = ScrapyCrawlingTask()
     result = task(spider_names=spider_names, spider_kwargs=spider_kwargs,
                   following_processing_execution=following_processing_execution)

@@ -11,6 +11,6 @@ flow.run(parameters=dict(
     # in_out='in',
     # destination='scrapying',
     domain='sankei.com',
-    in_out='out',
+    in_out='in',
     destination='crawling',
 ))

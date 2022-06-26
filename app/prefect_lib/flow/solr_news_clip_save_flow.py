@@ -9,8 +9,6 @@ from prefect.engine import signals
 from prefect.utilities.context import Context
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE
-from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
 from prefect_lib.common_module.flow_status_change import flow_status_change
 from prefect_lib.task.solr_news_clip_save_task import SolrNewsClipSaveTask
 
@@ -29,7 +27,6 @@ with Flow(
     scraped_save_start_time_to = DateTimeParameter(
         'scraped_save_start_time_to', required=False)
 
-    task = SolrNewsClipSaveTask(
-        log_file_path=LOG_FILE_PATH, start_time=datetime.now().astimezone(TIMEZONE))
+    task = SolrNewsClipSaveTask()
     result = task(domain=domain, scraped_save_start_time_from=scraped_save_start_time_from,
                   scraped_save_start_time_to=scraped_save_start_time_to)

@@ -17,7 +17,10 @@ from common_lib.resource_check import resource_check
 from common_lib.environ_check import environ_check
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
+from prefect_lib.settings import TIMEZONE
 from prefect_lib.settings import NOTICE_LEVEL
+from prefect_lib.common_module.logging_setting import LOG_FILE_PATH
+
 
 
 class ExtensionsTask(Task):
@@ -34,24 +37,29 @@ class ExtensionsTask(Task):
     prefect_context: Context = any.context
     logger: Logger
 
-    def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
+    # def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.log_file_path = LOG_FILE_PATH
+        self.logger.info(
+            f'=== ExtensionsTask __init__ log_file_path : {self.log_file_path}')
         # ログファイルパス
-        if log_file_path:
-            self.log_file_path = log_file_path
-            self.logger.info(
-                f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
-        else:
-            raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
+        # if log_file_path:
+        #     self.log_file_path = log_file_path
+        #     self.logger.info(
+        #         f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
+        # else:
+        #     raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
 
         # 開始時間
-        if start_time:
-            self.start_time = start_time
-            self.logger.info(
-                f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
-        else:
-            raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
+        self.start_time=datetime.now().astimezone(TIMEZONE)
+        # if start_time:
+        #     self.start_time = start_time
+        #     self.logger.info(
+        #         f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
+        # else:
+        #     raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
         # 環境変数チェック
         environ_check()
