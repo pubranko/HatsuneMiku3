@@ -1,6 +1,6 @@
 import logging
 import tempfile
-from prefect_lib.settings import DATA_DIR_LOGS
+from common_lib.common_settings import DATA_DIR_LOGS
 
 
 # 各Flowのロギング設定を行う。

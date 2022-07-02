@@ -14,7 +14,7 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Fo
 from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import DATA_DIR
+from common_lib.common_settings import DATA_DIR
 from common_lib.mail_attach_send import mail_attach_send
 from models.news_clip_master_model import NewsClipMasterModel
 from models.scraper_info_by_domain_model import ScraperInfoByDomainModel

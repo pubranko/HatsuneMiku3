@@ -16,7 +16,7 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Fo
 from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import DATA_DIR
+from common_lib.common_settings import DATA_DIR
 from common_lib.timezone_recovery import timezone_recovery
 from common_lib.mail_attach_send import mail_attach_send
 from models.mongo_model import MongoModel

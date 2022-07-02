@@ -9,7 +9,7 @@ from logging import Logger
 path = os.getcwd()
 sys.path.append(path)
 from models.solr_news_clip_model import SolrNewsClip
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 
 logger: Logger = logging.getLogger()
 

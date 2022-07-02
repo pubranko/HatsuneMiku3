@@ -1,5 +1,5 @@
 from datetime import datetime
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 from prefect_lib.flow.solr_news_clip_save_flow import flow
 # scraped_save_start_time_*による絞り込みは任意
 flow.run(parameters=dict(

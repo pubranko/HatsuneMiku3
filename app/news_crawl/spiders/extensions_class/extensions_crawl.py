@@ -64,6 +64,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     lastmod_period: LastmodPeriodMinutesSkipCheck
     url_continued: UrlsContinuedSkipCheck
     pagination_check: PaginationCheck
+    lastmod_continued: LastmodContinuedSkipCheck
 
 
     def __init__(self, *args, **kwargs):

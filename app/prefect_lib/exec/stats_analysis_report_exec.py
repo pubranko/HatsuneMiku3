@@ -1,5 +1,5 @@
 from datetime import datetime
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 from prefect_lib.flow.stats_analysis_report_flow import flow
 flow.run(parameters=dict(
     #report_term='daily',

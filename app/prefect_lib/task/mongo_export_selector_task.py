@@ -11,7 +11,7 @@ from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE, BACKUP_BASE_DIR
+from common_lib.common_settings import TIMEZONE, BACKUP_BASE_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel

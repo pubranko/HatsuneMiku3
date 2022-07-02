@@ -9,7 +9,7 @@
 
 # デフォルトの設定はこちらにあるようだ。
 # ~.venv/lib/python3.8/site-packages/scrapy/settings/default_settings.py
-
+import os
 from datetime import timedelta, timezone
 from shutil import which
 BOT_NAME = 'news_crawl'
@@ -217,6 +217,11 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 RETRY_ENABLED = True
 #RETRY_TIMES = 2    requestオブジェクトで直接拡張させたのでここでの設定不要。
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
+
+# 排他制御用のワークディレクトリ設定
+from common_lib.common_settings import DATA_DIR
+EXCLUSIVE_WORK = os.path.join(DATA_DIR, 'exclusive_work')
+
 
 '''デフォルトセッティングのパス
 .venv/lib/python3.8/site-packages/scrapy/settings/default_settings.py

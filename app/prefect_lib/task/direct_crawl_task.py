@@ -8,7 +8,7 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run
 from common_lib.directory_search_spiders import DirectorySearchSpiders
-from prefect_lib.settings import DIRECT_CRAWL_FILES_DIR
+from common_lib.common_settings import DIRECT_CRAWL_FILES_DIR
 from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
 
 

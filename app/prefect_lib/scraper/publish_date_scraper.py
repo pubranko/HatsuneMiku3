@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 from bs4.element import Tag
 from dateutil.parser import parse
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 import requests
 
 

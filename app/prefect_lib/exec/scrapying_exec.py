@@ -1,5 +1,5 @@
 from datetime import datetime
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 from prefect_lib.flow.scrapy_crawling_flow import flow
 # domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(

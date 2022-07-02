@@ -6,18 +6,18 @@ flow.run(parameters=dict(
         #'epochtimes_jp_sitemap',
         #'epochtimes_jp_crawl',
         #'kyodo_co_jp_sitemap',
-        # 'yomiuri_co_jp_sitemap',
+        'yomiuri_co_jp_sitemap',
         #'sankei_com_sitemap',
         # 'asahi_com_sitemap',
-        'jp_reuters_com_crawl',
+        # 'jp_reuters_com_crawl',
         #'mainichi_jp_crawl',
         # 'nikkei_com_crawl',
     ],
     spider_kwargs={
         'debug': 'Yes',
-        #'lastmod_period_minutes': '60,',
+        # 'pages': '1,1',
+        'lastmod_period_minutes': '60,',
         #'lastmod_period_minutes': '3840,3780',
-        'pages': '1,2',
         #'continued':'Yes',
         # 'direct_crawl_urls':[],
         #'crawl_point_non_update':'Yes',
@@ -26,5 +26,5 @@ flow.run(parameters=dict(
         #'url_pattern':'https://jp.reuters.com/article/euronext-tech-idJPKBN2NO0TB',
         #'url_pattern':'https://www.epochtimes.jp/2022/06/107648.html',
     },
-    following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
+    # following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
 ))

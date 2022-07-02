@@ -4,7 +4,7 @@ from dateutil import parser
 from typing import Any, Union
 from pydantic import BaseModel, ValidationError, validator,Field
 from pydantic.main import ModelMetaclass
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 
 class LogViewerValidator(BaseModel):
     date_from: str = ''

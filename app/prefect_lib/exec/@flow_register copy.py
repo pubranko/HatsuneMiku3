@@ -1,5 +1,8 @@
+from prefect.run_configs import LocalRun
+from prefect.run_configs import KubernetesRun
+from prefect.storage import Docker
+from datetime import datetime, timezone, timedelta
 from prefect.storage import Local
-from prefect.core.flow import Flow
 
 # crawl scrape系
 from prefect_lib.flow.direct_crawl_flow import flow as direct_crawl_flow
@@ -25,44 +28,19 @@ from prefect_lib.flow.scraper_pattern_report_flow import flow as scraper_pattern
 from prefect_lib.flow.stats_analysis_report_flow import flow as stats_analysis_report_flow
 from prefect_lib.flow.stats_info_collect_flow import flow as stats_info_collect_flow
 
-# flow情報を集めたdictを作成
-flows: dict[str, Flow] = {}
-# crawl scrape系
-flows['direct_crawl_flow'] = direct_crawl_flow
-flows['first_observation_flow'] = first_observation_flow
-flows['regular_observation_flow'] = regular_observation_flow
-flows['scraped_news_clip_master_save_flow'] = scraped_news_clip_master_save_flow
-flows['scrapy_crawling_flow'] = scrapy_crawling_flow
-flows['scrapying_flow'] = scrapying_flow
-flows['solr_news_clip_save_flow'] = solr_news_clip_save_flow
-# check系
-flows['crawl_urls_sync_check_flow'] = crawl_urls_sync_check_flow
-# mongodbメンテナンス消し
-flows['daily_clear_flow'] = daily_clear_flow
-flows['monthly_delete_flow'] = monthly_delete_flow
-flows['mongo_export_selector_flow'] = mongo_export_selector_flow
-flows['mongo_import_selector_flow'] = mongo_import_selector_flow
-# ENTRY系
-flows['scraper_info_uploader_flow'] = scraper_info_uploader_flow
-flows['stop_controller_update_flow'] = stop_controller_update_flow
-flows['regular_observation_controller_update_flow'] = regular_observation_controller_update_flow
-# stats系
-flows['scraper_pattern_report_flow'] = scraper_pattern_report_flow
-flows['stats_analysis_report_flow'] = stats_analysis_report_flow
-flows['stats_info_collect_flow'] = stats_info_collect_flow
-
 # 各種共通設定
 # エージェント名
 agents: list = ['crawler-container']
 # プロジェクト名
 project_name: str = "TEST2"
+# 登録したフローのファイル名に付与するタイムスタンプ
+dt_now_jst = datetime.now(timezone(timedelta(hours=9)))
+# timestamp = dt_now_jst.isoformat().replace(":","-")
+timestamp = dt_now_jst.strftime('%Y-%m-%dT%H-%M-%S.%f')
 
-for flow_name, flow in flows.items():
-    flow.storage = Local(path=f'prefect_lib/flow/{flow_name}.py',
-                         add_default_labels=False, stored_as_script=True)
-    flow.register(labels=agents, project_name=project_name,)
 
-# # crawl scrape系
+LocalRun()
+# crawl scrape系
 # direct_crawl_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{direct_crawl_flow.name}/{timestamp}')
 # first_observation_flow.register(
@@ -77,10 +55,10 @@ for flow_name, flow in flows.items():
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{scrapying_flow.name}/{timestamp}')
 # solr_news_clip_save_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{solr_news_clip_save_flow.name}/{timestamp}')
-# # check系
+# check系
 # crawl_urls_sync_check_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{crawl_urls_sync_check_flow.name}/{timestamp}')
-# # mongodbメンテナンス消し
+# mongodbメンテナンス消し
 # daily_clear_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{daily_clear_flow.name}/{timestamp}')
 # monthly_delete_flow.register(
@@ -89,18 +67,24 @@ for flow_name, flow in flows.items():
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{mongo_export_selector_flow.name}/{timestamp}')
 # mongo_import_selector_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{mongo_import_selector_flow.name}/{timestamp}')
-# # ENTRY系
+# ENTRY系
 # scraper_info_uploader_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{scraper_info_uploader_flow.name}/{timestamp}')
-
-# stop_controller_update_flow.storage = Local(
-#     path='prefect_lib/flow/stop_controller_update_flow.py', add_default_labels=False, stored_as_script=True)
-# stop_controller_update_flow.register(
-#     labels=agents, project_name=project_name,)
-
+stop_controller_update_flow.storage = Local(
+    # directory='.flows/',
+    path='prefect_lib/exec/stop_controller_update_exec.py',
+    add_default_labels=False,
+    stored_as_script=True)
+stop_controller_update_flow.register(
+    labels=agents, project_name=project_name, add_default_labels=False,
+    # path='/app/prefect_lib/flow/stop_controller_update_flow.py',
+    #path='prefect_lib/exec/stop_controller_update_exec.py',
+    # files={'prefect_lib/flow/stop_controller_update_flow.py':'stop_controller_update_flow.py'}
+    )
+    # labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{stop_controller_update_flow.name}/{timestamp}')
 # regular_observation_controller_update_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{regular_observation_controller_update_flow.name}/{timestamp}')
-# # stats系
+# stats系
 # scraper_pattern_report_flow.register(
 #     labels=agents, project_name=project_name, add_default_labels=False, path=f'.flows/{scraper_pattern_report_flow.name}/{timestamp}')
 # stats_analysis_report_flow.register(

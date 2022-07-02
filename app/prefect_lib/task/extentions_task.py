@@ -17,8 +17,8 @@ from common_lib.resource_check import resource_check
 from common_lib.environ_check import environ_check
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
-from prefect_lib.settings import TIMEZONE
-from prefect_lib.settings import NOTICE_LEVEL
+from common_lib.common_settings import TIMEZONE
+from common_lib.common_settings import NOTICE_LEVEL
 
 
 class ExtensionsTask(Task):

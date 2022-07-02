@@ -1,6 +1,6 @@
 import os
 import fasteners
-
+from news_crawl.settings import EXCLUSIVE_WORK
 
 class CrawlingDomainDuplicatePrevention():
     '''
@@ -13,7 +13,7 @@ class CrawlingDomainDuplicatePrevention():
         news_crawl/exclusive_work/ドメイン名.txt
         '''
         path = os.path.join(
-            'news_crawl', 'exclusive_work', domain_name + '.txt')
+            EXCLUSIVE_WORK, domain_name + '.txt')
         self.lock = fasteners.InterProcessLock(path)
         result: bool = self.lock.acquire(blocking=False)
 

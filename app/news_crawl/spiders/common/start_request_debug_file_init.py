@@ -3,7 +3,7 @@ import sys
 from scrapy.spiders import Spider
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import DEBUG_FILE_DIR
+from common_lib.common_settings import DEBUG_FILE_DIR
 
 
 def start_request_debug_file_init(spider: Spider, kwargs_save: dict):

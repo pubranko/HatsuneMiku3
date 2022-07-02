@@ -5,7 +5,7 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 path = os.getcwd()
 sys.path.append(path)
-from prefect_lib.settings import TIMEZONE
+from common_lib.common_settings import TIMEZONE
 from prefect_lib.task.extentions_task import ExtensionsTask
 from models.crawler_response_model import CrawlerResponseModel
 from models.scraped_from_response_model import ScrapedFromResponseModel

@@ -134,6 +134,7 @@ dmypy.json
 .vscode/settings.json
 .vscode/task.json
 app/news_crawl/exclusive_work/*
+app/.flows/*
 data_dir/backup_files/*
 data_dir/debug/*
 data_dir/direct_crawl_files/*
