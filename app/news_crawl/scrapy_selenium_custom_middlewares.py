@@ -1,4 +1,5 @@
 """This module contains the ``SeleniumMiddleware`` scrapy middleware"""
+import os
 from typing import Any
 from importlib import import_module
 
@@ -55,7 +56,8 @@ class SeleniumMiddleware:
 
         driver_kwargs = {
             'executable_path': driver_executable_path,
-            'options': driver_options
+            'options': driver_options,
+            'service_log_path': os.path.devnull,    # geckodriver.logを出力させないための設定
         }
 
         self.driver = driver_class(**driver_kwargs)

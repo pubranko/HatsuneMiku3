@@ -1,5 +1,5 @@
 #FROM openjdk:11-stretch
-FROM brownie_atelier_base:0.8
+FROM brownie_atelier_base:0.9
 
 #LABELでメタ情報を入れることができる
 #LABEL maintainer="Martijn Koster \"mak-docker@greenhills.co.uk\""
@@ -57,6 +57,9 @@ ENV MONGO_STATS_INFO_COLLECT "stats_info_collect"
 ENV PREFECT__LOGGING__LEVEL "INFO"
 ENV PREFECT__LOGGING__FORMAT "%(asctime)s %(levelname)s [%(name)s] : %(message)s"
 ENV PREFECT__LOGGING__DATEFMT "%Y-%m-%d %H:%M:%S"
+ENV PREFECT__LOGGING__DATEFMT "%Y-%m-%d %H:%M:%S"
+# Scrapyのsettingsファイルの場所(pythonのモジュール形式で指定が必要)
+ENV SCRAPY_SETTINGS_MODULE "news_crawl.settings"
 
 # rootユーザパスワード
 RUN echo 'root:'${OS_ROOT_PASS} | chpasswd
@@ -71,30 +74,12 @@ RUN echo ${OS_USER}':'${OS_PASS} | chpasswd
 
 # アプリ用ディレクトリ作成
 WORKDIR /app
-# ################################################
-# ### ここよりOSユーザーへ変更。権限などに注意 ###
-# ################################################
-# USER ${OS_USER}
-# WORKDIR /app
-
-# ################################################
-# ### ここよりrootへ変更。権限などに注意       ###
-# ################################################
-# USER root
-
 # ホストOSからアプリをコピー
 COPY app/ /app/
 COPY container_start.sh /
 COPY data_dir/ /data_dir/
 # data_dirのオーナー・グループをOS_USERへ変更
 RUN chown ${OS_USER}:${OS_USER} -R /data_dir
-
-# prefectのflowをコピー
-# flowはprefect cloudへ登録した際、pickle化されて保存されている。これをagentが参照してflowを実行しているため必要。
-# ホストOS側は登録したユーザーであることを前提とする。
-#WORKDIR /home/${OS_PASS}/.prefect/flows
-#COPY "/home/mikuras/.prefect/flows/" /home/${OS_PASS}/.prefect/flows/
-# COPY ~/.prefect/flows/ /home/${OS_PASS}/.prefect/flows/
 
 ################################################
 ### ここよりOSユーザーへ変更。権限などに注意 ###
@@ -109,5 +94,4 @@ WORKDIR /app
 ENTRYPOINT []
 
 # コンテナ起動時に以下のシェルを実行
-# CMD ["bash","/container_start.sh"]
-CMD []
+CMD ["bash","/container_start.sh"]

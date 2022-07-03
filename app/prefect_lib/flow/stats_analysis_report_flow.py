@@ -18,7 +18,7 @@ from prefect_lib.task.stats_analysis_report_task import StatsAnalysisReportTask
 各種実行結果を解析しレポートとして出力する。
 '''
 with Flow(
-    name='[STATS_002] Stats nalysis report flow',
+    name='[STATS_002] Stats analysis report flow',
     state_handlers=[flow_status_change],
 ) as flow:
     report_term = Parameter('report_term', default='weekly', required=True)()   # レポート期間 : daily, weekly, monthly, yearly

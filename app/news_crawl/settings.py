@@ -171,7 +171,13 @@ TIMEZONE = timezone(timedelta(hours=9), 'JST')
 
 #LOGのレベル(CRITICAL > ERROR > WARNING > INFO > DEBUG)
 #LOG_LEVEL = 'INFO'
-LOG_LEVEL = 'DEBUG'
+#LOG_LEVEL = 'DEBUG'
+# 環境変数にSCRAPY__LOG_LEVELがあればそれをログレベルとする。（チェックはしないので設定を間違えないでね）
+# なければINFOで実行する。
+if os.environ.get('SCRAPY__LOG_LEVEL'):
+    LOG_LEVEL = os.environ['SCRAPY__LOG_LEVEL']
+else:
+    LOG_LEVEL = 'INFO'
 #LOG_FILE = 'logs/test.log'
 #LOG_FILE = ''
 # ロギングを有効にするかどうか。
