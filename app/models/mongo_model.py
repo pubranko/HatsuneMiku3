@@ -22,8 +22,9 @@ class MongoModel(object):
         self.__mongo_db_name = os.environ['MONGO_USE_DB']
         self.__mongo_user = os.environ['MONGO_USER']
         self.__mongo_pass = os.environ['MONGO_PASS']
+        self.__mongo_query = os.environ['MONGO_QUERY']
 
-        uri = f'mongodb://{quote_plus(self.__mongo_user)}:{quote_plus(self.__mongo_pass)}@{self.__mongo_uri}/{self.__mongo_db_name}'
+        uri = f'mongodb://{quote_plus(self.__mongo_user)}:{quote_plus(self.__mongo_pass)}@{self.__mongo_uri}/{self.__mongo_db_name}?{self.__mongo_query}'
         self.__mongo_client = MongoClient(
             host=uri, port=int(self.__mongo_port),
         )

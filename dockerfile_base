@@ -1,9 +1,6 @@
-#FROM openjdk:11-stretch
 FROM ubuntu:20.04
 
 #LABELでメタ情報を入れることができる
-#LABEL maintainer="Martijn Koster \"mak-docker@greenhills.co.uk\""
-#LABEL repository="https://github.com/docker-solr/docker-solr"
 LABEL maintainer="BrownieAtelier-base-test"
 
 # タイムゾーン設定
@@ -11,41 +8,45 @@ ENV TZ Asia/Tokyo
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # リポジトリ一覧を更新、インストール済みのパッケージ更新
+# 必要なアプリをインストール
 RUN apt update
 RUN apt -y upgrade
-# 必要なアプリをインストール
-# RUN apt -y install build-essential curl git zlib1g-dev libssl-dev libbz2-dev libreadline-dev libsqlite3-dev wget vim systemd
 RUN apt -y install build-essential libssl-dev wget firefox
 
-# Selenium用にgeckodriverを取得して配置
+# Selenium用にgeckodriverを取得して配置。不要になったダウンロードファイル削除
 RUN wget -P /usr/local/bin/ "https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz"
 RUN tar -zxvf /usr/local/bin/geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin
+RUN rm /usr/local/bin/geckodriver-v0.31.0-linux64.tar.gz
 
 # pythonまわりのインストール
-RUN apt -y install software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt -y install python3.10
+# 完了後PPAの削除
+# RUN apt -y install software-properties-common
+# RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt search python3.10
+RUN apt -y install libqgispython3.10.4
 RUN apt -y install python3.10-venv
 RUN apt -y install python3-pip
 RUN apt -y install python3-selenium
-# 完了後PPAの削除
-RUN add-apt-repository --remove ppa:deadsnakes/ppa
-# 更新時に使われたが、その後不要となったものの一括削除
-RUN apt autoremove
-# キャッシュされているがインストールされていないdebファイルを削除
-RUN apt autoclean
+# RUN add-apt-repository --remove ppa:deadsnakes/ppa
 
-WORKDIR /
+# 更新時に使われたが、その後不要となったものの一括削除
+# キャッシュされているがインストールされていないdebファイルを削除
+# 不要なアプリを削除
+RUN apt autoremove
+RUN apt autoclean
+RUN apt -y remove build-essential libssl-dev wget
+
 # アプリ用ディレクトリ作成
 WORKDIR /app
+
 # ホストOSからアプリをコピー
 COPY app/requirements.txt /app/
 
 # アプリ内でpython仮想環境構築
+ENV PYTHONPATH "/app:/app/.venv/bin/"
 RUN python3.10 -m venv .venv
 RUN "." /app/.venv/bin/activate
-ENV PYTHONPATH "/app:/app/.venv/bin/"
-# RUN python3.10 -m pip install --upgrade pip
+RUN pip install --upgrade pip
 RUN /app/.venv/bin/pip3.10 install -r requirements.txt
 
 ENTRYPOINT []

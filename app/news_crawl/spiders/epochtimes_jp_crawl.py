@@ -153,13 +153,13 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         '''
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
-        driver.set_page_load_timeout(15)
-        driver.implicitly_wait(15)
-        driver.set_script_timeout(15)
+        driver.set_page_load_timeout(60)
+        driver.implicitly_wait(60)
+        driver.set_script_timeout(60)
 
         ### ログイン操作
         # ログインフォーム部のiframe内に入る
-        iframe: WebElement = WebDriverWait(driver, 15).until(
+        iframe: WebElement = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
         driver.switch_to.frame(iframe)
 
@@ -186,12 +186,12 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             driver.switch_to.default_content()
 
             # ログインフォームのiframに入る
-            iframe2: WebElement = WebDriverWait(driver, 15).until(
+            iframe2: WebElement = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#modal-COMMON-content > p > iframe')))
             driver.switch_to.frame(iframe2)
 
             # ユーザー名（email）入力
-            elem: WebElement = WebDriverWait(driver, 15).until(
+            elem: WebElement = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ymkemail')))
             elem.send_keys(user)
             # パスワード入力
@@ -209,10 +209,10 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         ### ログイン済みであることを最終チェック
         try:
-            iframe3: WebElement = WebDriverWait(driver, 15).until(
+            iframe3: WebElement = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
             driver.switch_to.frame(iframe3)
-            WebDriverWait(driver, 15).until(
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ep_user_name'))) #ログイン後なら存在
             driver.switch_to.default_content()
         except NoSuchElementException:
@@ -226,7 +226,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
             next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
             next_page_element = f'.main_content > .left_col > .pagination > a[href="{next_page_url}"]'
-            WebDriverWait(driver, 15).until(
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, next_page_element)))
 
             # ページ内の対象urlを抽出

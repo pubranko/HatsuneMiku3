@@ -1,7 +1,7 @@
 from prefect_lib.flow.scraper_info_uploader_flow import flow
 flow.run(parameters=dict(
     scraper_info_by_domain_files=[
-        "nikkei_com.json",
+        # "nikkei_com.json",
         #"mainichi_jp.json",
         #"epochtimes_jp.json",
         #'yomiuri_co_jp.json',

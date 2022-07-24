@@ -84,8 +84,8 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
         while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response_selenium 現在解析中のURL = {driver.current_url}')
-            driver.set_page_load_timeout(15)
-            driver.set_script_timeout(15)
+            driver.set_page_load_timeout(60)
+            driver.set_script_timeout(60)
 
             target_article_element = f'#article-list > ul > li:nth-child({number_of_details_in_page * self.page})'
             WebDriverWait(driver, 10).until(

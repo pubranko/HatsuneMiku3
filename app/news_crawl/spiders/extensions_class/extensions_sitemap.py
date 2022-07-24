@@ -125,9 +125,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     yield SplashRequest(url=loc, callback=self.parse,
                                         meta={'max_retry_times': 20},
                                         args={
-                                            'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
+                                            'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
                                             'wait': 2.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
-                                            'resource_timeout': 10.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                                            'resource_timeout': 60.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
                                             'images': 0,  # 画像はダウンロードしない(0)
                                         })
                 else:
@@ -174,9 +174,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
                             elif self.splash_mode:
                                 yield SplashRequest(url=loc, callback=call_back, meta={'max_retry_times': 20},
                                                     args={
-                                    'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
+                                    'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
                                     'wait': 1.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
-                                    'resource_timeout': 30.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                                    'resource_timeout': 60.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
                                     'images': 0,  # 画像はダウンロードしない(0)
                                 })
                             else:
@@ -266,9 +266,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
         if self.splash_mode:
             meta = {'max_retry_times': 20}
             args = {
-                'timeout': 10,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
+                'timeout': 60,  # レンダリングのタイムアウト（秒単位）（デフォルトは30）。
                 'wait': 2.0,  # ページが読み込まれた後、更新を待機する時間（秒単位）
-                'resource_timeout': 10.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
+                'resource_timeout': 60.0,  # 個々のネットワーク要求のタイムアウト（秒単位）。
                 'images': 0,  # 画像はダウンロードしない(0)
             }
 
@@ -332,9 +332,9 @@ class ExtensionsSitemapSpider(SitemapSpider):
         any: Any = response.request
         driver: WebDriver = any.meta['driver']
 
-        driver.set_page_load_timeout(15)
+        driver.set_page_load_timeout(60)
         # driver.implicitly_wait(15)
-        driver.set_script_timeout(15)
+        driver.set_script_timeout(60)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
         # driverから直接リンク要素を取得しても、DOMで参照中に変わってしまうことが発生した。

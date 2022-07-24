@@ -3,6 +3,7 @@ from typing import Any
 from datetime import datetime
 from models.mongo_model import MongoModel
 from models.mongo_common_model import MongoCommonModel
+from pymongo import ASCENDING
 
 
 class CrawlerResponseModel(MongoCommonModel):
@@ -26,8 +27,11 @@ class CrawlerResponseModel(MongoCommonModel):
         if not 'response_time' in index_list:
             self.mongo.mongo_db[self.collection_name].create_index(
                 'response_time')
-        if not 'domain' in index_list:
-            self.mongo.mongo_db[self.collection_name].create_index('domain')
+        # if not 'domain' in index_list:
+        #     self.mongo.mongo_db[self.collection_name].create_index('domain')
+        if not 'domain__response_time' in index_list:
+            self.mongo.mongo_db[self.collection_name].create_index([('domain',ASCENDING),('response_time',ASCENDING)])
+
 
     def news_clip_master_register_result(self, url: str, response_time: datetime, news_clip_master_register: str) -> None:
         '''news_clip_masterへの登録結果を反映させる'''

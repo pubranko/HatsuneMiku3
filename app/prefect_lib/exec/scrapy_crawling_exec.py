@@ -7,7 +7,7 @@ flow.run(parameters=dict(
         #'epochtimes_jp_crawl',
         #'kyodo_co_jp_sitemap',
         'yomiuri_co_jp_sitemap',
-        #'sankei_com_sitemap',
+        'sankei_com_sitemap',
         # 'asahi_com_sitemap',
         # 'jp_reuters_com_crawl',
         #'mainichi_jp_crawl',
@@ -26,5 +26,5 @@ flow.run(parameters=dict(
         #'url_pattern':'https://jp.reuters.com/article/euronext-tech-idJPKBN2NO0TB',
         #'url_pattern':'https://www.epochtimes.jp/2022/06/107648.html',
     },
-    # following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
+    following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
 ))

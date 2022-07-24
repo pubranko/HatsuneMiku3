@@ -105,12 +105,12 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         while self.page <= self.end_page:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
-            driver.set_page_load_timeout(5)
-            # driver.implicitly_wait(15)
-            driver.set_script_timeout(5)
+            driver.set_page_load_timeout(60)
+            # driver.implicitly_wait(60)
+            driver.set_script_timeout(60)
 
             next_page_element = f'div.control-nav > a.control-nav-next[href="?view=page&page={self.page + 1}&pageSize=10"]'
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, next_page_element)))
 
             # ページ内の対象urlを抽出

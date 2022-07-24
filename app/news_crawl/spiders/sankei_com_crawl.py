@@ -114,7 +114,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         while page <= end_page:  # 条件はあとで考える
 
             # Javascript実行が終了するまで最大30秒間待つように指定
-            driver.set_script_timeout(30)
+            driver.set_script_timeout(60)
 
             elements = driver.find_elements_by_css_selector(
                 '#fusion-app > div > div > section > .story-card-feed .storycard .story-card-flex')

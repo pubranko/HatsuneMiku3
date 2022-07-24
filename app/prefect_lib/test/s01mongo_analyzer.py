@@ -1,6 +1,7 @@
 import scrapy
 from typing import Any
-from pymongo import MongoClient
+#from pymongo import MongoClient
+from pymongo.mongo_client import MongoClient
 import pickle
 from bs4 import BeautifulSoup as bs4
 from dateutil import parser

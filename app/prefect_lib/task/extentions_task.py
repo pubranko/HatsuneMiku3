@@ -18,7 +18,6 @@ from common_lib.environ_check import environ_check
 from models.mongo_model import MongoModel
 from models.crawler_logs_model import CrawlerLogsModel
 from common_lib.common_settings import TIMEZONE
-from common_lib.common_settings import NOTICE_LEVEL
 
 
 class ExtensionsTask(Task):
@@ -80,13 +79,13 @@ class ExtensionsTask(Task):
         # 2021-08-08 12:31:04 INFO [prefect.FlowRunner] : Flow run SUCCESS: all reference tasks succeeded
 
         title: str = ''
-        if pattern_traceback.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
+        if pattern_traceback.search(self.log_record):
             title = f'【{self.name}:クリティカル発生】{self.start_time.isoformat()}'
-        elif pattern_critical.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL']:
+        elif pattern_critical.search(self.log_record):
             title = f'【{self.start_time.isoformat()}:クリティカル発生】{self.start_time.isoformat()}'
-        elif pattern_error.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR']:
+        elif pattern_error.search(self.log_record):
             title = f'【{self.name}:エラー発生】{self.start_time.isoformat()}'
-        # elif pattern_warning.search(self.log_record) and NOTICE_LEVEL in ['CRITICAL', 'ERROR', 'WARNING']:
+        # elif pattern_warning.search(self.log_record):
         #     title = f'【{self.name}:ワーニング発生】{self.start_time.isoformat()}'
 
         if not title == '':
