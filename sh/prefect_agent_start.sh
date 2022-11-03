@@ -1,6 +1,4 @@
 #!/bin/bash
-# アプリディレクトリへ
-cd $HOME/BrownieAtelier
 # python仮想環境を有効化
 . $HOME/.venv/bin/activate
 # prefectクラウドへのログイン
@@ -10,6 +8,8 @@ $HOME/.venv/bin/prefect auth login --key $PRECECT_AUTH
 # prefectのバックエンドの向き先をクラウドへ
 $HOME/.venv/bin/prefect backend cloud
 
+# アプリディレクトリへ
+cd $HOME/BrownieAtelier/app
 # prefectエージェントを起動
 #   -l -> labelsの指定。Flow登録時のlabelを指定することによりFlowの実行が可能となる。登録されているFlowのlabel(複数設定可)と合わない場合、実行できない。
 #         複数のエージェントを同時に起動する場合、一意となるラベル名も追加で付与すること。そうしないと競合する。
