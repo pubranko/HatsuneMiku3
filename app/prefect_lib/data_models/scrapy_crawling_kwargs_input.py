@@ -3,16 +3,16 @@ from typing import Any
 import pandas as pd
 from copy import deepcopy
 import itertools
-
+from typing import Union
 
 class ScrapyCrawlingKwargsInput:
-    lastmod_period_minutes:(list|None) = None
-    pages:(list|None) = None
-    continued:(str|None) = None
-    direct_crawl_urls:(list|None) = None
-    debug:(str|None) = None
-    crawl_point_non_update:(str|None) = None
-    url_pattern:(str|None) = None
+    lastmod_period_minutes:Union[list,None] = None
+    pages:Union[list,None] = None
+    continued:Union[str,None] = None
+    direct_crawl_urls:Union[list,None] = None
+    debug:Union[str,None] = None
+    crawl_point_non_update:Union[str,None] = None
+    url_pattern:Union[str,None] = None
 
     def __init__(self, spider_kwargs):
         if 'lastmod_period_minutes' in spider_kwargs:
