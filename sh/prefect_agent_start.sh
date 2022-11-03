@@ -1,13 +1,14 @@
+#!/bin/bash
 # アプリディレクトリへ
-cd /app
+cd $HOME/BrownieAtelier
 # python仮想環境を有効化
-. .venv/bin/activate
+. $HOME/.venv/bin/activate
 # prefectクラウドへのログイン
-prefect auth login --key $PRECECT_AUTH
+$HOME/.venv/bin/prefect auth login --key $PRECECT_AUTH
 # コンテナ内よりフローをprefectクラウドへ登録
 # python prefect_lib/exec/@flow_register.py
 # prefectのバックエンドの向き先をクラウドへ
-prefect backend cloud
+$HOME/.venv/bin/prefect backend cloud
 
 # prefectエージェントを起動
 #   -l -> labelsの指定。Flow登録時のlabelを指定することによりFlowの実行が可能となる。登録されているFlowのlabel(複数設定可)と合わない場合、実行できない。
@@ -17,4 +18,4 @@ prefect backend cloud
 #                          このホスト名の部分を無しにできるオプション。
 #                          この端末専用のフロー以外拒否したい場合はこのオプションを外してください。
 #prefect agent local start -l crawler-container
-prefect agent local start -l crawler-container -f --no-hostname-label
+$HOME/.venv/bin/prefect agent local start -l crawler-container -f --no-hostname-label

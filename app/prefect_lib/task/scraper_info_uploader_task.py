@@ -59,6 +59,8 @@ class ScraperInfoUploaderTask(ExtensionsTask):
                 scraper_info_by_domain_model.update_one(
                     filter={'domain': scraper_info['domain']},
                     record={"$set":scraper_info})
+                self.logger.info(
+                    f'=== ScraperInfoUploaderTask run 登録完了 : {file_name}')
 
             # 処理の終わったファイルオブジェクトを削除
             del file, scraper_info

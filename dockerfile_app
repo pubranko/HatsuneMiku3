@@ -1,99 +1,46 @@
 #FROM openjdk:11-stretch
-FROM brownie_atelier_base:0.9
+FROM brownie_atelier_base:0.10
 
 #LABELでメタ情報を入れることができる
 #LABEL maintainer="Martijn Koster \"mak-docker@greenhills.co.uk\""
 #LABEL repository="https://github.com/docker-solr/docker-solr"
 LABEL maintainer="BrownieAtelier-app-test"
 
-# CLI 上から引数を代入するキーを指定するコマンド。
-# ARG <key> といった感じに書いておいて、 --build-arg <key>=<value> オプションで代入することで、
-# Dockerfile 内で の値は使い回しすることができる。
-# 要は、dockerコマンドとdockerfile間で情報をやり取りするための変数を定義しているようだ。
-# OSユーザー＆パスワード
-ARG OS_USER
-ARG OS_PASS
-ARG OS_ROOT_PASS
-# アプリのログイン要素
-ARG MONGO_SERVER
-ARG MONGO_PORT
-ARG MONGO_USE_DB
-ARG MONGO_USER
-ARG MONGO_PASS
-ARG MONGO_QUERY
-ARG EMAIL_FROM
-ARG EMAIL_TO
-ARG EMAIL_PASS
-ARG PRECECT_AUTH
-ARG PREFECT_DATA_DIR_PATH
-# ARG PRECECT_PROJECT
-
-# こんな感じでbuildコマンドで渡した引数をコンテナに動的に設定できそう。
-# mongoDBへのアクセス情報
-ENV MONGO_SERVER ${MONGO_SERVER}
-ENV MONGO_PORT ${MONGO_PORT}
-ENV MONGO_USER ${MONGO_USER}
-ENV MONGO_PASS ${MONGO_PASS}
-ENV MONGO_QUERY ${MONGO_QUERY}
-ENV MONGO_USE_DB ${MONGO_USE_DB}
-# Email情報
-ENV EMAIL_FROM ${EMAIL_FROM}
-ENV EMAIL_TO ${EMAIL_TO}
-ENV EMAIL_PASS ${EMAIL_PASS}
-# Prefect情報
-ENV PREFECT_DATA_DIR_PATH ${PREFECT_DATA_DIR_PATH}
-ENV PRECECT_AUTH ${PRECECT_AUTH}
-# ENV PRECECT_PROJECT ${PRECECT_PROJECT}
-# solr用の情報は後日実装するときに。
-
-# mongoDB関連：環境変数設定
-ENV MONGO_CRAWLER_RESPONSE "crawler_response"
-ENV MONGO_CONTROLLER "controller"
-ENV MONGO_CRAWLER_LOGS "crawler_logs"
-ENV MONGO_SCRAPED_FROM_RESPONSE "scraped_from_response"
-ENV MONGO_NEWS_CLIP_MASTER "news_clip_master"
-ENV MONGO_SCRAPER_BY_DOMAIN "scraper_by_domain"
-ENV MONGO_ASYNCHRONOUS_REPORT "asynchronous_report"
-ENV MONGO_STATS_INFO_COLLECT "stats_info_collect"
-# Prefectのログ設定情報
-ENV PREFECT__LOGGING__LEVEL "INFO"
-ENV PREFECT__LOGGING__FORMAT "%(asctime)s %(levelname)s [%(name)s] : %(message)s"
-ENV PREFECT__LOGGING__DATEFMT "%Y-%m-%d %H:%M:%S"
-ENV PREFECT__LOGGING__DATEFMT "%Y-%m-%d %H:%M:%S"
-# Scrapyのsettingsファイルの場所(pythonのモジュール形式で指定が必要)
-ENV SCRAPY_SETTINGS_MODULE "news_crawl.settings"
-
-# rootユーザパスワード
-RUN echo 'root:'${OS_ROOT_PASS} | chpasswd
-# 新規グループ・ユーザーを作成。
-RUN groupadd -g 1000 ${OS_USER}
-RUN useradd  -g      ${OS_USER} -G sudo -m -s /bin/bash ${OS_USER}
-# ユーザパスワード
-RUN echo ${OS_USER}':'${OS_PASS} | chpasswd
-#sudoユーザーを追加
-# RUN echo 'Defaults visiblepw' >> /etc/sudoers
-# RUN echo 'iganari ALL=(ALL) NOPASSWD:ALL' >> /etc/sud
+ARG NORMAL_USER
+ARG GIT_REMOTE_REPOSITORY
 
 # アプリ用ディレクトリ作成
-WORKDIR /app
-# ホストOSからアプリをコピー
-COPY app/ /app/
-COPY container_start.sh /
-COPY data_dir/ /data_dir/
-# data_dirのオーナー・グループをOS_USERへ変更
-RUN chown ${OS_USER}:${OS_USER} -R /data_dir
+WORKDIR /home/${NORMAL_USER}//BrownieAtelier
 
-################################################
-### ここよりOSユーザーへ変更。権限などに注意 ###
-################################################
-USER ${OS_USER}
+RUN git init
+# azureの共有ファイルに保存する際、セキュリティで警告が出るため以下のコマンドで安全であるディレクトリであると設定する。
+RUN git config --global --add safe.directory /home/${NORMAL_USER}/BrownieAtelier
+# BrownieAtelierのリモートリポジトリを登録
+RUN git remote add origin $GIT_REMOTE_REPOSITORY
+# リモートリポジトリよりpullを実行し初回のソースを取得する。
+#まだmasterじゃない、、、
+RUN git pull origin develop
 
-WORKDIR /app
+# アプリ内でpython仮想環境構築
+WORKDIR /home/${NORMAL_USER}
+RUN python3.9 -m venv .venv
+RUN "." .venv/bin/activate
+RUN .venv/bin/pip install --upgrade pip
+# pythonライブラリ系インストール
+RUN /home/${NORMAL_USER}/.venv/bin/pip install -r /home/${NORMAL_USER}/BrownieAtelier/app/requirements.txt
 
-# #VOLUME 命令は指定した名前でマウントポイントを作成し、他のホストやコンテナから外部マウント可能なボリュームにします
-# # VOLUME /app/data_dir
 
-ENTRYPOINT []
+# pythonライブラリのインストール完了後、git pullした情報を抹消(容量節約)
+WORKDIR /home/${NORMAL_USER}//BrownieAtelier
+RUN rm -rf *; \
+    rm -rf .git; \
+    rm -rf .dockerignore; \
+    rm -rf .gitignore; \
+    rm -rf .vscode
 
-# コンテナ起動時に以下のシェルを実行
-CMD ["bash", "/container_start.sh"]
+# オーナー＆グループをOSユーザーに変更
+WORKDIR /home/${NORMAL_USER}
+RUN chown -R ${NORMAL_USER}:${NORMAL_USER} .
+
+# コンテナ実行時のユーザーをOSユーザーへ変更
+USER ${NORMAL_USER}
