@@ -1,7 +1,4 @@
-from email import generator
-from numpy import generic
 from typing import Union
-from pymongo import collection
 from models.mongo_model import MongoModel
 from pymongo.cursor import Cursor
 
@@ -73,7 +70,7 @@ class MongoCommonModel(object):
         ]
         return self.mongo.mongo_db[self.collection_name].aggregate(pipeline=pipeline)
 
-    def limited_find(self, projection=None, filter=None, sort=None, limit: int = 100):
+    def limited_find(self, projection=None, filter:dict[str,list] ={}, sort=None, limit: int = 100):
         '''
         ・findした結果をレコード単位で返すジェネレーター。
         ・デフォルトで100件単位でデータを取得するが、当メソッドの呼び出し元では

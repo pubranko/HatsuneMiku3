@@ -1,6 +1,11 @@
 {
+    "python.pythonPath": "app/.venv/bin/python",
     "terminal.integrated.cwd": "app",
     "jupyter.notebookFileRoot": "app",
-    "jupyter.notebookFileRoot": "/home/mikuras/004_atelier/003_BrownieAtelier/app",
-    // "python.formatting.provider": "autopep8"
+    "python.autoComplete.extraPaths": [
+    
+    ],
+    // "jupyter.notebookFileRoot": "/home/mikuras/004_atelier/003_BrownieAtelier/app",
+    // "python.formatting.provider": "autopep8",
+
 }

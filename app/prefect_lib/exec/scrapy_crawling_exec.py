@@ -2,21 +2,19 @@ from prefect_lib.flow.scrapy_crawling_flow import flow
 
 flow.run(parameters=dict(
     spider_names=[
-        #'sankei_com_sitemap', 'asahi_com_sitemap', 'kyodo_co_jp_sitemap', 'jp_reuters_com_crawl', 'yomiuri_co_jp_sitemap', 'epochtimes_jp_sitemap',
-        #'epochtimes_jp_sitemap',
-        #'epochtimes_jp_crawl',
-        #'kyodo_co_jp_sitemap',
-        'yomiuri_co_jp_sitemap',
-        'sankei_com_sitemap',
-        # 'asahi_com_sitemap',
-        # 'jp_reuters_com_crawl',
-        #'mainichi_jp_crawl',
-        # 'nikkei_com_crawl',
+        "sankei_com_sitemap",
+        "asahi_com_sitemap",
+        "kyodo_co_jp_sitemap",
+        "yomiuri_co_jp_sitemap",
+        "jp_reuters_com_crawl",
+        "epochtimes_jp_crawl",
+        "mainichi_jp_crawl",
+        "nikkei_com_crawl"
     ],
     spider_kwargs={
         'debug': 'Yes',
-        # 'pages': '1,1',
-        'lastmod_period_minutes': '60,',
+        'pages': '1,1',
+        'lastmod_period_minutes': '120,',
         #'lastmod_period_minutes': '3840,3780',
         #'continued':'Yes',
         # 'direct_crawl_urls':[],

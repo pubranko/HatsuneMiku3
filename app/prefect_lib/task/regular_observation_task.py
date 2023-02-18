@@ -9,6 +9,7 @@ from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_cli
 from models.controller_model import ControllerModel
 from common_lib.directory_search_spiders import DirectorySearchSpiders
 from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+from BrownieAtelierStorage.models.controller_blob_model import ControllerBlobModel
 
 
 class RegularObservationTask(ExtensionsTask):
@@ -86,4 +87,10 @@ class RegularObservationTask(ExtensionsTask):
 
         # 終了処理
         self.closed()
+
+        # 定期観測終了後コンテナーを停止させる。
+        #   azure functions BLOBトリガーを動かすためのBLOBファイルを削除＆作成を実行する。
+        controller_blob_model = ControllerBlobModel()
+        controller_blob_model.delete_blob()
+        controller_blob_model.upload_blob()
         # return ''

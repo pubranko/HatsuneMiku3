@@ -148,3 +148,5 @@ test_aria/*
 ### パスワードなどあるので保存禁止 雛形は docker-compose.yml.org を参照
 docker-compose.yml
 aci-create*.yml
+aci-app-db-login.yml
+aci-app-db.yml

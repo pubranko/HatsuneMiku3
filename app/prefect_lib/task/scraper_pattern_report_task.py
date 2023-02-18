@@ -82,7 +82,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             conditions.append({'crawling_start_time': {'$lt': base_date_to}})
             conditions.append(
                 {'domain': scraper_info_by_domain_data.domain_get()})
-            filter: Any = {'$and': conditions}
+            filter: dict = {'$and': conditions}
             record_count = news_clip_master.count(filter=filter)
             self.logger.info(
                 f'=== ScrapyingPatternReportTask run news_clip_master domain = {scraper_info_by_domain_data.domain_get()},  件数 = {str(record_count)}')

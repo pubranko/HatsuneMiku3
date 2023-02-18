@@ -30,7 +30,7 @@ class ScraperPatternReportInput(BaseModel):
     # 単項目チェック、省略時の値設定
     ##################################
     @validator('start_time')
-    def start_time_check(cls, value: str, values: dict) -> str:
+    def start_time_check(cls, value: datetime, values: dict) -> datetime:
         if value:
             assert isinstance(value, datetime), '日付型以外がエラー'
         return value
