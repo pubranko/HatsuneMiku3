@@ -8,10 +8,10 @@ from pymongo import ASCENDING
 from pymongo.cursor import Cursor
 path = os.getcwd()
 sys.path.append(path)
-from models.mongo_model import MongoModel
-from models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
+from shared.timezone_recovery import timezone_recovery
 from models.solr_news_clip_model import SolrNewsClip
-from common_lib.timezone_recovery import timezone_recovery
 
 logger: Logger = logging.getLogger('prefect.run.news_clip_master_save')
 

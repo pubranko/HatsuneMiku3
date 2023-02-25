@@ -4,3 +4,6 @@
 [submodule "app/BrownieAtelierMongo"]
 	path = app/BrownieAtelierMongo
 	url = https://github.com/pubranko/BrownieAtelierMongo.git
+[submodule "app/BrownieAtelierNotice"]
+	path = app/BrownieAtelierNotice
+	url = https://github.com/pubranko/BrownieAtelierNotice.git

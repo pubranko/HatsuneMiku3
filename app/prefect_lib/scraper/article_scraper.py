@@ -10,7 +10,7 @@ from bs4.element import Tag
 from bs4.element import ResultSet
 from datetime import datetime
 from dateutil.parser import parse
-from common_lib.common_settings import TIMEZONE
+from shared.settings import TIMEZONE
 import time
 import requests
 
@@ -49,14 +49,14 @@ if __name__ == '__main__':
 
     # body > div#fusion-app > div.grid div.grid > section > article.article-wrapper > div.article-body > p.article-text
     # DB内のデータイメージ
-    {'domain': 'yomiuri.co.jp',
-     'scrape_item': {
-        'article_scraper': [
-            {'pattern': 2,
-                'css_selecter': 'div.p-main-contents > p[iarticle_selecterrop=articleBody]'},
-            {'pattern': 1,
-                'css_selecter': 'div.main-contents > p[iarticle_selecterrop=articleBody]'},
-        ]}}
+    # {'domain': 'yomiuri.co.jp',
+    #  'scrape_item': {
+    #     'article_scraper': [
+    #         {'pattern': 2,
+    #             'css_selecter': 'div.p-main-contents > p[iarticle_selecterrop=articleBody]'},
+    #         {'pattern': 1,
+    #             'css_selecter': 'div.main-contents > p[iarticle_selecterrop=articleBody]'},
+    #     ]}}
     # パターン: pattern
     # 型：str,datetime      type
     # 数：single,multipule  single_or_multiple

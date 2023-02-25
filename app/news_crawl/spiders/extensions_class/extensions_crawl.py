@@ -5,12 +5,14 @@ from datetime import datetime
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Response, Request, TextResponse
 from urllib.parse import unquote
-from news_crawl.items import NewsCrawlItem
-from models.mongo_model import MongoModel
 from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
 from scrapy_splash import SplashRequest
 from scrapy_splash.response import SplashTextResponse
+#
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from news_crawl.items import NewsCrawlItem
+from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
@@ -36,8 +38,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
     _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_crawl_version: float = 1.0         # 当クラスのバージョン
 
-    # 引数の値保存
-    kwargs_save: dict                    # 取得した引数を保存
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
@@ -58,13 +58,17 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # クロール対象となったurlリスト[response.url,,,]
     crawl_target_urls: list[str] = []
 
-
-    # パラメータによる抽出処理のためのクラス
+    # 引数の値保存
+    kwargs_save: dict                    # 取得した引数を保存
+    # 引数用クラス
+    news_crawl_input: NewsCrawlInput
+    # 引数による抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
     url_continued: UrlsContinuedSkipCheck
-    pagination_check: PaginationCheck
     lastmod_continued: LastmodContinuedSkipCheck
+    # ページネーションチェック: 次ページがある場合、そのURLを取得する
+    pagination_check: PaginationCheck
 
 
     def __init__(self, *args, **kwargs):

@@ -12,6 +12,11 @@
 import os
 from datetime import timedelta, timezone
 from shutil import which
+from decouple import config, AutoConfig
+# .envファイルが存在するパスを指定。実行時のカレントディレクトリに.envを配置している場合、以下の設定不要。
+# config = AutoConfig(search_path="./shared")
+
+
 BOT_NAME = 'news_crawl'
 
 SPIDER_MODULES = ['news_crawl.spiders']
@@ -174,10 +179,11 @@ TIMEZONE = timezone(timedelta(hours=9), 'JST')
 #LOG_LEVEL = 'DEBUG'
 # 環境変数にSCRAPY__LOG_LEVELがあればそれをログレベルとする。（チェックはしないので設定を間違えないでね）
 # なければINFOで実行する。
-if os.environ.get('SCRAPY__LOG_LEVEL'):
-    LOG_LEVEL = os.environ['SCRAPY__LOG_LEVEL']
-else:
-    LOG_LEVEL = 'INFO'
+# if os.environ.get('SCRAPY__LOG_LEVEL'):
+#     LOG_LEVEL = os.environ['SCRAPY__LOG_LEVEL']
+# else:
+#     LOG_LEVEL = 'INFO'
+LOG_LEVEL:str = str(config('SCRAPY__LOG_LEVEL', default='INFO'))
 #LOG_FILE = 'logs/test.log'
 #LOG_FILE = ''
 # ロギングを有効にするかどうか。
@@ -225,7 +231,7 @@ RETRY_ENABLED = True
 RETRY_HTTP_CODES = [500, 502, 503, 504, 522, 524, 408, 429]
 
 # 排他制御用のワークディレクトリ設定
-from common_lib.common_settings import DATA_DIR
+from shared.settings import DATA_DIR
 EXCLUSIVE_WORK = os.path.join(DATA_DIR, 'exclusive_work')
 
 

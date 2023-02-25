@@ -8,8 +8,8 @@ from logging import Logger
 
 path = os.getcwd()
 sys.path.append(path)
+from shared.settings import TIMEZONE
 from models.solr_news_clip_model import SolrNewsClip
-from common_lib.common_settings import TIMEZONE
 
 logger: Logger = logging.getLogger()
 

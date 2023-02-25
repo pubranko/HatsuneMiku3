@@ -22,8 +22,8 @@ with Flow(
     # storage=Local(directory='.flows/')
 ) as flow:
     domain = Parameter('domain', required=True)()   #登録・削除したいドメインを指定
-    in_out = Parameter('in_out', required=True)()   #in:登録、out：削除
+    register = Parameter('register', required=True)()   #add:登録、delete：削除
     destination = Parameter('destination', required=True)()   #crawlingとscrapyingの選択
     task = StopControllerUpdateTask()
-    result = task(domain=domain, in_out=in_out,
+    result = task(domain=domain, register=register,
                   destination=destination)

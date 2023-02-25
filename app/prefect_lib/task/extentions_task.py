@@ -12,12 +12,11 @@ from prefect.utilities.context import Context
 from prefect.utilities import context as prefect_utilities_con
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.mail_send import mail_send
-from common_lib.resource_check import resource_check
-from common_lib.environ_check import environ_check
-from models.mongo_model import MongoModel
-from models.crawler_logs_model import CrawlerLogsModel
-from common_lib.common_settings import TIMEZONE
+from BrownieAtelierNotice.mail_send import mail_send
+from shared.resource_check import resource_check
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from shared.settings import TIMEZONE
 
 
 class ExtensionsTask(Task):
@@ -55,9 +54,6 @@ class ExtensionsTask(Task):
         # else:
         #     raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
 
-        # 環境変数チェック
-        environ_check()
-
     def log_check(self):
         '''クリティカル、エラー、ワーニングがあったらメールで通知'''
         # logファイルオープン
@@ -92,7 +88,7 @@ class ExtensionsTask(Task):
             msg: str = '\n'.join([
                 '【ログ】', self.log_record,
             ])
-            mail_send(title, msg,)
+            mail_send(title, msg,self.logger)
 
     def log_save(self):
         '''処理が終わったらログを保存'''

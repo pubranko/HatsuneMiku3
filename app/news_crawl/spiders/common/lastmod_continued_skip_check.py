@@ -4,7 +4,7 @@ from typing import Any
 from datetime import datetime
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.timezone_recovery import timezone_recovery
+from shared.timezone_recovery import timezone_recovery
 
 
 class LastmodContinuedSkipCheck(object):

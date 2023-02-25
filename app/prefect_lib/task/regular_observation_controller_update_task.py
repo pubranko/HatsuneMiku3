@@ -1,27 +1,30 @@
 import os
 import sys
-import re
+from typing import Final
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
-from models.mongo_model import MongoModel
-from models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
-from common_lib.directory_search_spiders import DirectorySearchSpiders
+from shared.directory_search_spiders import DirectorySearchSpiders
 
 
 class RegularObservationControllerUpdateTask(ExtensionsTask):
     '''
     定期観測コントローラー更新用タスク
     '''
+    # 定数定義
+    REGISTER_ADD:Final[str] = 'add'         # 登録方法：追加
+    REGISTER_DELETE:Final[str] = 'delete'   # 登録方法：削除
 
-    def run(self, spiders_name: str, in_out: str,):
+    def run(self, spiders_name: str, register: str,):
         '''ここがprefectで起動するメイン処理'''
         self.run_init()
 
         self.logger.info('=== Regular Observation Controller Update Task run kwargs : ' +
-                    str(spiders_name) + '/' + str(in_out))
+                    str(spiders_name) + '/' + str(register))
         mongo: MongoModel = self.mongo
         controller = ControllerModel(mongo)
         record = set(controller.regular_observation_spider_name_set_get())
@@ -37,14 +40,14 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
         for spider_info in directory_search_spiders.spiders_name_list_get():
             spiders_exist_set.add(spider_info)
 
-        if in_out == 'in':
+        if register == self.REGISTER_ADD:
             for spider_name in spiders_name_set:
                 if not spider_name in spiders_exist_set:
                     self.logger.error(
                         '=== Regular Observation  Controller Update Task : run : spider_nameパラメータエラー : ' + spider_name + ' は存在しません。')
                     raise ENDRUN(state=state.Failed())
             record.update(spiders_name_set)
-        elif in_out == 'out':
+        elif register == self.REGISTER_DELETE:
             for spider_name in spiders_name_set:
                 if spider_name in record:
                     record.remove(spider_name)
@@ -54,7 +57,7 @@ class RegularObservationControllerUpdateTask(ExtensionsTask):
                     raise ENDRUN(state=state.Failed())
         else:
             self.logger.error(
-                '=== Regular Observation  Controller Update Task : run : in_outパラメータエラー : ')
+                '=== Regular Observation  Controller Update Task : run : 登録方法(register)パラメータエラー : ')
             raise ENDRUN(state=state.Failed())
 
         self.logger.info(

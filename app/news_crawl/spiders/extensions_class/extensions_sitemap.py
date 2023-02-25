@@ -16,7 +16,9 @@ from scrapy_splash import SplashRequest
 from scrapy_splash.response import SplashTextResponse
 from selenium.webdriver.remote.webdriver import WebDriver
 #
+from BrownieAtelierMongo.models.mongo_model import MongoModel
 from news_crawl.items import NewsCrawlItem
+from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.pagination_check import PaginationCheck
@@ -25,7 +27,6 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-from models.mongo_model import MongoModel
 
 
 class ExtensionsSitemapSpider(SitemapSpider):
@@ -46,8 +47,6 @@ class ExtensionsSitemapSpider(SitemapSpider):
     _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_sitemap_version: float = 1.0         # 当クラスのバージョン
 
-    # 引数の値保存
-    kwargs_save: dict
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
@@ -70,9 +69,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # 3. ただし、クロールするlastmodの範囲指定(lastmod_period_minutes)でTOが指定されている場合、その時間を最大更新時間とする。(テストで利用しやすくするため)
     domain_lastmod: Union[datetime, None] = None
 
-    # パラメータによる抽出処理のためのクラス
+    # 引数の値保存
+    kwargs_save: dict
+    # 引数用クラス
+    news_crawl_input: NewsCrawlInput
+    # 引数による抽出処理のためのクラス
     lastmod_continued: LastmodContinuedSkipCheck
     lastmod_period: LastmodPeriodMinutesSkipCheck
+    # ページネーションチェック: 次ページがある場合、そのURLを取得する
     pagination_check: PaginationCheck
     # seleniumモード
     selenium_mode: bool = False

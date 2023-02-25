@@ -10,7 +10,7 @@ from bs4.element import Tag
 from bs4.element import ResultSet
 from datetime import datetime
 from dateutil.parser import parse
-from common_lib.common_settings import TIMEZONE
+from shared.settings import TIMEZONE
 import time
 import requests
 
@@ -46,14 +46,14 @@ if __name__ == '__main__':
 
     # scrape用のパラメータ
     # DB内のデータイメージ
-    {'domain': 'yomiuri.co.jp',
-     'scrape_item': {
-        'title_scraper': [
-            {'pattern': 2,
-                'css_selecter': 'head > title'},
-            {'pattern': 1,
-                'css_selecter': 'title',}
-        ]}}
+    # {'domain': 'yomiuri.co.jp',
+    #  'scrape_item': {
+    #     'title_scraper': [
+    #         {'pattern': 2,
+    #             'css_selecter': 'head > title'},
+    #         {'pattern': 1,
+    #             'css_selecter': 'title',}
+    #     ]}}
 
     scrape_parm = [
         {'pattern': 2,

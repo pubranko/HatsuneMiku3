@@ -9,14 +9,14 @@ from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.common_settings import BACKUP_BASE_DIR
+from shared.settings import BACKUP_BASE_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
-from models.crawler_response_model import CrawlerResponseModel
-from models.scraped_from_response_model import ScrapedFromResponseModel
-from models.news_clip_master_model import NewsClipMasterModel
-from models.crawler_logs_model import CrawlerLogsModel
-from models.controller_model import ControllerModel
-from models.asynchronous_report_model import AsynchronousReportModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.models.scraped_from_response_model import ScrapedFromResponseModel
+from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
 
 
 class MongoImportSelectorTask(ExtensionsTask):

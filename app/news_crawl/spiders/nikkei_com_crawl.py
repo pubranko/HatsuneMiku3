@@ -26,7 +26,7 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-from common_lib.login_info_get import login_info_get
+from shared.login_info_get import login_info_get
 
 
 class NikkeiComCrawlSpider(ExtensionsCrawlSpider):

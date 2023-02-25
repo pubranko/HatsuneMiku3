@@ -7,10 +7,10 @@ from prefect.engine.runner import ENDRUN
 from pydantic import ValidationError
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.common_settings import SCRAPER_INFO_BY_DOMAIN_DIR
+from shared.settings import SCRAPER_INFO_BY_DOMAIN_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
-from models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from BrownieAtelierMongo.models.scraper_info_by_domain_model import ScraperInfoByDomainModel
 from prefect.agent.local import LocalAgent
 
 class ScraperInfoUploaderTask(ExtensionsTask):

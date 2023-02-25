@@ -1,16 +1,18 @@
 from prefect_lib.flow.stop_controller_update_flow import flow
+from prefect_lib.task.stop_controller_update_task import StopControllerUpdateTask
 # domain、crawling_start_time_*による絞り込みは任意
 flow.run(parameters=dict(
     # domain='epochtimes.jp',
-    # in_out='in',
+    # register='in',
     # destination='crawling',
     # domain='epochtimes.jp',
-    # in_out='out',
+    # register='out',
     # destination='crawling',
     # domain='sankei.com',
-    # in_out='in',
+    # register='in',
     # destination='scrapying',
     domain='sankei.com',
-    in_out='in',
+    register=StopControllerUpdateTask.REGISTER_ADD,
+    # register=StopControllerUpdateTask.REGISTER_DELETE,
     destination='crawling',
 ))

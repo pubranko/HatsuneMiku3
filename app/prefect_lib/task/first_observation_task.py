@@ -5,8 +5,8 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
-from common_lib.directory_search_spiders import DirectorySearchSpiders
-from models.controller_model import ControllerModel
+from shared.directory_search_spiders import DirectorySearchSpiders
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
 
 

@@ -13,12 +13,12 @@ from bs4.element import Tag
 from bs4.element import ResultSet
 path = os.getcwd()
 sys.path.append(path)
-from models.mongo_model import MongoModel
-from models.crawler_response_model import CrawlerResponseModel
-from models.scraped_from_response_model import ScrapedFromResponseModel
-from models.scraper_info_by_domain_model import ScraperInfoByDomainModel
-from models.controller_model import ControllerModel
-from common_lib.timezone_recovery import timezone_recovery
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.models.scraped_from_response_model import ScrapedFromResponseModel
+from BrownieAtelierMongo.models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
+from shared.timezone_recovery import timezone_recovery
 from prefect_lib.common_module.scraped_record_error_check import scraped_record_error_check
 
 logger: Logger = logging.getLogger('prefect.run.scrapying_deco')

@@ -16,11 +16,11 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Fo
 from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.common_settings import DATA_DIR
-from common_lib.timezone_recovery import timezone_recovery
-from common_lib.mail_attach_send import mail_attach_send
-from models.mongo_model import MongoModel
-from models.stats_info_collect_model import StatsInfoCollectModel
+from shared.settings import DATA_DIR
+from shared.timezone_recovery import timezone_recovery
+from BrownieAtelierNotice.mail_attach_send import mail_attach_send
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.stats_info_collect_model import StatsInfoCollectModel
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.data_models.stats_analysis_report_input import StatsAnalysisReportInput
 from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData

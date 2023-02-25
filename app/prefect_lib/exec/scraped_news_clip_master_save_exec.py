@@ -1,5 +1,5 @@
 from datetime import datetime
-from common_lib.common_settings import TIMEZONE
+from shared.settings import TIMEZONE
 from prefect_lib.flow.scraped_news_clip_master_save_flow import flow
 
 # domain、scrapying_start_time_*による絞り込みは任意

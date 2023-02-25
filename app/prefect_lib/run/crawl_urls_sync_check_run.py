@@ -9,14 +9,14 @@ from pymongo.cursor import Cursor
 import pysolr
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.timezone_recovery import timezone_recovery
-from common_lib.mail_send import mail_send
-from models.mongo_model import MongoModel
-from models.crawler_logs_model import CrawlerLogsModel
-from models.crawler_response_model import CrawlerResponseModel
-from models.news_clip_master_model import NewsClipMasterModel
+from shared.timezone_recovery import timezone_recovery
+from BrownieAtelierNotice.mail_send import mail_send
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
 from models.solr_news_clip_model import SolrNewsClip
-from models.asynchronous_report_model import AsynchronousReportModel
 
 logger: Logger = logging.getLogger('prefect.run.crawl_urls_sync_check_run')
 
@@ -312,4 +312,4 @@ def check(kwargs: dict):
 
     # エラーがあった場合エラー通知を行う。
     if not message == '':
-        mail_send(title, message)
+        mail_send(title, message, logger)

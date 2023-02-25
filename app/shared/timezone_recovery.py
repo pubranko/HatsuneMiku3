@@ -1,6 +1,6 @@
 from datetime import datetime
 from dateutil import tz
-from common_lib.common_settings import TIMEZONE
+from shared.settings import TIMEZONE
 
 def timezone_recovery(dt:datetime,timezone:str='') -> datetime:
     '''

@@ -3,10 +3,10 @@ from typing import Union, Any, TYPE_CHECKING
 from datetime import datetime
 from logging import LoggerAdapter
 from scrapy.statscollectors import MemoryStatsCollector
-from models.mongo_model import MongoModel
-from models.controller_model import ControllerModel
-from models.crawler_logs_model import CrawlerLogsModel
-from common_lib.resource_check import resource_check
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from shared.resource_check import resource_check
 
 if TYPE_CHECKING:  # 型チェック時のみインポート
     from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider

@@ -14,10 +14,10 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Fo
 from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.common_settings import DATA_DIR
-from common_lib.mail_attach_send import mail_attach_send
-from models.news_clip_master_model import NewsClipMasterModel
-from models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from shared.settings import DATA_DIR
+from BrownieAtelierNotice.mail_attach_send import mail_attach_send
+from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.models.scraper_info_by_domain_model import ScraperInfoByDomainModel
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.data_models.scraper_pattern_report_input import ScraperPatternReportInput
 from prefect_lib.data_models.scraper_pattern_report_data import ScraperPatternReportData

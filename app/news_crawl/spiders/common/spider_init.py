@@ -4,16 +4,16 @@ from logging import LoggerAdapter
 from typing import Union, Any, TYPE_CHECKING
 from datetime import datetime
 from scrapy.exceptions import CloseSpider
-from models.mongo_model import MongoModel
-from models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 from news_crawl.settings import TIMEZONE
-from news_crawl.spiders.common.environ_check import environ_check
 from news_crawl.spiders.common.argument_check import argument_check
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
 from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
-from common_lib.resource_check import resource_check
+from news_crawl.news_crawl_input import NewsCrawlInput
+from shared.resource_check import resource_check
 
 if TYPE_CHECKING:  # 型チェック時のみインポート
     from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
@@ -35,8 +35,6 @@ def spider_init(
     logger.info(
         '=== spider_init : ' + name + '開始')
 
-    # 必要な環境変数チェック
-    environ_check()
     # MongoDBオープン
     spider.mongo = MongoModel()
     # 前回のドメイン別のクロール結果を取得
@@ -48,6 +46,7 @@ def spider_init(
     spider.kwargs_save = kwargs
     argument_check(
         spider, domain_name, spider._crawl_point, *args, **kwargs)
+    spider.news_crawl_input = NewsCrawlInput(**kwargs)
 
     # クロール対象となるurlと付随する情報（サイトマップurl、lastmodなど）を保存。
     # spiderを並列で実行する際、extensions_~.pyの定義のみでは全て共有されてしまいデータが混在する。

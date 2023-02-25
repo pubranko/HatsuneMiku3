@@ -13,14 +13,13 @@ from urllib.parse import urlparse
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
-from common_lib.timezone_recovery import timezone_recovery
-from common_lib.mail_send import mail_send
+from shared.timezone_recovery import timezone_recovery
 from prefect_lib.data_models.stats_info_collect_input import StatsInfoCollectInput
 #from prefect_lib.data_models.asynchronous_report_totalization_data import AsynchronousReportTotalizationData
 from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
-from models.asynchronous_report_model import AsynchronousReportModel
-from models.crawler_logs_model import CrawlerLogsModel
-from models.stats_info_collect_model import StatsInfoCollectModel
+from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.models.stats_info_collect_model import StatsInfoCollectModel
 
 
 class StatsInfoCollectTask(ExtensionsTask):

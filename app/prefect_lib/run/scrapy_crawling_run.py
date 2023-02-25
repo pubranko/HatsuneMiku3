@@ -11,8 +11,8 @@ from scrapy.crawler import CrawlerRunner
 from twisted.internet import reactor
 path = os.getcwd()
 sys.path.append(path)
-from models.mongo_model import MongoModel
-from models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 import time
 #from scrapy.utils.reactor import install_reactor
 #install_reactor('twisted.internet.asyncioreactor.AsyncioSelectorReactor')

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs4
 from bs4.element import Tag
 from dateutil.parser import parse
-from common_lib.common_settings import TIMEZONE
+from shared.settings import TIMEZONE
 import requests
 
 
@@ -36,14 +36,14 @@ if __name__ == '__main__':
 
     # scrape用のパラメータ
     # DB内のデータイメージ
-    {'domain': 'yomiuri.co.jp',
-     'scrape_item': {
-         'publish_date_scraper': [
-             {'pattern': 2,
-              'css_selecter': 'head > meta[property="article:modified_time"]'},
-             {'pattern': 1,
-              'css_selecter': 'head > meta[property="article:published_time"]'},
-         ]}}
+    # {'domain': 'yomiuri.co.jp',
+    #  'scrape_item': {
+    #      'publish_date_scraper': [
+    #          {'pattern': 2,
+    #           'css_selecter': 'head > meta[property="article:modified_time"]'},
+    #          {'pattern': 1,
+    #           'css_selecter': 'head > meta[property="article:published_time"]'},
+    #      ]}}
 
     scrape_parm = [{
         "pattern": 1,

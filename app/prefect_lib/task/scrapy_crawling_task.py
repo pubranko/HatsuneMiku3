@@ -8,7 +8,7 @@ import threading
 #from multiprocessing import Process
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.directory_search_spiders import DirectorySearchSpiders
+from shared.directory_search_spiders import DirectorySearchSpiders
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask

@@ -3,7 +3,7 @@ import sys
 from collections.abc import Iterable
 path = os.getcwd()
 sys.path.append(path)
-from common_lib.common_settings import DEBUG_FILE_DIR
+from shared.settings import DEBUG_FILE_DIR
 
 
 def start_request_debug_file_generate(spider_name: str, start_url: str, entries: Iterable, kwargs_save: dict):

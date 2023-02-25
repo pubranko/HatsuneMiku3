@@ -5,8 +5,8 @@ from pymongo.mongo_client import MongoClient
 import pickle
 from bs4 import BeautifulSoup as bs4
 from dateutil import parser
-from models.mongo_model import MongoModel
-from models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
 
 mongo = MongoModel()
 crawler_response = CrawlerResponseModel(mongo)
