@@ -1,6 +1,6 @@
 import pickle
 import scrapy
-from typing import Union, Any
+from typing import Any
 from datetime import datetime
 from scrapy.spiders import CrawlSpider
 from scrapy.http import Response, Request, TextResponse
@@ -15,10 +15,9 @@ from news_crawl.items import NewsCrawlItem
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
-from news_crawl.spiders.common.lastmod_period_skip_check import LastmodPeriodMinutesSkipCheck
+from news_crawl.spiders.common.lastmod_term_skip_check import LastmodTermSkipCheck
 from news_crawl.spiders.common.lastmod_continued_skip_check import LastmodContinuedSkipCheck
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
-from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 from news_crawl.spiders.common.pagination_check import PaginationCheck
 
 
@@ -41,7 +40,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
-    _crawling_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
@@ -58,13 +56,11 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # クロール対象となったurlリスト[response.url,,,]
     crawl_target_urls: list[str] = []
 
-    # 引数の値保存
-    kwargs_save: dict                    # 取得した引数を保存
     # 引数用クラス
     news_crawl_input: NewsCrawlInput
     # 引数による抽出処理のためのクラス
     crawling_continued: LastmodContinuedSkipCheck
-    lastmod_period: LastmodPeriodMinutesSkipCheck
+    lastmod_term: LastmodTermSkipCheck
     url_continued: UrlsContinuedSkipCheck
     lastmod_continued: LastmodContinuedSkipCheck
     # ページネーションチェック: 次ページがある場合、そのURLを取得する
@@ -91,12 +87,6 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        #pagination: ResultSet = self.pagination_check(response)
-        # if len(pagination) > 0:
-        #     self.logger.info(
-        #         f"=== parse_news 次のページあり → リクエストに追加 : {pagination[0].get('href')}")
-        #     yield scrapy.Request(response.urljoin(pagination[0].get('href')), callback=self.parse_news)
-
         # selenium、splash、通常モードにより処理を切り分ける
         meta = {}
         args = {}
@@ -137,16 +127,9 @@ class ExtensionsCrawlSpider(CrawlSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
-            crawling_start_time=self._crawling_start_time,
+            crawling_start_time=self.news_crawl_input.crawling_start_time,
             source_of_information=source_of_information,
         )
-
-    # def pagination_check(self, response: Response) -> ResultSet:
-    #     '''(拡張メソッド)
-    #     次ページがあれば、BeautifulSoupのResultSetで返す。
-    #     このメソッドは継承先のクラスでオーバーライドして使うことを前提とする。
-    #     '''
-    #     return ResultSet(response.text, [])
 
     def closed(self, spider):
         '''spider終了処理'''
@@ -158,15 +141,13 @@ class ExtensionsCrawlSpider(CrawlSpider):
         '''
         return url['url']
 
-    def pages_setting(self, start_page: int, end_page: int) -> dict:
+    def pages_setting(self, default_page_span_from: int, default_page_span_to: int) -> tuple[int,int]:
         ''' (拡張メソッド)
-        クロール対象のurlを抽出するページの開始・終了の範囲を決める。\n
-        ・起動時の引数にpagesがある場合は、その指定に従う。\n
+        クロール対象のurlを抽出するページの開始・終了の範囲を決める。
+        ・起動時の引数にpagesがある場合は、その指定に従う。
         ・それ以外は、各サイトの標準値に従う。
         '''
-        if 'pages' in self.kwargs_save:
-            #pages: list = eval(self.kwargs_save['pages'])
-            pages:list = list(map(int,str(self.kwargs_save['pages']).split(',')))
-            return{'start_page': pages[0], 'end_page': pages[1]}
+        if self.news_crawl_input.page_span_from and self.news_crawl_input.page_span_to:  # ページ範囲指定ありの場合
+            return self.news_crawl_input.page_span_from, self.news_crawl_input.page_span_to
         else:
-            return{'start_page': start_page, 'end_page': end_page}
+            return default_page_span_from, default_page_span_to

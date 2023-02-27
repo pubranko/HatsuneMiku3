@@ -54,15 +54,14 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        self.pages: dict = self.pages_setting(1, 3)
-        self.start_page: int = self.pages['start_page']
-        self.end_page: int = self.pages['end_page']
-        self.page: int = self.start_page
+        # クロールする対象ページを決定する。デフォルト１〜３。scrapy起動引数に指定がある場合、そちらを使う。
+        self.page_from, self.page_to = self.pages_setting(1, 3)
+        self.page: int = self.page_from
         self.all_urls_list: list = []
         self.session_id: str = self.name + datetime.now().isoformat()
 
         # 開始ページからURLを生成
-        url = f'https://jp.reuters.com/news/archive?view=page&page={self.pages["start_page"]}&pageSize=10'
+        url = f'https://jp.reuters.com/news/archive?view=page&page={self.page_from}&pageSize=10'
         self.start_urls.append(url)
         # https://jp.reuters.com/news/archive?view=page&page=1&pageSize=10  →  https://jp.reuters.com/news/archive を抽出
         _ = str(url).split('?')[0]
@@ -70,7 +69,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         self.base_url = _.replace('.', '_')
 
         self.url_continued = UrlsContinuedSkipCheck(
-            self._crawl_point, self.base_url, self.kwargs_save)
+            self._crawl_point, self.base_url, self.news_crawl_input.continued)
 
     def start_requests(self):
         ''' '''
@@ -102,7 +101,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
 
-        while self.page <= self.end_page:
+        while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
             driver.set_page_load_timeout(60)
@@ -132,7 +131,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
                 if self.url_continued.skip_check(url):
                     pass
-                elif url_pattern_skip_check(url, self.kwargs_save):
+                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                     pass
                 else:
                     # クロール対象のURL情報を保存
@@ -142,13 +141,13 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
 
             # debug指定がある場合、現ページの１０件をデバック用ファイルに保存
             start_request_debug_file_generate(
-                self.name, driver.current_url, self.all_urls_list[-10:], self.kwargs_save)
+                self.name, driver.current_url, self.all_urls_list[-10:], self.news_crawl_input.debug)
 
             # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if self.url_continued.skip_flg == True:
                 self.logger.info(
                     f'=== parse_start_response 前回の続きまで再取得完了 ({driver.current_url})', )
-                self.page = self.end_page + 1
+                self.page = self.page_to + 1
                 break
 
             # 次のページを読み込む
@@ -163,7 +162,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の5件をcontrollerへ保存する
         self._crawl_point[self.base_url] = {
             'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self._crawling_start_time
+            'crawling_start_time': self.news_crawl_input.crawling_start_time
         }
 
     def parse_start_response_splash(self, response: SplashJsonResponse):
@@ -190,7 +189,7 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             # 前回取得したurlが確認できたら確認済み（削除）にする。
             if self.url_continued.skip_check(url):
                 pass
-            elif url_pattern_skip_check(url, self.kwargs_save):
+            elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                 pass
             else:
                 self.crawl_urls_list.append(
@@ -200,17 +199,17 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         if self.url_continued.skip_flg == False:
             self.logger.info(
                 f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})', )
-            self.page = self.end_page + 1
+            self.page = self.page_to + 1
 
         start_request_debug_file_generate(
-            self.name, response.url, self.all_urls_list[-10:], self.kwargs_save)
+            self.name, response.url, self.all_urls_list[-10:], self.news_crawl_input.debug)
 
         # 次のページを読み込む
         self.page += 1
         next_page_element = 'div.control-nav > a.control-nav-next[href="?view=page&page=' + str(
             self.page + 1) + '&pageSize=10"]'
         click_element = 'div.control-nav > a.control-nav-next'
-        if self.page <= self.end_page:
+        if self.page <= self.page_to:
             yield SplashRequest(
                 url=response.url,
                 callback=self.parse_start_response_splash,
@@ -232,5 +231,5 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
             # 次回向けに1ページ目の5件をcontrollerへ保存する
             self._crawl_point[self.base_url] = {
                 'urls': self.all_urls_list[0:self.url_continued.check_count],
-                'crawling_start_time': self._crawling_start_time
+                'crawling_start_time': self.news_crawl_input.crawling_start_time
             }

@@ -57,14 +57,13 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        self.pages: dict = self.pages_setting(1, 3)
-        self.start_page: int = self.pages['start_page']
-        self.end_page: int = self.pages['end_page']
-        self.page: int = self.start_page
+        # クロールする対象ページを決定する。デフォルト１〜３。scrapy起動引数に指定がある場合、そちらを使う。
+        self.page_from, self.page_to = self.pages_setting(1, 3)
+        self.page: int = self.page_from                    # URLに埋め込むページ数。現在のページ数を保存するエリア。
         self.all_urls_list: list = []
 
         self.url_continued = UrlsContinuedSkipCheck(
-            self._crawl_point, self.start_urls[0], self.kwargs_save)
+            self._crawl_point, self.start_urls[0], self.news_crawl_input.continued)
 
         # start_urlsを再構築
         # 例）https://www.epochtimes.jp/latest
@@ -89,7 +88,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        while self.page <= self.end_page:
+        while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {response.url}')
 
@@ -113,7 +112,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
                 if self.url_continued.skip_check(url):
                     pass
-                elif url_pattern_skip_check(url, self.kwargs_save):
+                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                     pass
                 else:
                     # クロール対象のURL情報を保存
@@ -123,18 +122,18 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
             start_request_debug_file_generate(
-                self.name, response.url, self.all_urls_list[-30:], self.kwargs_save)
+                self.name, response.url, self.all_urls_list[-30:], self.news_crawl_input.debug)
 
             # 前回からの続きの指定がある場合、前回の10件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if self.url_continued.skip_flg == True:
                 self.logger.info(
                     f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})', )
-                self.page = self.end_page + 1
+                self.page = self.page_to + 1
                 break
 
             # 次のページを読み込む
             self.page += 1
-            if self.page <= self.end_page:
+            if self.page <= self.page_to:
                 # 要素を表示するようスクロールしてクリック
                 yield scrapy.Request(url=next_page_url, callback=self.parse_start_response)
 
@@ -144,7 +143,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
             'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self._crawling_start_time
+            'crawling_start_time': self.news_crawl_input.crawling_start_time
         }
 
     def parse_start_response_selenium(self, response: TextResponse):
@@ -220,7 +219,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 f'=== ログインできなかったため中止 ({driver.current_url})')
 
         ### 指定ページをループしてクロール対象のurlを収集
-        while self.page <= self.end_page:
+        while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
 
@@ -248,7 +247,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 # urlパターンの指定がある場合、パターンに合わないurlは対象外
                 if self.url_continued.skip_check(url):
                     pass
-                elif url_pattern_skip_check(url, self.kwargs_save):
+                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                     pass
                 else:
                     # クロール対象のURL情報を保存
@@ -259,18 +258,18 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
             start_request_debug_file_generate(
-                self.name, driver.current_url, self.all_urls_list[-30:], self.kwargs_save)
+                self.name, driver.current_url, self.all_urls_list[-30:], self.news_crawl_input.debug)
 
             # 前回からの続きの指定がある場合、前回の10件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if self.url_continued.skip_flg == True:
                 self.logger.info(
                     f'=== parse_start_response 前回の続きまで再取得完了 ({driver.current_url})', )
-                self.page = self.end_page + 1
+                self.page = self.page_to + 1
                 break
 
             # 次のページを読み込む
             self.page += 1
-            if self.page <= self.end_page:
+            if self.page <= self.page_to:
                 # 要素を表示するようスクロールしてクリック
                 elem: WebElement = driver.find_element_by_css_selector(
                     next_page_element)
@@ -285,5 +284,5 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
             'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self._crawling_start_time
+            'crawling_start_time': self.news_crawl_input.crawling_start_time
         }

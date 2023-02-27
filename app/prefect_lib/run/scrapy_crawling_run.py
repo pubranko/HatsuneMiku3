@@ -42,16 +42,7 @@ def custom_crawl_run(logger: Logger, start_time: datetime, scrapy_crawling_kwarg
     configure_logging(install_root_handler=False)
 
     for spider_info in spiders_info:
-        process.crawl(spider_info['class_instans'],
-                      crawling_start_time=start_time,
-                      lastmod_period_minutes=scrapy_crawling_kwargs['lastmod_period_minutes'],
-                      pages=scrapy_crawling_kwargs['pages'],
-                      continued=scrapy_crawling_kwargs['continued'],
-                      direct_crawl_urls=scrapy_crawling_kwargs['direct_crawl_urls'],
-                      debug=scrapy_crawling_kwargs['debug'],
-                      crawl_point_non_update=scrapy_crawling_kwargs['crawl_point_non_update'],
-                      url_pattern=scrapy_crawling_kwargs['url_pattern'],
-                      )
+        process.crawl(spider_info['class_instans'], **scrapy_crawling_kwargs)
     process.start()
     #process.start(stop_after_crawl=False)
 
@@ -65,16 +56,7 @@ def custom_runner_run(logger: Logger, start_time: datetime, scrapy_crawling_kwar
     configure_logging(install_root_handler=True)
 
     for spider_info in spiders_info:
-        runner.crawl(spider_info['class_instans'],
-            crawling_start_time=start_time,
-            lastmod_period_minutes=scrapy_crawling_kwargs['lastmod_period_minutes'],
-            pages=scrapy_crawling_kwargs['pages'],
-            continued=scrapy_crawling_kwargs['continued'],
-            direct_crawl_urls=scrapy_crawling_kwargs['direct_crawl_urls'],
-            debug=scrapy_crawling_kwargs['debug'],
-            crawl_point_non_update=scrapy_crawling_kwargs['crawl_point_non_update'],
-            url_pattern=scrapy_crawling_kwargs['url_pattern'],
-            )
+        runner.crawl(spider_info['class_instans'], **scrapy_crawling_kwargs)
     run = runner.join()
     reac:Any = reactor
     run.addBoth(lambda _: reac.stop())

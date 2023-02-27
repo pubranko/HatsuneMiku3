@@ -7,7 +7,8 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from shared.directory_search_spiders import DirectorySearchSpiders
 from BrownieAtelierMongo.models.controller_model import ControllerModel
-from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+# from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+from news_crawl.news_crawl_input import NewsCrawlInput
 
 
 class FirstObservationTask(ExtensionsTask):
@@ -37,27 +38,36 @@ class FirstObservationTask(ExtensionsTask):
                 spider_info['domain_name'], spider_name,)
 
             if not spider_name in regular_observation_spider_name_set:
-                pass  # 定期観測に登録がないスパイダーは対象外
+                self.logger.info(f'=== 定期観測に登録がないスパイダーは対象外 : {spider_name}')
             elif len(crawl_point_record):
-                pass  # クロールポイントがある（既にクロール実績がある）スパイダーは対象外
+                self.logger.info(f'=== クロールポイントがある（既にクロール実績がある）スパイダーは対象外 : {spider_name}')
             else:
                 crawling_target_spiders.append(spider_info)
                 crawling_target_spiders_name.append(spider_name)
 
         if len(crawling_target_spiders_name):
             # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-            scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
-                'lastmod_period_minutes': '60,',
-                'pages': '1,3', })
+            # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
+            #     'lastmod_period_minutes': '60,',
+            #     'pages': '1,3', })
+            news_crawl_input = NewsCrawlInput(**dict(
+                crawling_start_time = self.start_time,
+                page_span_from = 1,
+                page_span_to = 3,
+                lastmod_term_minutes_from = 60,
+            ))
+
             self.logger.info(f'=== 初回観測対象スパイダー : {str(crawling_target_spiders_name)}')
-            self.logger.info(f'=== 初回観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+            # self.logger.info(f'=== 初回観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+            self.logger.info(f'=== 初回観測 run kwargs : {news_crawl_input.__dict__}')
 
             thread = threading.Thread(
                 target=scrapy_crawling_run.custom_runner_run(
-                    logger=self.logger,
-                    start_time=self.start_time,
-                    scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
-                    spiders_info=crawling_target_spiders))
+                    logger = self.logger,
+                    start_time = self.start_time,
+                    # scrapy_crawling_kwargs = scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    scrapy_crawling_kwargs = news_crawl_input.__dict__,
+                    spiders_info = crawling_target_spiders))
 
             # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
             thread.start()

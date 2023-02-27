@@ -51,10 +51,9 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        self.pages: dict = self.pages_setting(1, 3)
-        self.start_page: int = self.pages['start_page']
-        self.end_page: int = self.pages['end_page']
-        self.page: int = self.start_page
+        # クロールする対象ページを決定する。デフォルト１〜３。scrapy起動引数に指定がある場合、そちらを使う。
+        self.page_from, self.page_to = self.pages_setting(1, 3)
+        self.page: int = self.page_from
         self.all_urls_list: list = []
         self.session_id: str = self.name + datetime.now().isoformat()
 
@@ -62,7 +61,7 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
         self.base_url = str(self.start_urls[0]).replace('.', '_')
 
         self.url_continued = UrlsContinuedSkipCheck(
-            self._crawl_point, self.base_url, self.kwargs_save)
+            self._crawl_point, self.base_url, self.news_crawl_input.continued)
 
     def start_requests(self):
         ''' '''
@@ -81,7 +80,7 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
 
         number_of_details_in_page:int = 20  # 1ページ内の明細数
 
-        while self.page <= self.end_page:
+        while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response_selenium 現在解析中のURL = {driver.current_url}')
             driver.set_page_load_timeout(60)
@@ -107,19 +106,12 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
                 url: str = urllib.parse.unquote(response.urljoin(link))
                 self.all_urls_list.append({'loc': url, 'lastmod': ''})
 
-                # if url_pattern_skip_check(url, self.kwargs_save):
-                #    crwal_flg = False
-                # if self.url_continued.skip_check(url):
-                #     pass
-                # else:
-                #     crwal_flg = False
-
                 # 前回からの続きの指定がある場合、
                 # 前回取得したurlまで確認できたらそれ移行は対象外
                 if self.url_continued.skip_check(url):
                     pass
                 # urlパターンの絞り込みで対象外となった場合
-                elif url_pattern_skip_check(url, self.kwargs_save):
+                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                     pass
                 else:
                 # if crwal_flg:
@@ -130,13 +122,13 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
 
             # debug指定がある場合、現ページの明細数分をデバック用ファイルに保存
             start_request_debug_file_generate(
-                self.name, driver.current_url, self.all_urls_list[-number_of_details_in_page:], self.kwargs_save)
+                self.name, driver.current_url, self.all_urls_list[-number_of_details_in_page:], self.news_crawl_input.debug)
 
             # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if self.url_continued.skip_flg == False:
                 self.logger.info(
                     f'=== parse_start_response_selenium 前回の続きまで再取得完了 ({driver.current_url})', )
-                self.page = self.end_page + 1
+                self.page = self.page_to + 1
                 break
 
             # 次のページを読み込む
@@ -152,5 +144,5 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の5件をcontrollerへ保存する
         self._crawl_point[self.base_url] = {
             'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self._crawling_start_time
+            'crawling_start_time': self.news_crawl_input.crawling_start_time
         }

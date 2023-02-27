@@ -59,13 +59,12 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        self.pages: dict = self.pages_setting(1, 2)
-        self.start_page: int = self.pages['start_page']
-        self.end_page: int = self.pages['end_page']
-        self.page: int = self.start_page
+        # クロールする対象ページを決定する。デフォルト１〜３。scrapy起動引数に指定がある場合、そちらを使う。
+        self.page_from, self.page_to = self.pages_setting(1, 3)
+        self.page: int = self.page_from
         self.all_urls_list: list = []
         self.url_continued = UrlsContinuedSkipCheck(
-            self._crawl_point, self.start_urls[0], self.kwargs_save)
+            self._crawl_point, self.start_urls[0], self.news_crawl_input.continued)
 
     def start_requests(self):
         ''' '''
@@ -74,14 +73,14 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
         #     -> https://www.nikkei.com/news/category/?bn=5,
         # 記事の開始位置をページより計算して求める。
         yield scrapy.Request(
-            url=f'{self.start_urls[0]}?bn={(self.start_page * 30) - 29}',
+            url=f'{self.start_urls[0]}?bn={(self.page_from * 30) - 29}',
             callback=self.parse_start_response)
 
     def parse_start_response(self, response: TextResponse):
         ''' (拡張メソッド)
         取得したレスポンスよりDBへ書き込み
         '''
-        while self.page <= self.end_page:
+        while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {response.url}')
 
@@ -113,7 +112,7 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
 
                 if self.url_continued.skip_check(url):
                     pass
-                elif url_pattern_skip_check(url, self.kwargs_save):
+                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
                     pass
                 else:
                     # クロール対象のURL情報を保存
@@ -123,20 +122,20 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
 
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
             start_request_debug_file_generate(
-                self.name, response.url, self.all_urls_list[-30:], self.kwargs_save)
+                self.name, response.url, self.all_urls_list[-30:], self.news_crawl_input.debug)
 
             # 前回からの続きの指定がある場合、前回の10件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
             if self.url_continued.skip_flg == True:
                 self.logger.info(
                     f'=== parse_start_response 前回の続きまで再取得完了 ({response.url})', )
-                self.page = self.end_page + 1
+                self.page = self.page_to + 1
                 break
 
             # 次のページを読み込む => start_urlsに必要ページのurlを設定済み
             self.page += 1
-            if self.page <= self.end_page:
+            if self.page <= self.page_to:
                 # 要素を表示するようスクロールしてクリック
-                next_page_url = f'{self.start_urls[0]}?bn={(self.start_page * 30) - 29}'
+                next_page_url = f'{self.start_urls[0]}?bn={(self.page_from * 30) - 29}'
                 yield scrapy.Request(url=next_page_url, callback=self.parse_start_response)
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
@@ -145,5 +144,5 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
             'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self._crawling_start_time
+            'crawling_start_time': self.news_crawl_input.crawling_start_time
         }

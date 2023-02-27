@@ -14,6 +14,9 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from bs4 import BeautifulSoup as bs4
 from bs4.element import ResultSet
 
+'''
+このソースは現在未使用。
+'''
 
 class SankeiComCrawlSpider(ExtensionsCrawlSpider):
     name: str = 'sankei_com_crawl'
@@ -37,6 +40,9 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
 
     _domain_name: str = 'sankei_com'        # 各種処理で使用するドメイン名の一元管理
     _spider_version: float = 1.0
+
+    # 廃止された項目だがエラーが出ないようにとりあえず定義しているだけ。
+    kwargs_save:dict
 
     # start_urlsまたはstart_requestの数。起点となるurlを判別するために使う。
     _crawl_urls_count: int = 0
@@ -79,10 +85,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         # 1.現在のページ数は、3ページまで（仮）
         # 2.前回の1ページ目の記事リンク（10件）まで全て遡りきったら、前回以降に追加された記事は取得完了と考えられるため終了。
         # ※続きボタン押下してajaxでデータを取得した状態を次のページとして取り扱う。
-        pages: dict = self.pages_setting(1, 3)
-        start_page: int = pages['start_page']
-        end_page: int = pages['end_page']
-
+        page_from, page_to = self.pages_setting(1, 3)
 
         r:Any = response.request
         driver: WebDriver = r.meta['driver']
@@ -90,7 +93,7 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         urls_list: list = []
 
         # 直近の数分間の指定がある場合
-        until_this_time: datetime = self._crawling_start_time
+        until_this_time: datetime = self.news_crawl_input.crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))
@@ -106,12 +109,12 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
             self.settings['TIMEZONE']) - timedelta(days=3650)
         max_url: str = ''
 
-        page = start_page
+        page = page_from
         next_page_flg = False
         debug_urls_list = []
         self.logger.info(
             f'=== parse_start_response 現在解析中のpage={page} と URL = {driver.current_url}')
-        while page <= end_page:  # 条件はあとで考える
+        while page <= page_to:  # 条件はあとで考える
 
             # Javascript実行が終了するまで最大30秒間待つように指定
             driver.set_script_timeout(60)
@@ -187,11 +190,11 @@ class SankeiComCrawlSpider(ExtensionsCrawlSpider):
         self._crawl_point[response.url] = {
             'latest_lastmod': max_lstmod.isoformat(),
             'latest_url': max_url,
-            'crawling_start_time': self._crawling_start_time.isoformat()
+            'crawling_start_time': self.news_crawl_input.crawling_start_time.isoformat()
         }
 
         start_request_debug_file_generate(
-            self.name, response.url, debug_urls_list, self.kwargs_save)
+            self.name, response.url, debug_urls_list, self.news_crawl_input.debug)
 
     def pagination_check(self, response: Response) -> ResultSet:
         '''(オーバーライド)

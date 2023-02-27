@@ -8,8 +8,9 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from BrownieAtelierMongo.models.controller_model import ControllerModel
 from shared.directory_search_spiders import DirectorySearchSpiders
-from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
-from BrownieAtelierStorage.models.controller_blob_model import ControllerBlobModel
+# from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+from news_crawl.news_crawl_input import NewsCrawlInput
+# from BrownieAtelierStorage.models.controller_blob_model import ControllerBlobModel
 
 
 class RegularObservationTask(ExtensionsTask):
@@ -50,17 +51,24 @@ class RegularObservationTask(ExtensionsTask):
                 crawling_target_spiders_name.append(spider_name)
 
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-        scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
-            'continued': 'Yes', })
+        # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
+        #     'continued': 'Yes', })
+
+        news_crawl_input = NewsCrawlInput(**dict(
+            crawling_start_time = self.start_time,
+            continued = True,
+        ))
 
         self.logger.info(f'=== 定期観測対象スパイダー : {str(crawling_target_spiders_name)}')
-        self.logger.info(f'=== 定期観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+        # self.logger.info(f'=== 定期観測 run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+        self.logger.info(f'=== 定期観測 run kwargs : {news_crawl_input.__dict__}')
 
         thread = threading.Thread(
             target=scrapy_crawling_run.custom_runner_run(
                 logger=self.logger,
                 start_time=self.start_time,
-                scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                # scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                scrapy_crawling_kwargs=news_crawl_input.__dict__,
                 spiders_info=crawling_target_spiders))
 
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
@@ -90,7 +98,7 @@ class RegularObservationTask(ExtensionsTask):
 
         # 定期観測終了後コンテナーを停止させる。
         #   azure functions BLOBトリガーを動かすためのBLOBファイルを削除＆作成を実行する。
-        controller_blob_model = ControllerBlobModel()
-        controller_blob_model.delete_blob()
-        controller_blob_model.upload_blob()
+        # controller_blob_model = ControllerBlobModel()
+        # controller_blob_model.delete_blob()
+        # controller_blob_model.upload_blob()
         # return ''

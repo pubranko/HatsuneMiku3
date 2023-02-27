@@ -1,7 +1,6 @@
 from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を回避するため
-from typing import Union, Any, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 from datetime import datetime
-from logging import LoggerAdapter
 from scrapy.statscollectors import MemoryStatsCollector
 from BrownieAtelierMongo.models.mongo_model import MongoModel
 from BrownieAtelierMongo.models.controller_model import ControllerModel
@@ -22,18 +21,16 @@ def spider_closed(
     domain_name: str = spider._domain_name
     name: str = spider.name
     crawl_point: dict = spider._crawl_point
-    logger: LoggerAdapter = spider.logger
     stats: MemoryStatsCollector = spider.crawler.stats
-    crawling_start_time: datetime = spider._crawling_start_time
-    kwargs: dict = spider.kwargs_save
+    crawling_start_time: datetime = spider.news_crawl_input.crawling_start_time
 
-    if 'crawl_point_non_update' in kwargs and kwargs['crawl_point_non_update'] == 'Yes':
-        logger.info(
+    if spider.news_crawl_input.crawl_point_non_update:
+        spider.logger.info(
             '=== closed : 次回クロールポイント情報の更新Skip')
     else:
         controller = ControllerModel(mongo)
         controller.crawl_point_update(domain_name, name, crawl_point)
-        logger.info(
+        spider.logger.info(
             f'=== closed : controllerに次回クロールポイント情報を保存 \n {crawl_point}')
 
     resource_check()
@@ -72,4 +69,4 @@ def spider_closed(
     })
 
     mongo.close()
-    logger.info(f'=== Spider closed: {name}')
+    spider.logger.info(f'=== Spider closed: {name}')

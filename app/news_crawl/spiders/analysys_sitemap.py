@@ -28,7 +28,7 @@ class AnalysysSitemapSpider(ExtensionsSitemapSpider):
         ただしサイトマップ本体の保存機能は使用する。
         '''
         start_request_debug_file_generate(
-            self.name, self.sitemap_urls[self._sitemap_urls_count], entries, self.kwargs_save)
+            self.name, self.sitemap_urls[self._sitemap_urls_count], entries, self.news_crawl_input.debug)
 
         for _entry in entries:
             '''

@@ -8,10 +8,15 @@ from scrapy.http.response.xml import XmlResponse
 from scrapy.utils.spider import iterate_spider_output
 from news_crawl.items import NewsCrawlItem
 from BrownieAtelierMongo.models.mongo_model import MongoModel
+from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.spider_init import spider_init
 from news_crawl.spiders.common.spider_closed import spider_closed
 
+'''
+現在このソースは未使用。
+XmlFeedSpiderの使用例のサンプルとし保存しているのみ。
+'''
 
 class ExtensionsXmlFeedSpider(XMLFeedSpider):
     '''
@@ -29,12 +34,11 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
     _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _extensions_xml_version: float = 1.0         # 当クラスのバージョン
 
-    # 引数の値保存
-    kwargs_save: dict
+    # 引数用クラス
+    news_crawl_input: NewsCrawlInput
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
-    _crawling_start_time: datetime         # Scrapy起動時点の基準となる時間
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
@@ -58,7 +62,8 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         '''
         super().__init__(*args, **kwargs)
 
-        spider_init(self, *args, **kwargs)
+        # エラーが出ないようにとりあえずコメントアウト
+        # spider_init(self, *args, **kwargs)
 
     def start_requests(self):
         for url in self.start_urls:
@@ -81,7 +86,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
                 yield result_item
         # 終了処理
         start_request_debug_file_generate(
-            self.name, response.url, self._entries, self.kwargs_save)
+            self.name, response.url, self._entries, self.news_crawl_input.debug)
 
         self.logger.info(
             f'=== parse_nodes : XMLの解析完了 : 件数 = {self._xml_extract_count} ,url = {response.url}')
@@ -89,7 +94,7 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
         self._crawl_point[response.url] = {
             'latest_lastmod': self._max_lstmod,
             'latest_url': self._max_url,
-            'crawling_start_time': self._crawling_start_time.isoformat()
+            'crawling_start_time': self.news_crawl_input.crawling_start_time.isoformat()
         }
 
     def parse_news(self, response: Response):
@@ -106,13 +111,15 @@ class ExtensionsXmlFeedSpider(XMLFeedSpider):
             response_headers=pickle.dumps(response.headers),
             response_body=pickle.dumps(response.body),
             spider_version_info=_info,
-            crawling_start_time=self._crawling_start_time,
+            crawling_start_time=self.news_crawl_input.crawling_start_time,
             source_of_information=[],
         )
 
     def closed(self, spider):
         '''spider終了処理'''
-        spider_closed(self)
+        # エラーが出ないようにとりあえずコメントアウト
+        # spider_closed(self)
+        pass
 
     def _custom_url(self, url: str) -> str:
         ''' (拡張メソッド)

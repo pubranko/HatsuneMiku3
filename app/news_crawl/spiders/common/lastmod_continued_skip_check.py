@@ -1,32 +1,63 @@
 import os
 import sys
-from typing import Any
+from typing import Any, Optional
 from datetime import datetime
+from logging import LoggerAdapter
+from scrapy.exceptions import CloseSpider
 path = os.getcwd()
 sys.path.append(path)
 from shared.timezone_recovery import timezone_recovery
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 
 
 class LastmodContinuedSkipCheck(object):
     '''
-    続きからクロール
+    前回の続きからクロールに関する機能を
     '''
-    crawl_point_save: dict = {}
+    # 引数保存エリア
+    continued: Optional[bool]     # spider起動時の引数の値
+    spider_name: str
+    domain_name: str
+    controller:ControllerModel
+    logger: LoggerAdapter
+    # クロールポイントレコード情報保存
+    crawl_point: dict = {}
     latest_lastmod: Any = None
     latest_urls: Any = None
-    kwargs_save: dict = {}
 
-    def __init__(self, crawl_point: dict, kwargs: dict) -> None:
+    def __init__(self,
+        continued: Optional[bool],
+        spider_name: str,
+        domain_name: str,
+        controller: ControllerModel,
+        logger: LoggerAdapter,
+        ) -> None:
         '''
         '''
-        self.kwargs_save = kwargs
+        # 引数保存
+        self.continued = continued  # クラス変数に保存
+        self.spider_name = spider_name
+        self.domain_name = domain_name
+        self.controller = controller # コントローラーコレクションを保存
+        self.logger = logger
 
-        if 'continued' in kwargs and self.kwargs_save['continued'] == 'Yes':
-            # lastmodがあるサイト用
-            if 'latest_lastmod' in crawl_point:
-                self.crawl_point_save = crawl_point
+        # 前回からの続き指定がある場合
+        if self.continued:
+            # コントローラーから前回のクロールポイントを取得
+            self.crawl_point = self.controller.crawl_point_get(
+                domain_name, spider_name)
+
+            # 前回のクロールポイントが空の場合、エラー処理を実施
+            if not self.crawl_point:
+                self.logger.critical(
+                    f'引数エラー：domain = {domain_name} は前回のクロール情報がありません。初回から"continued"の使用は不可です。')
+                raise CloseSpider()
+
+            # lastmodがあるサイトの場合、タイムゾーンがmongoDBから取得する際消えているため復元する。
+            if self.controller.LATEST_LASTMOD in self.crawl_point:
                 self.latest_lastmod = timezone_recovery(
-                    crawl_point['latest_lastmod'])
+                    self.crawl_point[self.controller.LATEST_LASTMOD])
+
 
     def skip_check(self, lastmod: datetime) -> bool:
         '''
@@ -36,7 +67,7 @@ class LastmodContinuedSkipCheck(object):
         ・ただし、前回の続きの指定がない場合、常にスキップ対象外（False）を返す。
         '''
         skip_flg: bool = False
-        if 'continued' in self.kwargs_save and self.kwargs_save['continued'] == 'Yes':
+        if self.continued:
             if lastmod < self.latest_lastmod:
                 skip_flg = True
         return skip_flg

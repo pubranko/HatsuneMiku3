@@ -12,7 +12,8 @@ from shared.directory_search_spiders import DirectorySearchSpiders
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from prefect_lib.task.extentions_task import ExtensionsTask
-from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+# from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+from news_crawl.news_crawl_input import NewsCrawlInput
 #import pprint
 #from twisted.internet import reactor
 #from scrapy.utils.reactor import install_reactor
@@ -47,8 +48,11 @@ class ScrapyCrawlingTask(ExtensionsTask):
             raise ENDRUN(state=state.Failed())
 
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-        scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
-            kwargs['spider_kwargs'])
+        # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
+        #     kwargs['spider_kwargs'])
+        #kwargsにスタートタイムを追加し、news_crawlへの引数チェックを実行
+        kwargs['crawling_start_time'] = self.start_time
+        news_crawl_input = NewsCrawlInput(**kwargs['spider_kwargs'])
         # seleniumの使用有無により分けられた単位でマルチスレッド処理を実行する。
         #for separate_spiders_info in directory_search_spiders.separate_spider_using_selenium(args_spiders_name):
         for separate_spiders_info in directory_search_spiders.spiders_info_list_get(args_spiders_name):
@@ -56,7 +60,8 @@ class ScrapyCrawlingTask(ExtensionsTask):
                 threading.Thread(target=scrapy_crawling_run.custom_runner_run(
                     logger=self.logger,
                     start_time=self.start_time,
-                    scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    # scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                    scrapy_crawling_kwargs=news_crawl_input.__dict__,
                     spiders_info=separate_spiders_info)))
                 # threading.Thread(target=scrapy_crawling_run.custom_crawl_run(
                 #     logger=self.logger,

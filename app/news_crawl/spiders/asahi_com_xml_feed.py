@@ -5,6 +5,10 @@ from scrapy.selector.unified import Selector
 from scrapy.http.response.xml import XmlResponse
 from news_crawl.spiders.extensions_class.extensions_xml_feed import ExtensionsXmlFeedSpider
 
+'''
+現在このソースは未使用。
+XmlFeedSpiderの使用例のサンプルとし保存しているのみ。
+'''
 
 class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
     name: str = 'asahi_com_xml_feed'
@@ -23,6 +27,10 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
     _spider_version: float = 0.0          # spiderのバージョン。継承先で上書き要。
     _domain_name = 'asahi_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
+    # 廃止された項目だがエラーが出ないようにとりあえず定義しているだけ。
+    kwargs_save:dict
+
+
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
         親クラスの__init__処理後に追加で初期処理を行う。
@@ -34,7 +42,8 @@ class AsahiComXmlFeedSpider(ExtensionsXmlFeedSpider):
         itertagに指定したタグ単位に順次処理を実施
         '''
         # 直近の数分間の指定がある場合
-        until_this_time: datetime = self._crawling_start_time
+        # until_this_time: datetime = self._crawling_start_time
+        until_this_time: datetime = self.news_crawl_input.crawling_start_time
         if 'lastmod_recent_time' in self.kwargs_save:
             until_this_time = until_this_time - \
                 timedelta(minutes=int(self.kwargs_save['lastmod_recent_time']))

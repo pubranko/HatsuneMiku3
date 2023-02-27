@@ -9,7 +9,8 @@ from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run
 from shared.directory_search_spiders import DirectorySearchSpiders
 from shared.settings import DIRECT_CRAWL_FILES_DIR
-from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+# from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
+from news_crawl.news_crawl_input import NewsCrawlInput
 
 
 class DirectCrawlTask(ExtensionsTask):
@@ -21,7 +22,7 @@ class DirectCrawlTask(ExtensionsTask):
 
         kwargs['start_time'] = self.start_time
         kwargs['logger'] = self.logger
-        self.logger.info('=== Direct crwal run kwargs : ' + str(kwargs))
+        self.logger.info(f'=== Direct crwal run kwargs : {str(kwargs)}')
 
         spider_name: str = kwargs['spider_name']
         file: str = kwargs['file']
@@ -32,33 +33,42 @@ class DirectCrawlTask(ExtensionsTask):
                 urls = [line for line in f.readlines()]
         else:
             self.logger.error(
-                '=== Direct crwal run : 指定されたファイルは存在しませんでした : ' + file_path)
+                f'=== Direct crwal run : 指定されたファイルは存在しませんでした : {file_path}')
             raise ENDRUN(state=state.Failed())
         if len(urls) == 0:
             self.logger.error(
-                '=== Direct crwal run : 指定されたファイルが空です : ' + file_path)
+                f'=== Direct crwal run : 指定されたファイルが空です : {file_path}')
             raise ENDRUN(state=state.Failed())
 
         directory_search_spiders = DirectorySearchSpiders()
         if not spider_name in directory_search_spiders.spiders_name_list_get():
             self.logger.error(
-                '=== Direct crwal run : 指定されたspider_nameは存在しませんでした : ' + spider_name)
+                f'=== Direct crwal run : 指定されたspider_nameは存在しませんでした : {spider_name}')
             raise ENDRUN(state=state.Failed())
 
         spider_info = directory_search_spiders.spiders_info[spider_name]
 
         # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-        scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
-            'direct_crawl_urls':urls,})
+        # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
+        #     'direct_crawl_urls':urls,})
+        # kwargs['crawling_start_time'] = self.start_time
+        # kwargs['direct_crawl_urls'] = urls
+        news_crawl_input = NewsCrawlInput(**dict(
+            crawling_start_time = self.start_time,
+            direct_crawl_urls = urls,
+        ))
+        # news_crawl_input = NewsCrawlInput(**kwargs)
+
 
         self.logger.info(f'=== ダイレクト 対象スパイダー : {spider_name}')
-        self.logger.info(f'=== ダイレクト run kwargs : {scrapy_crawling_kwargs_input.spider_kwargs_correction()}')
+        self.logger.info(f'=== ダイレクト run kwargs : {news_crawl_input.__dict__}')
 
         thread = threading.Thread(
             target=scrapy_crawling_run.custom_runner_run(
                 logger=self.logger,
                 start_time=self.start_time,
-                scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                # scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
+                scrapy_crawling_kwargs=news_crawl_input.__dict__,
                 spiders_info=[spider_info]))
 
         # マルチプロセスで動いているScrapyの終了を待ってから後続の処理を実行する。
