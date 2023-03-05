@@ -1,7 +1,6 @@
-from copy import deepcopy
 import pickle
 import scrapy
-from typing import Union, Any, Optional
+from typing import Any, Optional, Final
 from datetime import datetime, timedelta
 from dateutil import parser
 from lxml.etree import _Element
@@ -13,10 +12,12 @@ from scrapy.http import Response, Request, TextResponse
 from scrapy.utils.sitemap import sitemap_urls_from_robots
 from scrapy_selenium import SeleniumRequest
 from scrapy_splash import SplashRequest
-from scrapy_splash.response import SplashTextResponse
 from selenium.webdriver.remote.webdriver import WebDriver
 #
 from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 from news_crawl.items import NewsCrawlItem
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.lastmod_term_skip_check import LastmodTermSkipCheck
@@ -50,6 +51,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     # MongoDB関連
     mongo: MongoModel                   # MongoDBへの接続を行うインスタンスをspider内に保持。pipelinesで使用。
     # スパイダーの挙動制御関連、固有の情報など
+
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
     # 次回クロールポイント情報
@@ -89,7 +91,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
     sitemap_type = 'nomal'
 
     # sitemap情報を保存 [{'source_url': response.url, 'lastmod': date_lastmod, 'loc': entry['loc']},,,]
-    crawl_urls_list: list[dict[str,Any]] = []
+    crawl_urls_list: list[dict[str, Any]] = []
 
     # クロール対象となったsitemapのurlリスト[response.url,,,]
     crawl_target_urls: list[str] = []
@@ -100,6 +102,36 @@ class ExtensionsSitemapSpider(SitemapSpider):
     known_pagination_css_selectors: list[str] = []
     # ページネーションで追加済みのurlリスト
     pagination_selected_urls: set[str] = set()
+
+    ###########
+    # 定数
+    ###########
+    '''当クラスのバージョン管理用のKEY項目名'''
+    EXTENSIONS_SITEMAP: Final[str] = 'extensions_sitemap'
+
+    #############################################################
+    # 定数 (CrawlerResponseModelのsource_of_information)
+    #############################################################
+    '''(CrawlerResponseModel)クロール対象がある一覧ページURL'''
+    CRAWL_URLS_LIST__SOURCE_URL: Final[str] = CrawlerLogsModel.CRAWL_URLS_LIST__SOURCE_URL
+    '''(CrawlerResponseModel)クロール対象URL'''
+    CRAWL_URLS_LIST__LOC: Final[str] = CrawlerLogsModel.CRAWL_URLS_LIST__LOC
+    '''(CrawlerResponseModel)クロールページの最終更新時間'''
+    CRAWL_URLS_LIST__LASTMOD: Final[str] = CrawlerLogsModel.CRAWL_URLS_LIST__LASTMOD
+
+    #############################################
+    # 定数 (各サイトマップ上で使用される文字)
+    #############################################
+    SITEMAP__LASTMOD: Final[str] = 'lastmod'
+    SITEMAP__LOC: Final[str] = 'loc'
+
+    ################################
+    # 定数 (サイトマップのタイプ)
+    ################################
+    SITEMAP_TYPE__SITEMAPINDEX: Final[str] = 'sitemapindex'
+    SITEMAP_TYPE__GOOGLE_NEWS_SITEMAP: Final[str] = 'google_news_sitemap'
+    SITEMAP_TYPE__IRREGULAR: Final[str] = 'irregular'
+    SITEMAP_TYPE__ROBOTS_TXT: Final[str] = '/robots.txt'
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -143,7 +175,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
         カスタマイズ版の_parse_sitemap
         通常版とselenium版の切り替え機能を追加。
         '''
-        if response.url.endswith('/robots.txt'):
+        if response.url.endswith(self.SITEMAP_TYPE__ROBOTS_TXT):
             for url in sitemap_urls_from_robots(response.text, base_url=response.url):
                 yield Request(url, callback=self.custom_parse_sitemap)
         else:
@@ -153,13 +185,12 @@ class ExtensionsSitemapSpider(SitemapSpider):
                                     {'response': response}, extra={'spider': self})
                 return
 
-            #s = Sitemap(body)
             sitemap = CustomSitemap(
                 body, response, self)        # 引数にresponseを追加
             it = self.sitemap_filter(sitemap, response)   # 引数にresponseを追加
 
             # サイトマップインデックスの場合
-            if sitemap.type == 'sitemapindex':
+            if sitemap.type == self.SITEMAP_TYPE__SITEMAPINDEX:
                 for loc in iterloc(it, self.sitemap_alternate_links):
                     if any(x.search(loc) for x in self._follow):
                         yield Request(loc, callback=self.custom_parse_sitemap)
@@ -204,13 +235,13 @@ class ExtensionsSitemapSpider(SitemapSpider):
             引数に絞り込み指定がある場合、その条件を満たす場合のみ対象とする。
             '''
             entry: dict
-            if max_lstmod < entry['lastmod']:
-                max_lstmod = entry['lastmod']
+            if max_lstmod < entry[self.SITEMAP__LASTMOD]:
+                max_lstmod = entry[self.SITEMAP__LASTMOD]
             crwal_flg: bool = True
-            date_lastmod = parser.parse(entry['lastmod']).astimezone(
+            date_lastmod = parser.parse(entry[self.SITEMAP__LASTMOD]).astimezone(
                 self.settings['TIMEZONE'])
 
-            if entries.type == 'sitemapindex':
+            if entries.type == self.SITEMAP_TYPE__SITEMAPINDEX:
                 # sitemap側と実際のソースは常に一致するわけではなさそう。
                 # バッファとして2日間分範囲を広げてチェックする。
                 if self.lastmod_term.skip_check(date_lastmod + timedelta(days=2)):
@@ -218,7 +249,7 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 if self.lastmod_continued.skip_check(date_lastmod):
                     crwal_flg = False
             else:
-                if url_pattern_skip_check(entry['loc'], self.news_crawl_input.url_pattern):
+                if url_pattern_skip_check(entry[self.SITEMAP__LOC], self.news_crawl_input.url_pattern):
                     crwal_flg = False
                 if self.lastmod_term.skip_check(date_lastmod):
                     crwal_flg = False
@@ -229,16 +260,16 @@ class ExtensionsSitemapSpider(SitemapSpider):
             if crwal_flg:
                 # カスタムurlの指定がある場合url変換する。
                 if self._custom_url_flg:
-                    entry['loc'] = self._custom_url(entry)
+                    entry[self.SITEMAP__LOC] = self._custom_url(entry)
                 # 子サイトマップ以外
-                if not entries.type == 'sitemapindex':
+                if not entries.type == self.SITEMAP_TYPE__SITEMAPINDEX:
                     # クロールurl情報を保存
                     self.crawl_urls_list.append({
-                        'source_url': response.url,
-                        'lastmod': date_lastmod,
-                        'loc': entry['loc']})
+                        self.CRAWL_URLS_LIST__SOURCE_URL: response.url,
+                        self.CRAWL_URLS_LIST__LASTMOD: date_lastmod,
+                        self.CRAWL_URLS_LIST__LOC: entry[self.SITEMAP__LOC]})
                     # クロール対象となったurlを保存
-                    self.crawl_target_urls.append(entry['loc'])
+                    self.crawl_target_urls.append(entry[self.SITEMAP__LOC])
                 yield entry
 
         # 単一のサイトマップからクロールする場合、そのページの最大更新時間、
@@ -252,8 +283,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
                     parser.parse(max_lstmod).astimezone(self.settings['TIMEZONE']))
             # クロールポイントを更新する。
             self._crawl_point = {
-                'latest_lastmod': self.domain_lastmod,
-                'crawling_start_time': self.news_crawl_input.crawling_start_time,
+                ControllerModel.LATEST_LASTMOD: self.domain_lastmod,
+                ControllerModel.CRAWLING_START_TIME: self.news_crawl_input.crawling_start_time,
             }
 
     def parse(self, response: TextResponse):
@@ -304,16 +335,17 @@ class ExtensionsSitemapSpider(SitemapSpider):
                 req.append(scrapy.Request(url=url, callback=self.parse))
         yield from req
 
-        ###
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
+        # クロール時のスパイダーのバージョン情報を記録 ( ex: 'sankei_com_sitemap:1.0 / extensions_sitemap:1.0' )
+        _info = f'{self.name}:{str(self._spider_version)} / {self.EXTENSIONS_SITEMAP}:{str(self._extensions_sitemap_version)}'
 
         source_of_information: dict = {}
         for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__SOURCE_URL] = record[
+                    self.CRAWL_URLS_LIST__SOURCE_URL]
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__LASTMOD] = record[
+                    self.CRAWL_URLS_LIST__LASTMOD]
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
@@ -371,17 +403,17 @@ class ExtensionsSitemapSpider(SitemapSpider):
             req.append(SeleniumRequest(
                 url=url, callback=self.selenium_parse, wait_time=2))
         yield from req
-        ###
 
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_sitemap:' + str(self._extensions_sitemap_version)
+        _info = f'{self.name}:{str(self._spider_version)} / {self.EXTENSIONS_SITEMAP}:{str(self._extensions_sitemap_version)}'
 
         source_of_information: dict = {}
         for record in self.crawl_urls_list:
             record: dict
             if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__SOURCE_URL] = record[
+                    self.CRAWL_URLS_LIST__SOURCE_URL]
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__LASTMOD] = record[
+                    self.CRAWL_URLS_LIST__LASTMOD]
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],

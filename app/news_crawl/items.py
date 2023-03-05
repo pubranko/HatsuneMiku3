@@ -4,6 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
 
 
 class NewsCrawlItem(scrapy.Item):
@@ -21,12 +22,12 @@ class NewsCrawlItem(scrapy.Item):
         # 当クラスのurl,title,contentを引数に、当クラスのインスタンス化をしているようだ。
         # ログからresponse_headers,response_bodyを削除するために細工
         p: NewsCrawlItem = NewsCrawlItem(self)
-        del p['domain']
-        del p['url']
-        del p['response_time']
-        del p['response_headers']
-        del p['response_body']
-        del p['spider_version_info']
-        del p['crawling_start_time']
-        del p['source_of_information']
+        del p[CrawlerResponseModel.DOMAIN]
+        del p[CrawlerResponseModel.URL]
+        del p[CrawlerResponseModel.RESPONSE_TIME]
+        del p[CrawlerResponseModel.RESPONSE_HEADERS]
+        del p[CrawlerResponseModel.RESPONSE_BODY]
+        del p[CrawlerResponseModel.SPIDER_VERSION_INFO]
+        del p[CrawlerResponseModel.CRAWLING_START_TIME]
+        del p[CrawlerResponseModel.SOURCE_OF_INFORMATION]
         return super(NewsCrawlItem, p).__repr__()

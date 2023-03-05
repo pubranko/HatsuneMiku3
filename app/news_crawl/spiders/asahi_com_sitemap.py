@@ -10,7 +10,7 @@ class AsahiComSitemapSpider(ExtensionsSitemapSpider):
     _domain_name: str = 'asahi_com'        # 各種処理で使用するドメイン名の一元管理
     _spider_version: float = 1.0
 
-    sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
+    sitemap_type = ExtensionsSitemapSpider.SITEMAP_TYPE__GOOGLE_NEWS_SITEMAP    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     known_pagination_css_selectors:list[str] = [
         '.entryPageNav  a[href]',

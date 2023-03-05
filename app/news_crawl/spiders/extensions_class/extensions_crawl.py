@@ -1,16 +1,16 @@
 import pickle
 import scrapy
-from typing import Any
+from typing import Any, Final
 from datetime import datetime
 from scrapy.spiders import CrawlSpider
-from scrapy.http import Response, Request, TextResponse
+from scrapy.http import TextResponse
 from urllib.parse import unquote
-from bs4 import BeautifulSoup as bs4
-from bs4.element import ResultSet
 from scrapy_splash import SplashRequest
-from scrapy_splash.response import SplashTextResponse
 #
 from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
 from news_crawl.items import NewsCrawlItem
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.spider_init import spider_init
@@ -51,7 +51,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
     splash_mode: bool = False
 
     # 一覧ページの情報を保存 [{'source_url': '', 'lastmod': '', 'loc': ''},,,]
-    crawl_urls_list: list[dict[str,Any]] = []
+    crawl_urls_list: list[dict[str, Any]] = []
 
     # クロール対象となったurlリスト[response.url,,,]
     crawl_target_urls: list[str] = []
@@ -66,6 +66,30 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # ページネーションチェック: 次ページがある場合、そのURLを取得する
     pagination_check: PaginationCheck
 
+    ###########
+    # 定数
+    ###########
+    '''当クラスのバージョン管理用のKEY項目名'''
+    EXTENSIONS_CRAWL: str = 'extensions_crawl'
+
+    ##################################################
+    # 定数 (CrawlerLogsModelのspider_reportと同期)
+    ##################################################
+    '''クロール対象がある一覧ページURL'''
+    CRAWL_URLS_LIST__SOURCE_URL: str = CrawlerLogsModel.CRAWL_URLS_LIST__SOURCE_URL
+    '''クロール対象URL'''
+    CRAWL_URLS_LIST__LOC: str = CrawlerLogsModel.CRAWL_URLS_LIST__LOC
+    '''クロールページの最終更新時間'''
+    CRAWL_URLS_LIST__LASTMOD: str = CrawlerLogsModel.CRAWL_URLS_LIST__LASTMOD
+
+    #############################################################
+    # 定数 (ControllerModelの レコードタイプcrawl_pointと同期)
+    #############################################################
+    CRAWL_POINT__LOC: Final[str] = ControllerModel.LOC
+    CRAWL_POINT__URLS: Final[str] = ControllerModel.URLS
+    CRAWL_POINT__LASTMOD: Final[str] = ControllerModel.LASTMOD
+    CRAWL_POINT__LATEST_LASTMOD: Final[str] = ControllerModel.LATEST_LASTMOD
+    CRAWL_POINT__CRAWLING_START_TIME: Final[str] = ControllerModel.CRAWLING_START_TIME
 
     def __init__(self, *args, **kwargs):
         ''' (拡張メソッド)
@@ -109,16 +133,15 @@ class ExtensionsCrawlSpider(CrawlSpider):
                 req.append(scrapy.Request(url=url, callback=self.parse))
         yield from req
 
-
-        _info = self.name + ':' + str(self._spider_version) + ' / ' \
-            + 'extensions_crawl:' + str(self._extensions_crawl_version)
+        # クロール時のスパイダーのバージョン情報を記録 ( ex: 'jp_reuters_com_crawl:1.0 / extensions_crawl:1.0' )
+        _info = f'{self.name}:{str(self._spider_version)} / {self.EXTENSIONS_CRAWL}:{str(self._extensions_crawl_version)}'
 
         source_of_information: dict = {}
         for record in self.crawl_urls_list:
             record: dict
-            if response.url == record['loc']:
-                source_of_information['source_url'] = record['source_url']
-                source_of_information['lastmod'] = record['lastmod']
+            if response.url == record[self.CRAWL_URLS_LIST__LOC]:
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__SOURCE_URL] = record[self.CRAWL_URLS_LIST__SOURCE_URL]
+                source_of_information[CrawlerResponseModel.SOURCE_OF_INFORMATION__LASTMOD] = record[self.CRAWL_URLS_LIST__LASTMOD]
 
         yield NewsCrawlItem(
             domain=self.allowed_domains[0],
@@ -141,7 +164,7 @@ class ExtensionsCrawlSpider(CrawlSpider):
         '''
         return url['url']
 
-    def pages_setting(self, default_page_span_from: int, default_page_span_to: int) -> tuple[int,int]:
+    def pages_setting(self, default_page_span_from: int, default_page_span_to: int) -> tuple[int, int]:
         ''' (拡張メソッド)
         クロール対象のurlを抽出するページの開始・終了の範囲を決める。
         ・起動時の引数にpagesがある場合は、その指定に従う。

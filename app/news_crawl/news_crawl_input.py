@@ -1,8 +1,22 @@
 from datetime import datetime
-from typing import Any, Optional, Union, Tuple
+from typing import Any, Optional, Tuple, Final
 from pydantic import BaseModel, ValidationError, validator, Field
 from urllib.parse import urlparse
 from news_crawl.settings import TIMEZONE
+
+################################
+# 定数 (news_crawlの引数)
+################################
+DEBUG: Final[str] = 'debug'
+CRAWL_POINT_NON_UPDATE: Final[str] = 'crawl_point_non_update'
+CRAWLING_START_TIME: Final[str] = 'crawling_start_time'
+LASTMOD_TERM_MINUTES_FROM: Final[str] = 'lastmod_term_minutes_from'
+LASTMOD_TERM_MINUTES_TO: Final[str] = 'lastmod_term_minutes_to'
+PAGE_SPAN_FROM: Final[str] = 'page_span_from'
+PAGE_SPAN_TO: Final[str] = 'page_span_to'
+CONTINUED: Final[str] = 'continued'
+DIRECT_CRAWL_URLS: Final[str] = 'direct_crawl_urls'
+URL_PATTERN: Final[str] = 'url_pattern'
 
 
 class NewsCrawlInput(BaseModel):
@@ -29,7 +43,6 @@ class NewsCrawlInput(BaseModel):
         None, title="直接クロールするURLリスト")
     url_pattern: Optional[str] = Field(None, title="URLパターンによる絞り込み")
 
-    # エラーメッセージを表示させるためのロガー
 
     def __init__(self, **data: Any):
         super().__init__(**data)
@@ -43,31 +56,31 @@ class NewsCrawlInput(BaseModel):
     ##################################
     # 単項目チェック
     ##################################
-    @validator('direct_crawl_urls')
+    @validator(DIRECT_CRAWL_URLS)
     def start_time_check(cls, value: list[str], values: dict) -> list[str]:
         if value:
             for url in value:
                 parsed_url = urlparse(url)
                 assert len(
-                    parsed_url.scheme) > 0, f'引数エラー(direct_crawl_urls): URLとして解析できませんでした {url}'
+                    parsed_url.scheme) > 0, f'引数エラー({DIRECT_CRAWL_URLS}): URLとして解析できませんでした {url}'
         return value
 
-    @validator('lastmod_term_minutes_to')
+    @validator(LASTMOD_TERM_MINUTES_TO)
     def lastmod_term_minutes_to_check(cls, value: list[str], values: dict) -> list[str]:
-        if value and values['lastmod_term_minutes_from']:
+        if value and values[LASTMOD_TERM_MINUTES_FROM]:
             assert value <= values[
-                'lastmod_term_minutes_from'], f'引数エラー : lastmod_term_minutes_from と lastmod_term_minutes_to は、from > toで指定してください。from({values["lastmod_term_minutes_from"]}) : to({value})）'
+                LASTMOD_TERM_MINUTES_FROM], f'引数エラー : {LASTMOD_TERM_MINUTES_FROM} と {LASTMOD_TERM_MINUTES_TO} は、from > toで指定してください。from({values[LASTMOD_TERM_MINUTES_FROM]}) : to({value})）'
         return value
 
-    @validator('page_span_to', always=True)
+    @validator(PAGE_SPAN_TO, always=True)
     def page_span_to_check(cls, value: list[str], values: dict) -> list[str]:
 
-        assert ((values['page_span_from'] and value) or
-                (not values['page_span_from'] and not value)), f'引数エラー : page_span_from と page_span_to は同時に指定してください。'
+        assert ((values[PAGE_SPAN_FROM] and value) or
+                (not values[PAGE_SPAN_FROM] and not value)), f'引数エラー : {PAGE_SPAN_FROM} と {PAGE_SPAN_TO} は同時に指定してください。'
 
-        if value and values['page_span_from']:
+        if value and values[PAGE_SPAN_FROM]:
             assert value > values[
-                'page_span_from'], f'引数エラー : page_span_fromとpage_span_toはfrom ≦ toで指定してください。from({values["page_span_from"]}) : to({value})）'
+                PAGE_SPAN_FROM], f'引数エラー : {PAGE_SPAN_FROM}と{PAGE_SPAN_TO}はfrom ≦ toで指定してください。from({values[PAGE_SPAN_FROM]}) : to({value})）'
 
         return value
 
@@ -81,7 +94,7 @@ if __name__ == "__main__":
         crawl_point_non_update=False,
         lastmod_term_minutes_from=60,
         lastmod_term_minutes_to=0,
-        # page_span_from = 2,
+        page_span_from = 2,
         page_span_to=3,
         continued=False,
         direct_crawl_urls=['https://yahoo.co.jp'],

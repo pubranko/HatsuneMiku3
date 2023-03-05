@@ -28,7 +28,7 @@ class SankeiComSitemapSpider(ExtensionsSitemapSpider):
         }
     }
 
-    sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
+    sitemap_type = ExtensionsSitemapSpider.SITEMAP_TYPE__GOOGLE_NEWS_SITEMAP    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     known_pagination_css_selectors:list[str] = [
         '.pagination  a[href]',

@@ -1,17 +1,8 @@
-import re
 import urllib.parse
-import pickle
-from datetime import datetime
 from time import sleep
-from typing import Pattern, Any
-from bs4.element import ResultSet
-from urllib.parse import unquote
-from bs4 import BeautifulSoup as bs4
+from typing import Any
 import scrapy
-from scrapy.http import Response
 from scrapy.http import TextResponse
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import Rule
 from scrapy_selenium import SeleniumRequest
 from scrapy.exceptions import CloseSpider
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -20,9 +11,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException,StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
-from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate, LOC as debug_file__LOC, LASTMOD as debug_file__LASTMOD
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
@@ -59,7 +50,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         # クロールする対象ページを決定する。デフォルト１〜３。scrapy起動引数に指定がある場合、そちらを使う。
         self.page_from, self.page_to = self.pages_setting(1, 3)
-        self.page: int = self.page_from                    # URLに埋め込むページ数。現在のページ数を保存するエリア。
+        # URLに埋め込むページ数。現在のページ数を保存するエリア。
+        self.page: int = self.page_from
         self.all_urls_list: list = []
 
         self.url_continued = UrlsContinuedSkipCheck(
@@ -95,7 +87,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             next_page_url = f'{self.start_urls[0]}/{self.page + 1}'
 
             # ページ内の対象urlを抽出
-            links = response.css(f'.main_content > .left_col > .posts_list .post_title > a[href]::attr(href)').getall()
+            links = response.css(
+                f'.main_content > .left_col > .posts_list .post_title > a[href]::attr(href)').getall()
             self.logger.info(
                 f'=== ページ内の記事件数 = {len(links)}')
             # ページ内記事は通常30件。それ以外の場合はワーニングメール通知（環境によって違うかも、、、）
@@ -106,7 +99,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             for link in links:
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = urllib.parse.unquote(response.urljoin(link))
-                self.all_urls_list.append({'loc': url, 'lastmod': ''})
+                self.all_urls_list.append(
+                    {debug_file__LOC: url, debug_file__LASTMOD: ''})
                 # 前回からの続きの指定がある場合、
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
 
@@ -117,7 +111,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 else:
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
-                        {'loc': url, 'lastmod': '', 'source_url': response.url})
+                        {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: '', self.CRAWL_URLS_LIST__SOURCE_URL: response.url})
                     self.crawl_target_urls.append(url)
 
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
@@ -139,11 +133,11 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
         for _ in self.crawl_urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
+            yield scrapy.Request(response.urljoin(_[self.CRAWL_POINT__LOC]), callback=self.parse_news,)
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
-            'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self.news_crawl_input.crawling_start_time
+            self.CRAWL_POINT__URLS: self.all_urls_list[0:self.url_continued.check_count],
+            self.CRAWL_POINT__CRAWLING_START_TIME: self.news_crawl_input.crawling_start_time
         }
 
     def parse_start_response_selenium(self, response: TextResponse):
@@ -156,7 +150,7 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
         driver.implicitly_wait(60)
         driver.set_script_timeout(60)
 
-        ### ログイン操作
+        # ログイン操作
         # ログインフォーム部のiframe内に入る
         iframe: WebElement = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
@@ -168,15 +162,17 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             yaml_file[self.allowed_domains[0]]['user']
             yaml_file[self.allowed_domains[0]]['password']
         except Exception as e:
-            self.logger.critical(f'指定したYAMLファイルがない、またはファイルの中よりユーザー・パスワードが取得できませんでした。{e}')
+            self.logger.critical(
+                f'指定したYAMLファイルがない、またはファイルの中よりユーザー・パスワードが取得できませんでした。{e}')
             raise CloseSpider()
         else:
             user = yaml_file[self.allowed_domains[0]]['user']
             password = yaml_file[self.allowed_domains[0]]['password']
 
         try:
-            elem: WebElement = driver.find_element_by_css_selector('#mypage')       #ログイン前なら存在
-        except NoSuchElementException:  #既にログイン中ならpass
+            elem: WebElement = driver.find_element_by_css_selector(
+                '#mypage')  # ログイン前なら存在
+        except NoSuchElementException:  # 既にログイン中ならpass
             pass
         else:
             # ログインウインドウを開く
@@ -194,10 +190,12 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#ymkemail')))
             elem.send_keys(user)
             # パスワード入力
-            elem: WebElement = driver.find_element_by_css_selector('#ymkpassword')
+            elem: WebElement = driver.find_element_by_css_selector(
+                '#ymkpassword')
             elem.send_keys(password)
             # ログインボタン押下
-            elem: WebElement = driver.find_element_by_css_selector('#ymk-login-btn')
+            elem: WebElement = driver.find_element_by_css_selector(
+                '#ymk-login-btn')
             elem.click()
 
             # iframeから出る
@@ -206,19 +204,19 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             # 仕方なく強制スリープでiframeが入れ替わるのを待つ。
             sleep(2)
 
-        ### ログイン済みであることを最終チェック
+        # ログイン済みであることを最終チェック
         try:
             iframe3: WebElement = WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '#login_wrapper > iframe')))
             driver.switch_to.frame(iframe3)
             WebDriverWait(driver, 60).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '#ep_user_name'))) #ログイン後なら存在
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#ep_user_name')))  # ログイン後なら存在
             driver.switch_to.default_content()
         except NoSuchElementException:
             self.logger.error(
                 f'=== ログインできなかったため中止 ({driver.current_url})')
 
-        ### 指定ページをループしてクロール対象のurlを収集
+        # 指定ページをループしてクロール対象のurlを収集
         while self.page <= self.page_to:
             self.logger.info(
                 f'=== parse_start_response 現在解析中のURL = {driver.current_url}')
@@ -242,7 +240,8 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
             for link in links:
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = urllib.parse.unquote(response.urljoin(link))
-                self.all_urls_list.append({'loc': url, 'lastmod': ''})
+                self.all_urls_list.append(
+                    {debug_file__LOC: url, debug_file__LASTMOD: ''})
                 # 前回からの続きの指定がある場合、前回取得したurlが確認できたらそれ以降のurlは対象外
                 # urlパターンの指定がある場合、パターンに合わないurlは対象外
                 if self.url_continued.skip_check(url):
@@ -252,11 +251,11 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 else:
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
-                        {'loc': url, 'lastmod': '', 'source_url': driver.current_url})
+                        {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: '', self.CRAWL_URLS_LIST__SOURCE_URL: driver.current_url})
                     self.crawl_target_urls.append(url)
 
-
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
+            #   末尾から３０件と指定しているが、最後のページまで行った場合、前ページ分が混ざるかも、、、どこかで直そう。
             start_request_debug_file_generate(
                 self.name, driver.current_url, self.all_urls_list[-30:], self.news_crawl_input.debug)
 
@@ -276,13 +275,11 @@ class EpochtimesJpCrawlSpider(ExtensionsCrawlSpider):
                 elem.send_keys(Keys.END)    # endキーを押下して画面最下部へ移動
                 elem.click()                # 画面に表示された対象のボタンを押下(表示されていないと押下できない)
 
-        ### リスト(self.urls_list)に溜めたクロール対象urlよりリクエストを発行
+        # リスト(self.urls_list)に溜めたクロール対象urlよりリクエストを発行
         for _ in self.crawl_urls_list:
-            yield SeleniumRequest(
-                url=response.urljoin(_['loc']),
-                callback=self.parse_news)
+            yield SeleniumRequest(url=response.urljoin(_[self.CRAWL_POINT__LOC]), callback=self.parse_news)
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
-            'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self.news_crawl_input.crawling_start_time
+            self.CRAWL_POINT__URLS: self.all_urls_list[0:self.url_continued.check_count],
+            self.CRAWL_POINT__CRAWLING_START_TIME: self.news_crawl_input.crawling_start_time,
         }

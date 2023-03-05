@@ -1,6 +1,6 @@
 """This module contains the ``SeleniumMiddleware`` scrapy middleware"""
 import os
-from typing import Any
+from typing import Optional
 from importlib import import_module
 
 from scrapy import signals
@@ -21,8 +21,8 @@ class SeleniumMiddleware:
 
     driver: WebDriver
 
-    def __init__(self, driver_name, driver_executable_path, driver_arguments,
-                 browser_executable_path, profile=None):  # パラメータにプロファイルを追加してみた。
+    def __init__(self, driver_name: str, driver_executable_path: str, driver_arguments: list,
+                 browser_executable_path:str, profile: Optional[FirefoxProfile]):  # パラメータにプロファイルを追加してみた。
         """Initialize the selenium webdriver
 
         Parameters
@@ -52,7 +52,8 @@ class SeleniumMiddleware:
         for argument in driver_arguments:
             driver_options.add_argument(argument)
 
-        driver_options.profile = profile    # 追加されたパラメータのプロファイルを設定
+        if profile:
+            driver_options.profile = profile    # 追加されたパラメータのプロファイルを設定
 
         driver_kwargs = {
             'executable_path': driver_executable_path,

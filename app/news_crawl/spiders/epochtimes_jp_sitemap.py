@@ -15,7 +15,7 @@ class EpochtimesJpSitemapSpider(ExtensionsSitemapSpider):
     # リダイレクト後のurlへ変換してクロールするようカスタマイズ。
     _custom_url_flg: bool = True
 
-    sitemap_type = 'google_news_sitemap'    #googleのニュースサイトマップ用にカスタマイズしたタイプ
+    sitemap_type = ExtensionsSitemapSpider.SITEMAP_TYPE__GOOGLE_NEWS_SITEMAP    #googleのニュースサイトマップ用にカスタマイズしたタイプ
 
     def _custom_url(self, _entry: dict) -> str:
         '''(オーバーライド)

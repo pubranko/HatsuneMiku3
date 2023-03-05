@@ -34,9 +34,9 @@ class CustomSitemap:
                 name = tag.split('}', 1)[1] if '}' in tag else tag
 
                 # イレギラーなsitemapの解析には、各スパイダーのirregular_sitemap_parseを使用するようカスタマイズ
-                if self.spider.sitemap_type == 'irregular':
+                if self.spider.sitemap_type == self.spider.SITEMAP_TYPE__IRREGULAR:
                     d = self.spider.irregular_sitemap_parse(d, el, name)
-                elif self.spider.sitemap_type == 'google_news_sitemap':
+                elif self.spider.sitemap_type == self.spider.SITEMAP_TYPE__GOOGLE_NEWS_SITEMAP:
                     '''
                     googleのニュースサイトマップタイプ解析処理。
                     lastmodがなく<news>タグ内の<publication_date>となっているため、カスタマイズを行う。

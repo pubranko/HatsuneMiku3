@@ -4,10 +4,6 @@ from datetime import datetime
 import urllib.parse
 from typing import Any
 from scrapy.http import TextResponse
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import Rule
-from scrapy_splash import SplashRequest
-from scrapy_splash.response import SplashJsonResponse
 from scrapy_selenium import SeleniumRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -15,7 +11,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
-from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate, LOC as debug_file__LOC, LASTMOD as debug_file__LASTMOD
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 
@@ -104,7 +100,7 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
                 # crwal_flg = True
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = urllib.parse.unquote(response.urljoin(link))
-                self.all_urls_list.append({'loc': url, 'lastmod': ''})
+                self.all_urls_list.append({debug_file__LOC: url, debug_file__LASTMOD: ''})
 
                 # 前回からの続きの指定がある場合、
                 # 前回取得したurlまで確認できたらそれ移行は対象外
@@ -117,7 +113,7 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
                 # if crwal_flg:
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
-                        {'loc': url, 'lastmod': '', 'source_url': driver.current_url})
+                        {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: '', self.CRAWL_URLS_LIST__SOURCE_URL: driver.current_url})
                     self.crawl_target_urls.append(url)
 
             # debug指定がある場合、現ページの明細数分をデバック用ファイルに保存
@@ -140,9 +136,9 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
         for _ in self.crawl_urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
+            yield scrapy.Request(response.urljoin(_[self.CRAWL_POINT__LOC]), callback=self.parse_news,)
         # 次回向けに1ページ目の5件をcontrollerへ保存する
         self._crawl_point[self.base_url] = {
-            'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self.news_crawl_input.crawling_start_time
+            self.CRAWL_POINT__URLS: self.all_urls_list[0:self.url_continued.check_count],
+            self.CRAWL_POINT__CRAWLING_START_TIME: self.news_crawl_input.crawling_start_time,
         }

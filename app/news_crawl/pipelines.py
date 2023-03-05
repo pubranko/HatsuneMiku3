@@ -5,9 +5,12 @@
 
 # useful for handling different item types with a single interface
 
+from typing import Union
 from itemadapter import ItemAdapter
 from BrownieAtelierMongo.models.mongo_model import MongoModel
 from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
+from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
 
 
 class MongoPipeline(object):
@@ -21,7 +24,7 @@ class MongoPipeline(object):
     def close_spider(self, spider):
         pass
 
-    def process_item(self, item, spider):
+    def process_item(self, item, spider: Union[ExtensionsCrawlSpider, ExtensionsSitemapSpider]):
 
         mongo: MongoModel = spider.mongo
         crawler_response = CrawlerResponseModel(mongo)

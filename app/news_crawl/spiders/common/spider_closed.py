@@ -17,56 +17,29 @@ def spider_closed(
     spider: Union[ExtensionsSitemapSpider, ExtensionsCrawlSpider],
 ):
     '''spider共通の終了処理'''
-    mongo: MongoModel = spider.mongo
-    domain_name: str = spider._domain_name
-    name: str = spider.name
-    crawl_point: dict = spider._crawl_point
     stats: MemoryStatsCollector = spider.crawler.stats
-    crawling_start_time: datetime = spider.news_crawl_input.crawling_start_time
 
     if spider.news_crawl_input.crawl_point_non_update:
         spider.logger.info(
             '=== closed : 次回クロールポイント情報の更新Skip')
     else:
-        controller = ControllerModel(mongo)
-        controller.crawl_point_update(domain_name, name, crawl_point)
+        controller = ControllerModel(spider.mongo)
+        controller.crawl_point_update(spider._domain_name, spider.name, spider._crawl_point)
         spider.logger.info(
-            f'=== closed : controllerに次回クロールポイント情報を保存 \n {crawl_point}')
+            f'=== closed : controllerに次回クロールポイント情報を保存 \n {spider._crawl_point}')
 
     resource_check()
 
-    stats_edit: dict = {}
-    for item in stats.get_stats().items():
-        key: str = str(item[0]).replace('.', '_')
-        stats_edit[key] = item[1]
+    # クロールの統計結果とクロールを行ったサイトの一覧情報を「spider_report」としてログに保存する。
+    crawler_logs = CrawlerLogsModel(spider.mongo)
 
-    # ログに保管するときはsource_urlごとの配列内にlocとlastmodを格納するよう構造変換
-    temp: dict = {}
-    source_urls:list = []
-    for record in spider.crawl_urls_list:
-        if record['source_url'] in temp.keys():
-            temp[record['source_url']].append({
-                'loc': record['loc'],
-                'lastmod': record['lastmod']})
-        else:
-            temp[record['source_url']] = [{
-                'loc': record['loc'],
-                'lastmod': record['lastmod'], }]
-    for key,value in temp.items():
-        source_urls.append({
-            'source_url':key,
-            'items':value,
-        })
+    crawler_logs.spider_report_insert(
+        spider.news_crawl_input.crawling_start_time,
+        spider.allowed_domains[0],
+        spider.name,
+        stats,
+        spider.crawl_urls_list,)
 
-    crawler_logs = CrawlerLogsModel(mongo)
-    crawler_logs.insert_one({
-        'start_time': crawling_start_time,
-        'record_type': 'spider_reports',
-        'domain': spider.allowed_domains[0],
-        'spider_name': name,
-        'stats': stats_edit,
-        'crawl_urls_list': source_urls,
-    })
 
-    mongo.close()
-    spider.logger.info(f'=== Spider closed: {name}')
+    spider.mongo.close()
+    spider.logger.info(f'=== Spider closed: {spider.name}')

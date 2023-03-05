@@ -1,32 +1,10 @@
-import re
 import urllib.parse
-import pickle
-from datetime import datetime
-from time import sleep
-from typing import Pattern, Any
-from bs4.element import ResultSet
-from urllib.parse import unquote
-from bs4 import BeautifulSoup as bs4
 import scrapy
-from scrapy.http import Response
 from scrapy.http import TextResponse
-from scrapy.linkextractors import LinkExtractor
-from scrapy.spiders import Rule
-from scrapy_selenium import SeleniumRequest
-from scrapy.exceptions import CloseSpider
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
-from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
+from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate, LOC as debug_file__LOC, LASTMOD as debug_file__LASTMOD
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
-from news_crawl.items import NewsCrawlItem
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
-from shared.login_info_get import login_info_get
 
 
 class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
@@ -68,7 +46,7 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
 
     def start_requests(self):
         ''' '''
-        ### start_urlsをベースにページに合わせたurlを生成
+        # start_urlsをベースにページに合わせたurlを生成
         # 例）https://www.nikkei.com/news/category/
         #     -> https://www.nikkei.com/news/category/?bn=5,
         # 記事の開始位置をページより計算して求める。
@@ -85,11 +63,11 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
                 f'=== parse_start_response 現在解析中のURL = {response.url}')
 
             # ページ内の対象urlを抽出
-            #CONTENTS_MAIN > div:nth-child(1) > ul > li:nth-child(1) > h3 > span > span.m-miM32_itemTitleText > a
+            # CONTENTS_MAIN > div:nth-child(1) > ul > li:nth-child(1) > h3 > span > span.m-miM32_itemTitleText > a
             #CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]
             #CONTENTS_MAIN > div > h3 > a[href]
 
-            #CONTENTS_MAIN > div > h3.m-miM09_title > a[href]::attr(href)
+            # CONTENTS_MAIN > div > h3.m-miM09_title > a[href]::attr(href)
             #CONTENTS_MAIN > div > ul > li > h3 > span > span.m-miM32_itemTitleText > a[href]
 
             links = response.css(
@@ -106,7 +84,8 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
             for link in links:
                 # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
                 url: str = urllib.parse.unquote(response.urljoin(link))
-                self.all_urls_list.append({'loc': url, 'lastmod': ''})
+                self.all_urls_list.append(
+                    {debug_file__LOC: url, debug_file__LASTMOD: ''})
                 # 前回からの続きの指定がある場合、
                 # 前回取得したurlが確認できたら確認済み（削除）にする。
 
@@ -117,7 +96,7 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
                 else:
                     # クロール対象のURL情報を保存
                     self.crawl_urls_list.append(
-                        {'loc': url, 'lastmod': '', 'source_url': response.url})
+                        {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: '', self.CRAWL_URLS_LIST__SOURCE_URL: response.url})
                     self.crawl_target_urls.append(url)
 
             # debug指定がある場合、現ページの３０件をデバック用ファイルに保存
@@ -140,9 +119,9 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
         for _ in self.crawl_urls_list:
-            yield scrapy.Request(response.urljoin(_['loc']), callback=self.parse_news,)
+            yield scrapy.Request(response.urljoin(_[self.CRAWL_POINT__LOC]), callback=self.parse_news,)
         # 次回向けに1ページ目の10件をcontrollerへ保存する
         self._crawl_point[self.start_urls[0]] = {
-            'urls': self.all_urls_list[0:self.url_continued.check_count],
-            'crawling_start_time': self.news_crawl_input.crawling_start_time
+            self.CRAWL_POINT__URLS: self.all_urls_list[0:self.url_continued.check_count],
+            self.CRAWL_POINT__CRAWLING_START_TIME: self.news_crawl_input.crawling_start_time,
         }

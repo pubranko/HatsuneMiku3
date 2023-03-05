@@ -3,6 +3,7 @@ import sys
 from typing import Optional
 path = os.getcwd()
 sys.path.append(path)
+from BrownieAtelierMongo.models.controller_model import ControllerModel
 
 
 class UrlsContinuedSkipCheck(object):
@@ -24,7 +25,7 @@ class UrlsContinuedSkipCheck(object):
         if self.continued:
             if base_url in crawl_point:
                 self.last_time_urls = [
-                    _['loc'] for _ in crawl_point[base_url]['urls']]
+                    _[ControllerModel.LOC] for _ in crawl_point[base_url][ControllerModel.URLS]]
 
     def skip_check(self, url:str) -> bool:
         '''
