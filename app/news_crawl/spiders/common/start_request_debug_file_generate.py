@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Final
 path = os.getcwd()
 sys.path.append(path)
-from shared.settings import DEBUG_FILE_DIR
+from shared.settings import DATA_DIR__DEBUG_FILE_DIR
 from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
 
 LOC: Final[str] = ExtensionsSitemapSpider.SITEMAP__LOC
@@ -16,7 +16,7 @@ def start_request_debug_file_generate(spider_name: str, start_url: str, entries:
     '''
     if debug:
         path: str = os.path.join(
-            DEBUG_FILE_DIR, 'start_urls(' + spider_name + ').txt')
+            DATA_DIR__DEBUG_FILE_DIR, 'start_urls(' + spider_name + ').txt')
         with open(path, 'a') as file:
             for entry in entries:
                 entry: dict

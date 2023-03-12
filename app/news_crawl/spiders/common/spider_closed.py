@@ -2,9 +2,8 @@ from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を�
 from typing import Union, TYPE_CHECKING
 from datetime import datetime
 from scrapy.statscollectors import MemoryStatsCollector
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
 from shared.resource_check import resource_check
 
 if TYPE_CHECKING:  # 型チェック時のみインポート

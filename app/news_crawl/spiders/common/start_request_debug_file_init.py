@@ -3,7 +3,7 @@ import sys
 from scrapy.spiders import Spider
 path = os.getcwd()
 sys.path.append(path)
-from shared.settings import DEBUG_FILE_DIR
+from shared.settings import DATA_DIR__DEBUG_FILE_DIR
 
 
 def start_request_debug_file_init(spider: Spider, debug: bool):
@@ -14,6 +14,6 @@ def start_request_debug_file_init(spider: Spider, debug: bool):
         spider.logger.info(f'=== debugモード ON: {spider.name}')
         # デバック用のファイルを初期化
         path = os.path.join(
-            DEBUG_FILE_DIR, 'start_urls(' + str(spider.name) + ').txt')
+            DATA_DIR__DEBUG_FILE_DIR, 'start_urls(' + str(spider.name) + ').txt')
         with open(path, 'w') as file:
             pass

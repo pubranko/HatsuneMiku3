@@ -25,19 +25,21 @@ class ScrapyCrawlingTask(ExtensionsTask):
     クローリング用タスク
     '''
 
-    def run(self, **kwargs):
+    # def run(self, **kwargs):
+    def run(self, spider_names: list[str], spider_kwargs: dict, following_processing_execution: bool):
         '''ここがprefectで起動するメイン処理'''
         self.run_init()
 
-        kwargs['logger'] = self.logger
-        self.logger.info('=== Scrapy crawling run kwargs : ' + str(kwargs))
+        # kwargs['logger'] = self.logger
+        self.logger.info(f'=== Scrapy crawling run kwargs : spider_names={spider_names}, spider_kwargs={spider_kwargs}, following_processing_execution={following_processing_execution}')
 
         error_spider_names: list = []
         threads: list[threading.Thread] = []
         directory_search_spiders = DirectorySearchSpiders()
 
         # spidersディレクトリより取得した一覧に存在するかチェック
-        args_spiders_name = set(kwargs['spider_names'])
+        # args_spiders_name = set(kwargs['spider_names'])
+        args_spiders_name = set(spider_names)
         for args_spider_name in args_spiders_name:
             # spidersディレクトリより取得した一覧に存在するかチェック
             if not args_spider_name in directory_search_spiders.spiders_name_list_get():
@@ -51,8 +53,8 @@ class ScrapyCrawlingTask(ExtensionsTask):
         # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput(
         #     kwargs['spider_kwargs'])
         #kwargsにスタートタイムを追加し、news_crawlへの引数チェックを実行
-        kwargs['crawling_start_time'] = self.start_time
-        news_crawl_input = NewsCrawlInput(**kwargs['spider_kwargs'])
+        # kwargs['crawling_start_time'] = self.start_time
+        news_crawl_input = NewsCrawlInput(**spider_kwargs)
         # seleniumの使用有無により分けられた単位でマルチスレッド処理を実行する。
         #for separate_spiders_info in directory_search_spiders.separate_spider_using_selenium(args_spiders_name):
         for separate_spiders_info in directory_search_spiders.spiders_info_list_get(args_spiders_name):
@@ -121,21 +123,37 @@ class ScrapyCrawlingTask(ExtensionsTask):
 
         #reac.stop()
 
-        if kwargs['following_processing_execution'] == 'Yes':
+        # if kwargs['following_processing_execution'] == 'Yes':
+        if following_processing_execution:
             # 必要な引数設定
-            kwargs['start_time'] = self.start_time
-            kwargs['mongo'] = self.mongo
-            kwargs['domain'] = None
-            kwargs['crawling_start_time_from'] = self.start_time
-            kwargs['crawling_start_time_to'] = self.start_time
-            kwargs['urls'] = []
-            kwargs['scrapying_start_time_from'] = self.start_time
-            kwargs['scrapying_start_time_to'] = self.start_time
-            kwargs['scraped_save_start_time_from'] = self.start_time
-            kwargs['scraped_save_start_time_to'] = self.start_time
+            # kwargs['start_time'] = self.start_time
+            # kwargs['mongo'] = self.mongo
+            # kwargs['domain'] = None
+            # kwargs['crawling_start_time_from'] = self.start_time
+            # kwargs['crawling_start_time_to'] = self.start_time
+            # kwargs['urls'] = []
+            # kwargs['scrapying_start_time_from'] = self.start_time
+            # kwargs['scrapying_start_time_to'] = self.start_time
+            # kwargs['scraped_save_start_time_from'] = self.start_time
+            # kwargs['scraped_save_start_time_to'] = self.start_time
 
-            scrapying_run.exec(kwargs)
-            scraped_news_clip_master_save_run.check_and_save(kwargs)
+            # scrapying_run.exec(kwargs)
+            scrapying_run.exec(
+                start_time = self.start_time,
+                mongo = self.mongo,
+                domain = None,
+                urls = [],
+                target_start_time_from = self.start_time,
+                target_start_time_to = self.start_time,
+            )
+            # scraped_news_clip_master_save_run.check_and_save(kwargs)
+            scraped_news_clip_master_save_run.check_and_save(
+                start_time = self.start_time,
+                mongo = self.mongo,
+                domain = None,
+                target_start_time_from = self.start_time,
+                target_start_time_to = self.start_time,
+            )
 
             ### 本格開発までsolrへの連動を一時停止 ###
             # solr_news_clip_save_run.check_and_save(kwargs)

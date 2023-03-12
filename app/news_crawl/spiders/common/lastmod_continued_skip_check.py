@@ -7,7 +7,7 @@ from scrapy.exceptions import CloseSpider
 path = os.getcwd()
 sys.path.append(path)
 from shared.timezone_recovery import timezone_recovery
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 
 
 class LastmodContinuedSkipCheck(object):

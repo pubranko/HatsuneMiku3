@@ -1,8 +1,8 @@
 from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を回避するため
 from typing import Union, TYPE_CHECKING
 from scrapy.exceptions import CloseSpider
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 from news_crawl.spiders.common.start_request_debug_file_init import start_request_debug_file_init
 from news_crawl.spiders.common.crawling_domain_duplicate_check import CrawlingDomainDuplicatePrevention
 from news_crawl.spiders.common.lastmod_term_skip_check import LastmodTermSkipCheck
@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # 型チェック時のみインポート
     from news_crawl.spiders.extensions_class.extensions_crawl import ExtensionsCrawlSpider
     #from news_crawl.spiders.extensions_class.extensions_xml_feed import ExtensionsXmlFeedSpider
 
-
+from logging import Logger,LoggerAdapter
 def spider_init(
     spider: Union[ExtensionsSitemapSpider, ExtensionsCrawlSpider],
     *args, **kwargs
@@ -30,7 +30,9 @@ def spider_init(
         '=== spider_init : ' + spider_name + '開始')
 
     # MongoDBオープン
-    spider.mongo = MongoModel()
+    spider.logger.logger
+    spider.logger.logger
+    spider.mongo = MongoModel(spider.logger.logger)     # MongoModelではLoggerAdapterではなくLoggerで定義している。そのためとりあえずLoggerを渡すよう対応中
     # コントローラーモデルを生成
     controller = ControllerModel(spider.mongo)
 

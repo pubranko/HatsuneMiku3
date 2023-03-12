@@ -4,7 +4,7 @@ import re
 import glob
 import importlib
 import inspect
-from typing import Any
+from typing import Any, Final
 path = os.getcwd()
 sys.path.append(path)
 
@@ -13,6 +13,24 @@ class DirectorySearchSpiders:
 
     directory_path: str
     spiders_info: dict[str, dict[str, Any]] = {}
+
+    ####################
+    # 定数
+    ####################
+    CLASS_INSTANS: Final[str] = 'class_instans'
+    '''定数: class_instans'''
+    CLASS_NAME: Final[str] = 'class_name'
+    '''定数: class_name'''
+    DOMAIN: Final[str] = 'domain'
+    '''定数: domain'''
+    DOMAIN_NAME: Final[str] = 'domain_name'
+    '''定数: domain_name'''
+    SELENIUM_MODE: Final[str] = 'selenium_mode'
+    '''定数: selenium_mode'''
+    SPLASH_MODE: Final[str] = 'splash_mode'
+    '''定数: splash_mode'''
+
+
     ''' データイメージ
     {'asahi_com_sitemap': {'class_instans': <class 'news_crawl.spiders.asahi_com_sitemap.AsahiComSitemapSpider'>,
                         'class_name': 'AsahiComSitemapSpider',

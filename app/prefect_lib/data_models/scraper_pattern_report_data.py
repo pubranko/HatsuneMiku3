@@ -1,5 +1,5 @@
 import pandas as pd
-
+from typing import Final
 
 class ScraperPatternReportData:
     '''
@@ -9,23 +9,37 @@ class ScraperPatternReportData:
     scraper_pattern_counter_df: pd.DataFrame
     result_df: pd.DataFrame
 
+    ################
+    # 定数
+    ################
+    DOMAIN: Final[str] = 'domain'
+    '''定数: domain'''
+    SCRAPER_ITEM: Final[str] = 'scraper_item'
+    '''定数: scraper_item'''
+    PATTERN: Final[str] = 'pattern'
+    '''定数: pattern'''
+    PRIORITY: Final[str] = 'priority'
+    '''定数: priority'''
+    COUNT_OF_USE: Final[str] = 'count_of_use'
+    '''定数: count_of_use'''
+
     def __init__(self):
         # データフレーム（マスター）
         self.scraper_pattern_master_df = pd.DataFrame({
-            'domain': [],
-            'scraper_item': [],
-            'pattern': [],
-            'priority': [],
+            self.DOMAIN: [],
+            self.SCRAPER_ITEM: [],
+            self.PATTERN: [],
+            self.PRIORITY: [],
             # 'count_of_use': [],
         })
 
         # データフレーム（カウント用）
         self.scraper_pattern_counter_df = pd.DataFrame({
-            'domain': [],
-            'scraper_item': [],
-            'pattern': [],
-            # 'priority': [],
-            'count_of_use': [],
+            self.DOMAIN: [],
+            self.SCRAPER_ITEM: [],
+            self.PATTERN: [],
+            # self.PRIORITY: [],
+            self.COUNT_OF_USE: [],
         })
 
     def scraper_info_master_store(self, record: dict) -> None:
@@ -51,6 +65,6 @@ class ScraperPatternReportData:
         '''
         self.result_df = pd.merge(self.scraper_pattern_master_df,
                                   self.scraper_pattern_counter_df.groupby(
-                                      by=['domain', 'scraper_item', 'pattern'], as_index=False).sum(),
-                                  on=['domain', 'scraper_item', 'pattern'],
+                                      by=[self.DOMAIN, self.SCRAPER_ITEM, self.PATTERN], as_index=False).sum(),
+                                  on=[self.DOMAIN, self.SCRAPER_ITEM, self.PATTERN],
                                   how='outer').fillna(0)

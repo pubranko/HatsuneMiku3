@@ -7,10 +7,10 @@ from scrapy.http import TextResponse
 from urllib.parse import unquote
 from scrapy_splash import SplashRequest
 #
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
-from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
 from news_crawl.items import NewsCrawlItem
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.spider_init import spider_init

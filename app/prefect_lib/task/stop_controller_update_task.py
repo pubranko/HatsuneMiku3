@@ -4,8 +4,7 @@ from typing import Final
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 
@@ -23,8 +22,7 @@ class StopControllerUpdateTask(ExtensionsTask):
 
         self.logger.info('=== Stop Controller Update Task run kwargs : ' +
                     str(domain) + '/' + str(register) + '/' + str(destination))
-        mongo: MongoModel = self.mongo
-        controller = ControllerModel(mongo)
+        controller = ControllerModel(self.mongo)
         if destination == 'crawling':
             record: list = controller.crawling_stop_domain_list_get()
         elif destination == 'scrapying':

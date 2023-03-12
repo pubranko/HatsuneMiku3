@@ -7,12 +7,12 @@ path = os.getcwd()
 sys.path.append(path)
 from shared.settings import TIMEZONE
 from prefect_lib.task.extentions_task import ExtensionsTask
-from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
-from BrownieAtelierMongo.models.scraped_from_response_model import ScrapedFromResponseModel
-from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
-from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
+from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.collection_models.scraped_from_response_model import ScrapedFromResponseModel
+from BrownieAtelierMongo.collection_models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.asynchronous_report_model import AsynchronousReportModel
 
 
 class MonthlyDeleteTask(ExtensionsTask):

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Final
 import pandas as pd
 from copy import deepcopy
 import itertools
@@ -35,88 +35,139 @@ class StatsInfoCollectData:
     # spiderの一覧
     spider_list: pd.Series
 
+    #######################
+    # 定数
+    #######################
+    RECORD_TYPE: Final[str] = 'record_type'
+    '''定数: record_type'''
+    START_TIME: Final[str] = 'start_time'
+    '''定数: start_time'''
+    SPIDER_NAME: Final[str] = 'spider_name'
+    '''定数: spider_name'''
+    PARAMETER: Final[str] = 'parameter'
+    '''定数: parameter'''
+    ROBOTS_RESPONSE_STATUS: Final[str] = 'robots_response_status'
+    '''定数: robots_response_status'''
+    DOWNLOADER_RESPONSE_STATUS: Final[str] = 'downloader_response_status'
+    '''定数: downloader_response_status'''
+    COUNT: Final[str] = 'count'
+    '''定数: count'''
+    TIME_PERIOD_HOUR: Final[str] = 'time_period_hour'
+    '''定数: time_period_hour'''
+    LOG_COUNT_CRITICAL: Final[str] = 'log_count/CRITICAL'
+    '''定数: log_count/CRITICAL'''
+    LOG_COUNT_ERROR: Final[str] = 'log_count/ERROR'
+    '''定数: log_count/ERROR'''
+    LOG_COUNT_WARNING: Final[str] = 'log_count/WARNING'
+    '''定数: log_count/WARNING'''
+    ELAPSED_TIME_SECONDS: Final[str] = 'elapsed_time_seconds'
+    '''定数: elapsed_time_seconds'''
+    MEMUSAGE_MAX: Final[str] = 'memusage/max'
+    '''定数: memusage/max'''
+    DOWNLOADER_REQUEST_COUNT: Final[str] = 'downloader/request_count'
+    '''定数: downloader/request_count'''
+    DOWNLOADER_RESPONSE_COUNT: Final[str] = 'downloader/response_count'
+    '''定数: downloader/response_count'''
+    REQUEST_DEPTH_MAX: Final[str] = 'request_depth_max'
+    '''定数: request_depth_max'''
+    DOWNLOADER_RESPONSE_BYTES: Final[str] = 'downloader/response_bytes'
+    '''定数: downloader/response_bytes'''
+    RETRY_COUNT: Final[str] = 'retry/count'
+    '''定数: retry/count'''
+    ITEM_SCRAPED_COUNT: Final[str] = 'item_scraped_count'
+    '''定数: item_scraped_count'''
+    FINISH_REASON: Final[str] = 'finish_reason'
+    '''定数: finish_reason'''
+    AGGREGATE_BASE_TERM: Final[str] = 'aggregate_base_term'
+    '''定数: aggregate_base_term'''
+
+    SUM: Final[str] = 'sum'
+    MEAN: Final[str] = 'mean'
+    MIN: Final[str] = 'min'
+    MAX: Final[str] = 'max'
+
     def __init__(self):
         self.robots_df = pd.DataFrame({
-            'record_type': [],
-            'start_time': [],
-            'time_period_hour': [],
-            'spider_name': [],
-            'robots_response_status': [],
-            'count': [],
+            self.RECORD_TYPE: [],
+            self.START_TIME: [],
+            self.TIME_PERIOD_HOUR: [],
+            self.SPIDER_NAME: [],
+            self.ROBOTS_RESPONSE_STATUS: [],
+            self.COUNT: [],
         })
         self.downloader_df = pd.DataFrame({
-            'record_type': [],
-            'start_time': [],
-            'time_period_hour': [],
-            'spider_name': [],
-            'downloader_response_status': [],
-            'count': [],
+            self.RECORD_TYPE: [],
+            self.START_TIME: [],
+            self.TIME_PERIOD_HOUR: [],
+            self.SPIDER_NAME: [],
+            self.DOWNLOADER_RESPONSE_STATUS: [],
+            self.COUNT: [],
         })
         self.spider_df = pd.DataFrame({
-            'record_type': [],
-            'start_time': [],
-            'time_period_hour': [],
-            'spider_name': [],
-            'log_count/CRITICAL': [],
-            'log_count/ERROR': [],
-            'log_count/WARNING': [],
-            'elapsed_time_seconds': [],
-            'memusage/max': [],
-            'downloader/request_count': [],
-            'downloader/response_count': [],
-            'request_depth_max': [],
-            'downloader/response_bytes': [],
-            'retry/count': [],
-            'item_scraped_count': [],
-            'finish_reason': [],
+            self.RECORD_TYPE: [],
+            self.START_TIME: [],
+            self.TIME_PERIOD_HOUR: [],
+            self.SPIDER_NAME: [],
+            self.LOG_COUNT_CRITICAL: [],
+            self.LOG_COUNT_ERROR: [],
+            self.LOG_COUNT_WARNING: [],
+            self.ELAPSED_TIME_SECONDS: [],
+            self.MEMUSAGE_MAX: [],
+            self.DOWNLOADER_REQUEST_COUNT: [],
+            self.DOWNLOADER_RESPONSE_COUNT: [],
+            self.REQUEST_DEPTH_MAX: [],
+            self.DOWNLOADER_RESPONSE_BYTES: [],
+            self.RETRY_COUNT: [],
+            self.ITEM_SCRAPED_COUNT: [],
+            self.FINISH_REASON: [],
         })
 
         robots_result_col = {
-            'aggregate_base_term': [],
-            'spider_name': [],
-            'robots_response_status': [],
-            'count': [],
+            self.AGGREGATE_BASE_TERM: [],
+            self.SPIDER_NAME: [],
+            self.ROBOTS_RESPONSE_STATUS: [],
+            self.COUNT: [],
         }
         downloader_result_col = {
-            'aggregate_base_term': [],
-            'spider_name': [],
-            'downloader_response_status': [],
-            'count': [],
+            self.AGGREGATE_BASE_TERM: [],
+            self.SPIDER_NAME: [],
+            self.DOWNLOADER_RESPONSE_STATUS: [],
+            self.COUNT: [],
         }
         spider_result_col = {
-            'aggregate_base_term': [],
-            'spider_name': [],
-            'log_count/CRITICAL': [],
-            'log_count/ERROR': [],
-            'log_count/WARNING': [],
-            'elapsed_time_seconds': [],
-            'memusage/max': [],
-            'downloader/request_count': [],
-            'downloader/response_count': [],
-            'request_depth_max': [],
-            'downloader/response_bytes': [],
-            'retry/count': [],
-            'item_scraped_count': [],
+            self.AGGREGATE_BASE_TERM: [],
+            self.SPIDER_NAME: [],
+            self.LOG_COUNT_CRITICAL: [],
+            self.LOG_COUNT_ERROR: [],
+            self.LOG_COUNT_WARNING: [],
+            self.ELAPSED_TIME_SECONDS: [],
+            self.MEMUSAGE_MAX: [],
+            self.DOWNLOADER_REQUEST_COUNT: [],
+            self.DOWNLOADER_RESPONSE_COUNT: [],
+            self.REQUEST_DEPTH_MAX: [],
+            self.DOWNLOADER_RESPONSE_BYTES: [],
+            self.RETRY_COUNT: [],
+            self.ITEM_SCRAPED_COUNT: [],
         }
 
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
         self.robots_result_df: dict[str, pd.DataFrame] = {
-            'sum': pd.DataFrame(robots_result_col),
-            'mean': pd.DataFrame(robots_result_col),
-            'min': pd.DataFrame(robots_result_col),
-            'max': pd.DataFrame(robots_result_col),
+            self.SUM: pd.DataFrame(robots_result_col),
+            self.MEAN: pd.DataFrame(robots_result_col),
+            self.MIN: pd.DataFrame(robots_result_col),
+            self.MAX: pd.DataFrame(robots_result_col),
         }
         self.downloader_result_df: dict[str, pd.DataFrame] = {
-            'sum': pd.DataFrame(downloader_result_col),
-            'mean': pd.DataFrame(downloader_result_col),
-            'min': pd.DataFrame(downloader_result_col),
-            'max': pd.DataFrame(downloader_result_col),
+            self.SUM: pd.DataFrame(downloader_result_col),
+            self.MEAN: pd.DataFrame(downloader_result_col),
+            self.MIN: pd.DataFrame(downloader_result_col),
+            self.MAX: pd.DataFrame(downloader_result_col),
         }
         self.spider_result_df: dict[str, pd.DataFrame] = {
-            'sum': pd.DataFrame(spider_result_col),
-            'mean': pd.DataFrame(spider_result_col),
-            'min': pd.DataFrame(spider_result_col),
-            'max': pd.DataFrame(spider_result_col),
+            self.SUM: pd.DataFrame(spider_result_col),
+            self.MEAN: pd.DataFrame(spider_result_col),
+            self.MIN: pd.DataFrame(spider_result_col),
+            self.MAX: pd.DataFrame(spider_result_col),
         }
 
     def spider_stats_store(self, start_time: datetime, spider_name: str, stats: dict,) -> None:
@@ -129,43 +180,59 @@ class StatsInfoCollectData:
             # 例）downloader/response_status_count/200、downloader/response_status_count/404 など
             if 'robotstxt/response_status_count/' in key:
                 _ = pd.DataFrame([{
-                    'record_type': 'robots_response_status',
-                    'start_time': start_time,
-                    'time_period_hour': start_time.strftime('%H'),
-                    'spider_name': spider_name,
-                    'robots_response_status': str(key).replace('robotstxt/response_status_count/', ''),
-                    'count': value,
+                    self.RECORD_TYPE: 'robots_response_status',
+                    self.START_TIME: start_time,
+                    self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
+                    self.SPIDER_NAME: spider_name,
+                    self.ROBOTS_RESPONSE_STATUS: str(key).replace('robotstxt/response_status_count/', ''),
+                    self.COUNT: value,
                 }])
                 #self.robots_df = self.robots_df.append(_, ignore_index=True)
                 self.robots_df = pd.concat([self.robots_df, _], ignore_index=True)
             if 'downloader/response_status_count/' in key:
                 _ = pd.DataFrame([{
-                    'record_type': 'downloader_response_status',
-                    'start_time': start_time,
-                    'time_period_hour': start_time.strftime('%H'),
-                    'spider_name': spider_name,
-                    'downloader_response_status': str(key).replace('downloader/response_status_count/', ''),
-                    'count': value,
+                    self.RECORD_TYPE: 'downloader_response_status',
+                    self.START_TIME: start_time,
+                    self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
+                    self.SPIDER_NAME: spider_name,
+                    self.DOWNLOADER_RESPONSE_STATUS: str(key).replace('downloader/response_status_count/', ''),
+                    self.COUNT: value,
                 }])
                 self.downloader_df = pd.concat([self.downloader_df, _], ignore_index=True)
 
         _ = pd.DataFrame([{
-            'record_type': 'spider_stats',
-            'start_time': start_time,
-            'time_period_hour': start_time.strftime('%H'),
-            'spider_name': spider_name,
-            'log_count/CRITICAL': stats['log_count/CRITICAL'] if 'log_count/CRITICAL' in stats else 0,
-            'log_count/ERROR': stats['log_count/ERROR'] if 'log_count/ERROR' in stats else 0,
-            'log_count/WARNING': stats['log_count/WARNING'] if 'log_count/WARNING' in stats else 0,
-            'elapsed_time_seconds': stats['elapsed_time_seconds'] if 'elapsed_time_seconds' in stats else 0,
-            'memusage/max': stats['memusage/max'] if 'memusage/max' in stats else 0,
-            'downloader/request_count': stats['downloader/request_count'] if 'downloader/request_count' in stats else 0,
-            'downloader/response_count': stats['downloader/response_count'] if 'downloader/response_count' in stats else 0,
-            'request_depth_max': stats['request_depth_max'] if 'request_depth_max' in stats else 0,
-            'downloader/response_bytes': stats['downloader/response_bytes'] if 'downloader/response_bytes' in stats else 0,
-            'retry/count': stats['retry/count'] if 'retry/count' in stats else 0,
-            'item_scraped_count': stats['item_scraped_count'] if 'item_scraped_count' in stats else 0,
-            'finish_reason': stats['finish_reason'] if 'finish_reason' in stats else 0,
+            self.RECORD_TYPE: 'spider_stats',
+            self.START_TIME: start_time,
+            self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
+            self.SPIDER_NAME: spider_name,
+            self.LOG_COUNT_CRITICAL: stats['log_count_CRITICAL'] if 'log_count_CRITICAL' in stats else 0,
+            self.LOG_COUNT_ERROR: stats['log_count_ERROR'] if 'log_count_ERROR' in stats else 0,
+            self.LOG_COUNT_WARNING: stats['log_count_WARNING'] if 'log_count_WARNING' in stats else 0,
+            self.ELAPSED_TIME_SECONDS: stats['elapsed_time_seconds'] if 'elapsed_time_seconds' in stats else 0,
+            self.MEMUSAGE_MAX: stats['memusage_max'] if 'memusage_max' in stats else 0,
+            self.DOWNLOADER_REQUEST_COUNT: stats['downloader_request_count'] if 'downloader_request_count' in stats else 0,
+            self.DOWNLOADER_RESPONSE_COUNT: stats['downloader_response_count'] if 'downloader_response_count' in stats else 0,
+            self.REQUEST_DEPTH_MAX: stats['request_depth_max'] if 'request_depth_max' in stats else 0,
+            self.DOWNLOADER_RESPONSE_BYTES: stats['downloader_response_bytes'] if 'downloader_response_bytes' in stats else 0,
+            self.RETRY_COUNT: stats['retry_count'] if 'retry_count' in stats else 0,
+            self.ITEM_SCRAPED_COUNT: stats['item_scraped_count'] if 'item_scraped_count' in stats else 0,
+            self.FINISH_REASON: stats['finish_reason'] if 'finish_reason' in stats else 0,
+            # 'record_type': 'spider_stats',
+            # 'start_time': start_time,
+            # 'time_period_hour': start_time.strftime('%H'),
+            # 'spider_name': spider_name,
+            # 'log_count/CRITICAL': stats['log_count/CRITICAL'] if 'log_count/CRITICAL' in stats else 0,
+            # 'log_count/ERROR': stats['log_count/ERROR'] if 'log_count/ERROR' in stats else 0,
+            # 'log_count/WARNING': stats['log_count/WARNING'] if 'log_count/WARNING' in stats else 0,
+            # 'elapsed_time_seconds': stats['elapsed_time_seconds'] if 'elapsed_time_seconds' in stats else 0,
+            # 'memusage/max': stats['memusage/max'] if 'memusage/max' in stats else 0,
+            # 'downloader/request_count': stats['downloader/request_count'] if 'downloader/request_count' in stats else 0,
+            # 'downloader/response_count': stats['downloader/response_count'] if 'downloader/response_count' in stats else 0,
+            # 'request_depth_max': stats['request_depth_max'] if 'request_depth_max' in stats else 0,
+            # 'downloader/response_bytes': stats['downloader/response_bytes'] if 'downloader/response_bytes' in stats else 0,
+            # 'retry/count': stats['retry/count'] if 'retry/count' in stats else 0,
+            # 'item_scraped_count': stats['item_scraped_count'] if 'item_scraped_count' in stats else 0,
+            # 'finish_reason': stats['finish_reason'] if 'finish_reason' in stats else 0,
         }])
         self.spider_df = pd.concat([self.spider_df, _], ignore_index=True)
 

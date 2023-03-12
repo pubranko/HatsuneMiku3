@@ -3,7 +3,7 @@ import sys
 from typing import Optional
 path = os.getcwd()
 sys.path.append(path)
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 
 
 class UrlsContinuedSkipCheck(object):

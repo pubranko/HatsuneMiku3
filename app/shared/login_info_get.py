@@ -1,9 +1,10 @@
 import yaml
 import os
 from typing import Any
+from shared import settings
 
 
-def login_info_get(path: str = 'data_dir/login_info', file: str = 'login_info.yml') -> Any:
+def login_info_get(path: str = settings.DATA_DIR__LOGIN_INFO, file: str = settings.DATA_DIR__LOGIN_INFO_YML) -> Any:
     '''
     クロール先のサイトへログインが必要な場合、必要なログイン情報を指定ファイルより取得する。
     デフォルトのファイル => 'data_dir/login_info/login_info.yml'
@@ -20,7 +21,7 @@ def login_info_get(path: str = 'data_dir/login_info', file: str = 'login_info.ym
 
 
 if __name__ == '__main__':
-    file = login_info_get(path='data_dir/login_info', file='login_info.yml')
+    file = login_info_get(path=settings.DATA_DIR__LOGIN_INFO, file = settings.DATA_DIR__LOGIN_INFO_YML)
     print(file)
     print(file['epochtimes.jp'])
     print(file['epochtimes.jp']['user'])

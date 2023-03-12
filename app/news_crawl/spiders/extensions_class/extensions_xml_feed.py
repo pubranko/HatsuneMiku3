@@ -7,7 +7,7 @@ from scrapy.http import Response
 from scrapy.http.response.xml import XmlResponse
 from scrapy.utils.spider import iterate_spider_output
 from news_crawl.items import NewsCrawlItem
-from BrownieAtelierMongo.models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.start_request_debug_file_generate import start_request_debug_file_generate
 from news_crawl.spiders.common.spider_init import spider_init

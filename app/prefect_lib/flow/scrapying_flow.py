@@ -22,16 +22,16 @@ with Flow(
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=False)()
-    crawling_start_time_from = DateTimeParameter(
-        'crawling_start_time_from', required=False,)
-    crawling_start_time_to = DateTimeParameter(
-        'crawling_start_time_to', required=False)
+    target_start_time_from = DateTimeParameter(
+        'target_start_time_from', required=False,)
+    target_start_time_to = DateTimeParameter(
+        'target_start_time_to', required=False)
     urls = Parameter('urls', required=False)()
     following_processing_execution = Parameter(
         'following_processing_execution', default='No')()
     task = ScrapyingTask()
     result = task(domain=domain,
-                  crawling_start_time_from=crawling_start_time_from,
-                  crawling_start_time_to=crawling_start_time_to,
+                  target_start_time_from=target_start_time_from,
+                  target_start_time_to=target_start_time_to,
                   urls=urls,
                   following_processing_execution=following_processing_execution,)

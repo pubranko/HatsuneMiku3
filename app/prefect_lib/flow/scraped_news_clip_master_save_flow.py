@@ -21,10 +21,11 @@ with Flow(
     state_handlers=[flow_status_change],
 ) as flow:
     domain = Parameter('domain', required=False)()
-    scrapying_start_time_from = DateTimeParameter(
-        'scrapying_start_time_from', required=False,)
-    scrapying_start_time_to = DateTimeParameter(
-        'scrapying_start_time_to', required=False)
+    target_start_time_from = DateTimeParameter(
+        'target_start_time_from', required=False,)
+    target_start_time_to = DateTimeParameter(
+        'target_start_time_to', required=False)
     task = ScrapedNewsClipMasterSaveTask()
-    result = task(domain=domain, scrapying_start_time_from=scrapying_start_time_from,
-                  scrapying_start_time_to=scrapying_start_time_to)
+    result = task(domain = domain,
+                  target_start_time_from = target_start_time_from,
+                  target_start_time_to = target_start_time_to)

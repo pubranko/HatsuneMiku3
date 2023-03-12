@@ -4,12 +4,13 @@ import re
 import glob
 import importlib
 import inspect
-from typing import Any,List
+from typing import Any, List, Final
 path = os.getcwd()
 sys.path.append(path)
+from shared import settings
 
 
-def directory_search_task(directory_path: str = 'prefect_lib/task') -> List[dict]:
+def directory_search_task(directory_path: str = settings.PREFECT_LIB__TASK_DIR) -> List[dict]:
     '''
     引数に渡されたパス内にあるタスククラスを読み込み、クラス名のリストにして返す。
     '''
@@ -43,6 +44,6 @@ def directory_search_task(directory_path: str = 'prefect_lib/task') -> List[dict
 
 if __name__ == "__main__":
     # execute only if run as a script
-    class_list = directory_search_task('prefect_lib/task')
+    class_list = directory_search_task(settings.PREFECT_LIB__TASK_DIR)
     from pprint import pprint
     pprint(class_list)

@@ -1,23 +1,25 @@
-from calendar import month
-import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from xml.dom import minicompat
-from dateutil import parser
-from typing import Any, Union, Optional, Tuple
+from typing import Any, Optional, Tuple, Final
 from pydantic import BaseModel, ValidationError, validator, Field
-from pydantic.main import ModelMetaclass
-from shared.settings import TIMEZONE
 
+CONST__START_TIME: Final[str] = 'start_time'
+CONST__BASE_DATE: Final[str] = 'base_date'
 
 class StatsInfoCollectInput(BaseModel):
-    '''
-    start_time,report_term,base_date
-    '''
     start_time: datetime = Field(..., title="開始時間")
     base_date: Optional[datetime] = None
 
+    #####################
+    # 定数
+    #####################
+    START_TIME: str = Field(CONST__START_TIME, const=True)
+    '''定数: start_time'''
+    BASE_DATE: str = Field(CONST__BASE_DATE, const=True)
+    '''定数: base_date'''
+
     def __init__(self, **data: Any):
+        '''あとで'''
         super().__init__(**data)
 
     '''
@@ -27,13 +29,13 @@ class StatsInfoCollectInput(BaseModel):
     ##################################
     # 単項目チェック、省略時の値設定
     ##################################
-    @validator('start_time')
+    @validator(CONST__START_TIME)
     def start_time_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, datetime), '日付型以外がエラー'
         return value
 
-    @validator('base_date')
+    @validator(CONST__BASE_DATE)
     def base_date_check(cls, value: Optional[datetime], values: dict) -> Optional[datetime]:
         if value:
             assert isinstance(value, datetime), '日時型以外がエラー'

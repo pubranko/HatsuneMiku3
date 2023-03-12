@@ -8,7 +8,7 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run
 from shared.directory_search_spiders import DirectorySearchSpiders
-from shared.settings import DIRECT_CRAWL_FILES_DIR
+from shared.settings import DATA_DIR__DIRECT_CRAWL_FILES_DIR
 # from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
 from news_crawl.news_crawl_input import NewsCrawlInput
 
@@ -26,7 +26,7 @@ class DirectCrawlTask(ExtensionsTask):
 
         spider_name: str = kwargs['spider_name']
         file: str = kwargs['file']
-        file_path: str = os.path.join(DIRECT_CRAWL_FILES_DIR, file)
+        file_path: str = os.path.join(DATA_DIR__DIRECT_CRAWL_FILES_DIR, file)
         urls: list = []
         if os.path.exists(file_path):
             with open(file_path) as f:
@@ -57,6 +57,8 @@ class DirectCrawlTask(ExtensionsTask):
             crawling_start_time = self.start_time,
             direct_crawl_urls = urls,
         ))
+        # news_crawl_input.DIRECT_CRAWL_URLS: urls,
+
         # news_crawl_input = NewsCrawlInput(**kwargs)
 
 

@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Any
+from typing import Any, Final
 import pandas as pd
 from pydantic import ValidationError
 from prefect.engine import state
@@ -14,18 +14,28 @@ from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Fo
 from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
-from shared.settings import DATA_DIR
-from BrownieAtelierNotice.mail_attach_send import mail_attach_send
-from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
-from BrownieAtelierMongo.models.scraper_info_by_domain_model import ScraperInfoByDomainModel
-from prefect_lib.task.extentions_task import ExtensionsTask
-from prefect_lib.data_models.scraper_pattern_report_input import ScraperPatternReportInput
 from prefect_lib.data_models.scraper_pattern_report_data import ScraperPatternReportData
-from prefect_lib.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
+from prefect_lib.data_models.scraper_pattern_report_input import ScraperPatternReportInput
+from prefect_lib.task.extentions_task import ExtensionsTask
+from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
+from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from BrownieAtelierMongo.collection_models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierNotice.mail_attach_send import mail_attach_send
+from shared.settings import DATA_DIR
 
 
 class ScrapyingPatternReportTask(ExtensionsTask):
     '''スクレイパーパターン情報の使用状況のレポートを作成する'''
+    # 作成するレポートの見出し項目
+    HEAD1: Final[str] = 'head1'
+    HEAD2: Final[str] = 'head2'
+    COL: Final[str] = 'col'
+    DOMAIN: Final[str] = 'domain'
+    EQUIVALENT_COLOR: Final[str] = 'equivalent_color'
+    SCRAPER_ITEM: Final[str] = 'scraper_item'
+    PRIORITY: Final[str] = 'priority'
+    PATTERN: Final[str] = 'pattern'
+
     scraper_pattern_analysis_columns_info: list = [
         # head1                     : 必須 : 見出し１行目
         # head2                     : 必須 : 見出し２行目
@@ -38,12 +48,12 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # warning_value_over        : 任意 : 超過したらワーニングとする値
         # warning_background_color  : 任意 : ワーンングとなったセルの背景色
         #{'head1': '集計期間', 'head2': '', 'col': 'aggregate_base_term'},
-        {'head1': 'スクレイパー情報', 'head2': 'ドメイン', 'col': 'domain',
-         'equivalent_color': 'bbbbbb'},
-        {'head1': '', 'head2': 'アイテム', 'col': 'scraper_item',
-         'equivalent_color': 'bbbbbb'},
-        {'head1': '', 'head2': '優先順位', 'col': 'priority'},
-        {'head1': '', 'head2': 'パターン', 'col': 'pattern'},
+        {HEAD1: 'スクレイパー情報', HEAD2: 'ドメイン', COL: DOMAIN,
+         EQUIVALENT_COLOR: 'bbbbbb'},
+        {HEAD1: '', HEAD2: 'アイテム', COL: SCRAPER_ITEM,
+         EQUIVALENT_COLOR: 'bbbbbb'},
+        {HEAD1: '', HEAD2: '優先順位', COL: PRIORITY},
+        {HEAD1: '', HEAD2: 'パターン', COL: PATTERN},
     ]
 
     def run(self, **kwargs):
@@ -57,8 +67,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         try:
             self.scraper_pattern_report_input = ScraperPatternReportInput(
                 start_time=self.start_time,
-                report_term=kwargs['report_term'],
-                base_date=kwargs['base_date'],
+                report_term=kwargs[self.scraper_pattern_report_input.REPORT_TERM],
+                base_date=kwargs[self.scraper_pattern_report_input.BASE_DATE],
             )
         except ValidationError as e:
             self.logger.error(
@@ -78,10 +88,10 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             # 対象件数を確認
             conditions: list = []
             conditions.append(
-                {'crawling_start_time': {'$gte': base_date_from}})
-            conditions.append({'crawling_start_time': {'$lt': base_date_to}})
+                {news_clip_master.CRAWLING_START_TIME: {'$gte': base_date_from}})
+            conditions.append({news_clip_master.CRAWLING_START_TIME: {'$lt': base_date_to}})
             conditions.append(
-                {'domain': scraper_info_by_domain_data.domain_get()})
+                {news_clip_master.DOMAIN: scraper_info_by_domain_data.domain_get()})
             filter: dict = {'$and': conditions}
             record_count = news_clip_master.count(filter=filter)
             self.logger.info(
@@ -96,14 +106,19 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             # news_clip_masterからレコードを順に取得する。
             # 取得したレコードをデータフレーム（カウント用）へ挿入
             for master_record in news_clip_master.limited_find(
-                    filter=filter, projection={'domain': 1, 'crawling_start_time': 1, 'pattern': 1}):
-                pattern_info: dict = master_record['pattern']
+                    filter=filter, projection={
+                        news_clip_master.DOMAIN: 1,
+                        news_clip_master.CRAWLING_START_TIME: 1,
+                        news_clip_master.PATTERN: 1}):
+
+                pattern_info: dict = master_record[news_clip_master.DOMAIN]
+
                 for pattern_key, pattern_value in pattern_info.items():
                     scraper_pattern_report_data.scraper_info_counter_store({
-                        'domain': master_record['domain'],
-                        'scraper_item': pattern_key,
-                        'pattern': pattern_value,
-                        'count_of_use': 1,
+                        scraper_pattern_report_data.DOMAIN: master_record[news_clip_master.DOMAIN],
+                        scraper_pattern_report_data.SCRAPER_ITEM: pattern_key,
+                        scraper_pattern_report_data.PATTERN: pattern_value,
+                        scraper_pattern_report_data.COUNT_OF_USE: 1,
                     })
 
         # 集計対象のnews_clip_masterが1件もない場合処理を中止する。
@@ -147,24 +162,25 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         '''
         scraper_info_by_domain = ScraperInfoByDomainModel(self.mongo)
 
-        scraper_info_by_domain_records: Cursor = scraper_info_by_domain.find()
-        self.logger.info(
-            f'=== ドメイン別スクレイパー情報({scraper_info_by_domain.count()})')
+        return scraper_info_by_domain.find_and_data_models_get()
+        # scraper_info_by_domain_records: Cursor = scraper_info_by_domain.find()
+        # self.logger.info(
+        #     f'=== ドメイン別スクレイパー情報({scraper_info_by_domain.count()})')
 
-        scraper_info_list: list = []
-        for scraper_info_by_domain_record in scraper_info_by_domain_records:
-            try:
-                scraper_info_by_domain_data = ScraperInfoByDomainData(
-                    scraper=scraper_info_by_domain_record)
-            except ValidationError as e:
-                # ここでエラーが発生することは基本的にありえないはず。
-                error_info: list = e.errors()
-                self.logger.error(
-                    f'=== ScrapyingPatternReportTask scraper_info_by_domain_get エラー : {error_info[0]["msg"]} : ({scraper_info_by_domain_record})')
-            else:
-                scraper_info_list.append(scraper_info_by_domain_data)
+        # scraper_info_list: list = []
+        # for scraper_info_by_domain_record in scraper_info_by_domain_records:
+        #     try:
+        #         scraper_info_by_domain_data = ScraperInfoByDomainData(
+        #             scraper=scraper_info_by_domain_record)
+        #     except ValidationError as e:
+        #         # ここでエラーが発生することは基本的にありえないはず。
+        #         error_info: list = e.errors()
+        #         self.logger.error(
+        #             f'=== ScrapyingPatternReportTask scraper_info_by_domain_get エラー : {error_info[0]["msg"]} : ({scraper_info_by_domain_record})')
+        #     else:
+        #         scraper_info_list.append(scraper_info_by_domain_data)
 
-        return scraper_info_list
+        # return scraper_info_list
 
     def scraper_pattern_analysis_report_edit_header(self, ws: Worksheet):
         '''スクレイパー情報解析レポート用Excelの見出し編集'''
@@ -179,7 +195,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         for i, col_info in enumerate(self.scraper_pattern_analysis_columns_info):
             # 見出し１行目
             head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
-            ws[head1_cell.coordinate] = col_info['head1']
+            ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
             head1_cell.alignment = Alignment(
@@ -187,7 +203,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
 
             # 見出し２行目
             head2_cell: Cell = ws[get_column_letter(i + 1) + str(2)]
-            ws[head2_cell.coordinate] = col_info['head2']
+            ws[head2_cell.coordinate] = col_info[self.HEAD2]
             head2_cell.fill = fill2
             head2_cell.border = border
             head2_cell.alignment = Alignment(horizontal="center")  # 中央寄せ
@@ -204,7 +220,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         base_row_idx: int = 3
         # 列ごとにエクセルに編集
         for col_idx, col_info in enumerate(self.scraper_pattern_analysis_columns_info):
-            for row_idx, value in enumerate(result_df[col_info['col']]):
+            for row_idx, value in enumerate(result_df[col_info[self.COL]]):
                 # 更新対象のセル
                 target_cell: Cell = ws[get_column_letter(
                     col_idx + 1) + str(base_row_idx + row_idx)]
@@ -213,13 +229,13 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                 ws[target_cell.coordinate] = value
 
                 # 同値カラー調整
-                if 'equivalent_color' in col_info:
+                if self.EQUIVALENT_COLOR in col_info:
                     # 比較用の１つ上のセルと同じ値の場合は文字色を変更
                     compare_cell: Cell = ws[get_column_letter(
                         col_idx + 1) + str(base_row_idx + row_idx - 1)]
                     if target_cell.value == compare_cell.value:
                         target_cell.font = Font(
-                            color=col_info['equivalent_color'])
+                            color=col_info[self.EQUIVALENT_COLOR])
 
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
@@ -238,7 +254,10 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             for cell in col:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            ws.column_dimensions[column].width = (max_length + 2.2)
+
+            # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
+            # ws.column_dimensions[column].width = (max_length + 2.2)
+            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.2)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。
         ws.freeze_panes = 'c3'

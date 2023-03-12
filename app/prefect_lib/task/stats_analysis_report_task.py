@@ -1,7 +1,7 @@
 from copy import deepcopy
 import os
 import sys
-from typing import Any
+from typing import Any, Final
 import pandas as pd
 from pydantic import ValidationError
 from prefect.engine import state
@@ -19,27 +19,38 @@ sys.path.append(path)
 from shared.settings import DATA_DIR
 from shared.timezone_recovery import timezone_recovery
 from BrownieAtelierNotice.mail_attach_send import mail_attach_send
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.stats_info_collect_model import StatsInfoCollectModel
+from BrownieAtelierMongo.collection_models.stats_info_collect_model import StatsInfoCollectModel
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.data_models.stats_analysis_report_input import StatsAnalysisReportInput
 from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
 
 
 class StatsAnalysisReportTask(ExtensionsTask):
-    ''''''
+    '''あとで'''
+
+    # 作成するレポートの見出し項目
+    HEAD1: Final[str] = 'head1'
+    HEAD2: Final[str] = 'head2'
+    COL: Final[str] = 'col'
+    EQUIVALENT_COLOR: Final[str] = 'equivalent_color'
+    WARNING_VALUE: Final[str] = 'warning_value'
+    WARNING_BACKGROUND_COLOR: Final[str] = 'warning_background_color'
+    DIGIT_ADJUSTMENT: Final[str] = 'digit_adjustment'
+    NUMBER_FORMAT: Final[str] = 'number_format'
+    WARNING_VALUE_OVER: Final[str] = 'warning_value_over'
+
     robots_analysis_columns_info: list = [
         # head1                     : 必須 : 見出し１行目
         # col                       : 必須 : データフレーム列名
         # equivalent_color          : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
         # warning_value             : 任意 : ワーニングとする値を入れる配列
         # warning_background_color  : 任意 : ワーンングとなったセルの背景色
-        {'head1': '集計日〜', 'col': 'aggregate_base_term'},
-        {'head1': 'スパイダー名', 'col': 'spider_name',
-         'equivalent_color': 'bbbbbb'},
-        {'head1': 'status', 'col': 'robots_response_status',
-         'warning_value': [], 'warning_background_color':'FF8C00'},
-        {'head1': 'count', 'col': 'count'},
+        {HEAD1: '集計日〜', COL: 'aggregate_base_term'},
+        {HEAD1: 'スパイダー名', COL: 'spider_name',
+         EQUIVALENT_COLOR: 'bbbbbb'},
+        {HEAD1: 'status', COL: 'robots_response_status',
+         WARNING_VALUE: [], WARNING_BACKGROUND_COLOR:'FF8C00'},
+        {HEAD1: 'count', COL: 'count'},
     ]
 
     downloader_analysis_columns_info: list = [
@@ -48,12 +59,12 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # equivalent_color          : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
         # warning_value             : 任意 : ワーニングとする値を入れる配列
         # warning_background_color  : 任意 : ワーンングとなったセルの背景色
-        {'head1': '集計日〜', 'col': 'aggregate_base_term'},
-        {'head1': 'スパイダー名', 'col': 'spider_name',
-         'equivalent_color': 'bbbbbb'},
-        {'head1': 'status', 'col': 'downloader_response_status',
-         'warning_value': [], 'warning_background_color':'FF8C00'},
-        {'head1': 'count', 'col': 'count'},
+        {HEAD1: '集計日〜', COL: 'aggregate_base_term'},
+        {HEAD1: 'スパイダー名', COL: 'spider_name',
+         EQUIVALENT_COLOR: 'bbbbbb'},
+        {HEAD1: 'status', COL: 'downloader_response_status',
+         WARNING_VALUE: [], WARNING_BACKGROUND_COLOR:'FF8C00'},
+        {HEAD1: 'count', COL: 'count'},
     ]
 
     stats_analysis_columns_info: list = [
@@ -62,57 +73,56 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # col                       : 必須 : データフレーム列名
         # digit_adjustment          : 任意 : 単位の調整。1000とした場合、'value/1000'となる。
         # number_format             : 任意 : 小数点以下の桁数。省略した場合'#,##0'
-        # number_format             : 任意 : 小数点以下の桁数。省略した場合'#,##0'
         # equivalent_color          : 任意 : 上のセルと同値の場合の文字色。上と同値の場合、文字色を薄くするなどに使用する。
         # warning_value             : 任意 : ワーニングとする値を入れる配列
         # warning_value_over        : 任意 : 超過したらワーニングとする値
         # warning_background_color  : 任意 : ワーンングとなったセルの背景色
-        {'head1': '集計日〜', 'head2': '', 'col': 'aggregate_base_term'},
-        {'head1': 'スパイダー名', 'head2': '', 'col': 'spider_name',
-         'equivalent_color': 'bbbbbb'},
-        {'head1': 'ログレベル件数', 'head2': 'CRITICAL', 'col': 'log_count/CRITICAL',
-         'warning_value_over': 0, 'warning_background_color': 'FF8C00'},    # 0件を超えた場合ワーニング
-        {'head1': '', 'head2': 'ERROR', 'col': 'log_count/ERROR',
-         'warning_value_over': 0, 'warning_background_color': 'FF8C00'},    # 0件を超えた場合ワーニング
-        {'head1': '', 'head2': 'WARNING', 'col': 'log_count/WARNING'},
-        {'head1': '処理時間(秒)', 'head2': '最小', 'col': 'elapsed_time_seconds_min',
-         'number_format': '#,##0.00'},
-        {'head1': '', 'head2': '最大', 'col': 'elapsed_time_seconds_max',
-         'number_format': '#,##0.00',
-         'warning_value_over': 600, 'warning_background_color': 'FF8C00'},  # 処理時間が１０分を超える場合ワーニング
-        {'head1': '', 'head2': '合計', 'col': 'elapsed_time_seconds',
-         'number_format': '#,##0.00'},
-        {'head1': '', 'head2': '平均', 'col': 'elapsed_time_seconds_mean',
-         'number_format': '#,##0.00'},
-        {'head1': 'メモリ使用量(kb)', 'head2': '最小', 'col': 'memusage/max_min',
-         'digit_adjustment': 1000},
-        {'head1': '', 'head2': '最大', 'col': 'memusage/max_max',
-         'digit_adjustment': 1000,
-         'warning_value_over': 300000000, 'warning_background_color': 'FF8C00'},     # メモリ使用量の300mbを超えている場合ワーニング
-        {'head1': '', 'head2': '平均', 'col': 'memusage/max_mean',
-         'digit_adjustment': 1000},
-        {'head1': '総リクエスト数', 'head2': '最小', 'col': 'downloader/request_count_min'},
-        {'head1': '', 'head2': '最大', 'col': 'downloader/request_count_max'},
-        {'head1': '', 'head2': '合計', 'col': 'downloader/request_count'},
-        {'head1': '', 'head2': '平均', 'col': 'downloader/request_count_mean',
-         'number_format': '#,##0.00'},
-        {'head1': '総レスポンス数', 'head2': '最小', 'col': 'downloader/response_count_min'},
-        {'head1': '', 'head2': '最大', 'col': 'downloader/response_count_max'},
-        {'head1': '', 'head2': '合計', 'col': 'downloader/response_count'},
-        {'head1': '', 'head2': '平均', 'col': 'downloader/response_count_mean',
-         'number_format': '#,##0.00'},
-        {'head1': 'リクエストの', 'head2': '深さ最大', 'col': 'request_depth_max_max'},
-        {'head1': 'レスポンス量(kb)', 'head2': '合計', 'col': 'downloader/response_bytes',
-         'digit_adjustment': 1000},
-        {'head1': '', 'head2': '平均', 'col': 'downloader/response_bytes_mean',
-         'digit_adjustment': 1000},
-        {'head1': 'リトライ件数', 'head2': '合計', 'col': 'retry/count'},
-        {'head1': '', 'head2': '平均', 'col': 'retry/count_mean',
-         'number_format': '#,##0.00'},
-        {'head1': '保存件数', 'head2': '合計', 'col': 'item_scraped_count',
-         'warning_value': [0], 'warning_background_color':'FF8C00'},    # 保存件数がゼロの場合ワーニング
-        {'head1': '', 'head2': '平均', 'col': 'item_scraped_count_mean',
-         'number_format': '#,##0.00'},
+        {HEAD1: '集計日〜', HEAD2: '', COL: 'aggregate_base_term'},
+        {HEAD1: 'スパイダー名', HEAD2: '', COL: 'spider_name',
+         EQUIVALENT_COLOR: 'bbbbbb'},
+        {HEAD1: 'ログレベル件数', HEAD2: 'CRITICAL', COL: 'log_count/CRITICAL',
+         WARNING_VALUE_OVER: 0, WARNING_BACKGROUND_COLOR: 'FF8C00'},    # 0件を超えた場合ワーニング
+        {HEAD1: '', HEAD2: 'ERROR', COL: 'log_count/ERROR',
+         WARNING_VALUE_OVER: 0, WARNING_BACKGROUND_COLOR: 'FF8C00'},    # 0件を超えた場合ワーニング
+        {HEAD1: '', HEAD2: 'WARNING', COL: 'log_count/WARNING'},
+        {HEAD1: '処理時間(秒)', HEAD2: '最小', COL: 'elapsed_time_seconds_min',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: '', HEAD2: '最大', COL: 'elapsed_time_seconds_max',
+         NUMBER_FORMAT: '#,##0.00',
+         WARNING_VALUE_OVER: 600, WARNING_BACKGROUND_COLOR: 'FF8C00'},  # 処理時間が１０分を超える場合ワーニング
+        {HEAD1: '', HEAD2: '合計', COL: 'elapsed_time_seconds',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: '', HEAD2: '平均', COL: 'elapsed_time_seconds_mean',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: 'メモリ使用量(kb)', HEAD2: '最小', COL: 'memusage/max_min',
+         DIGIT_ADJUSTMENT: 1000},
+        {HEAD1: '', HEAD2: '最大', COL: 'memusage/max_max',
+         DIGIT_ADJUSTMENT: 1000,
+         WARNING_VALUE_OVER: 300000000, WARNING_BACKGROUND_COLOR: 'FF8C00'},     # メモリ使用量の300mbを超えている場合ワーニング
+        {HEAD1: '', HEAD2: '平均', COL: 'memusage/max_mean',
+         DIGIT_ADJUSTMENT: 1000},
+        {HEAD1: '総リクエスト数', HEAD2: '最小', COL: 'downloader/request_count_min'},
+        {HEAD1: '', HEAD2: '最大', COL: 'downloader/request_count_max'},
+        {HEAD1: '', HEAD2: '合計', COL: 'downloader/request_count'},
+        {HEAD1: '', HEAD2: '平均', COL: 'downloader/request_count_mean',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: '総レスポンス数', HEAD2: '最小', COL: 'downloader/response_count_min'},
+        {HEAD1: '', HEAD2: '最大', COL: 'downloader/response_count_max'},
+        {HEAD1: '', HEAD2: '合計', COL: 'downloader/response_count'},
+        {HEAD1: '', HEAD2: '平均', COL: 'downloader/response_count_mean',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: 'リクエストの', HEAD2: '深さ最大', COL: 'request_depth_max_max'},
+        {HEAD1: 'レスポンス量(kb)', HEAD2: '合計', COL: 'downloader/response_bytes',
+         DIGIT_ADJUSTMENT: 1000},
+        {HEAD1: '', HEAD2: '平均', COL: 'downloader/response_bytes_mean',
+         DIGIT_ADJUSTMENT: 1000},
+        {HEAD1: 'リトライ件数', HEAD2: '合計', COL: 'retry/count'},
+        {HEAD1: '', HEAD2: '平均', COL: 'retry/count_mean',
+         NUMBER_FORMAT: '#,##0.00'},
+        {HEAD1: '保存件数', HEAD2: '合計', COL: 'item_scraped_count',
+         WARNING_VALUE: [0], WARNING_BACKGROUND_COLOR:'FF8C00'},    # 保存件数がゼロの場合ワーニング
+        {HEAD1: '', HEAD2: '平均', COL: 'item_scraped_count_mean',
+         NUMBER_FORMAT: '#,##0.00'},
     ]
 
     def run(self, **kwargs):
@@ -126,9 +136,12 @@ class StatsAnalysisReportTask(ExtensionsTask):
         try:
             self.stats_analysis_report_input = StatsAnalysisReportInput(
                 start_time=self.start_time,
-                report_term=kwargs['report_term'],
-                totalling_term=kwargs['totalling_term'],
-                base_date=kwargs['base_date'],
+                report_term=kwargs[self.stats_analysis_report_input.REPORT_TERM],
+                totalling_term=kwargs[self.stats_analysis_report_input.TOTALLING_TERM],
+                base_date=kwargs[self.stats_analysis_report_input.BASE_DATE],
+                # report_term=kwargs['report_term'],
+                # totalling_term=kwargs['totalling_term'],
+                # base_date=kwargs['base_date'],
             )
         except ValidationError as e:
             self.logger.error(
@@ -224,7 +237,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
         stats_info_collect_records: Cursor = stats_info_collect_model.find(
             filter=log_filter,
-            projection={'_id': 0, 'parameter': 0}
+            projection={'_id': 0, 'parameter': 0}   # 不要項目を除外
         )
 
         self.logger.info(
@@ -249,7 +262,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         for i, col_info in enumerate(analysis_columns_info):
             # 見出し１行目
             head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
-            ws[head1_cell.coordinate] = col_info['head1']
+            ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
             head1_cell.alignment = Alignment(
@@ -303,32 +316,32 @@ class StatsAnalysisReportTask(ExtensionsTask):
                         f'{check_col} == "{status}"')
                     if nomal_count != len(by_status_df):
                         for col_info in columns_info_by_spider:
-                            if col_info['col'] == check_col:
-                                col_info['warning_value'].append(status)
+                            if col_info[self.COL] == check_col:
+                                col_info[self.WARNING_VALUE].append(status)
 
             # 列ごとにエクセルに編集
             for col_idx, col_info in enumerate(columns_info_by_spider):
                 # データフレームの列ごとに１行ずつ処理を実施
-                for row_idx, value in enumerate(by_spider_df[col_info['col']]):
+                for row_idx, value in enumerate(by_spider_df[col_info[self.COL]]):
                     # 更新対象のセルに値を設定
                     target_cell: Cell = ws[get_column_letter(
                         col_idx + 1) + str(base_row_idx + row_idx)]
                     ws[target_cell.coordinate] = value
 
                     # 同値カラー調整列の場合、更新対象セルの上と同値ならば色を変える。
-                    if 'equivalent_color' in col_info:
+                    if self.EQUIVALENT_COLOR in col_info:
                         compare_cell: Cell = ws[get_column_letter(
                             col_idx + 1) + str(base_row_idx + row_idx - 1)]
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
-                                color=col_info['equivalent_color'])
+                                color=col_info[self.EQUIVALENT_COLOR])
                             warning_flg = True
 
                     # ワーニング値チェック列の場合、ワーニング値セルの背景色を設定。
-                    if 'warning_value' in col_info:
-                        if value in col_info['warning_value']:
+                    if self.WARNING_VALUE in col_info:
+                        if value in col_info[self.WARNING_VALUE]:
                             target_cell.fill = PatternFill(
-                                patternType='solid', fgColor=col_info['warning_background_color'])
+                                patternType='solid', fgColor=col_info[self.WARNING_BACKGROUND_COLOR])
                             warning_flg = True
 
             # １つのスパイダーに対する編集が終わった段階で、次のスパイダー用にエクセルの編集行の基準を設定する。
@@ -351,7 +364,9 @@ class StatsAnalysisReportTask(ExtensionsTask):
             for cell in cols:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            ws.column_dimensions[column].width = (max_length + 2.07)
+            # #型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
+            # ws.column_dimensions[column].width = (max_length + 2.07)
+            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。１行２列は常に表示させる。
         ws.freeze_panes = 'c2'
@@ -371,7 +386,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         for i, col_info in enumerate(self.stats_analysis_columns_info):
             # 見出し１行目
             head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
-            ws[head1_cell.coordinate] = col_info['head1']
+            ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
             head1_cell.alignment = Alignment(
@@ -379,7 +394,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
             # 見出し２行目
             head2_cell: Cell = ws[get_column_letter(i + 1) + str(2)]
-            ws[head2_cell.coordinate] = col_info['head2']
+            ws[head2_cell.coordinate] = col_info[self.HEAD2]
             head2_cell.fill = fill2
             head2_cell.border = border
             head2_cell.alignment = Alignment(horizontal="center")  # 中央寄せ
@@ -420,23 +435,23 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
             # 列ごとにエクセルに編集
             for col_idx, col_info in enumerate(columns_info_by_spider):
-                for row_idx, value in enumerate(by_spider_df[col_info['col']]):
+                for row_idx, value in enumerate(by_spider_df[col_info[self.COL]]):
                     # 更新対象のセル
                     target_cell: Cell = ws[get_column_letter(
                         col_idx + 1) + str(base_row_idx + row_idx)]
 
                     # 表示単位の切り上げ (example:b -> kb)
                     custom_value = value
-                    if 'digit_adjustment' in col_info:
+                    if self.DIGIT_ADJUSTMENT in col_info:
                         if value:
                             custom_value = int(
-                                value) // col_info['digit_adjustment']
+                                value) // col_info[self.DIGIT_ADJUSTMENT]
                             Decimal(str(custom_value)).quantize(
                                 Decimal('0'), rounding=ROUND_HALF_UP)
 
                     # 小数点以下の調整
-                    if 'number_format' in col_info:
-                        target_cell.number_format = col_info['number_format']
+                    if self.NUMBER_FORMAT in col_info:
+                        target_cell.number_format = col_info[self.NUMBER_FORMAT]
                     else:
                         target_cell.number_format = '#,##0'
 
@@ -444,27 +459,27 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     ws[target_cell.coordinate] = custom_value
 
                     # 同値カラー調整
-                    if 'equivalent_color' in col_info:
+                    if self.EQUIVALENT_COLOR in col_info:
                         # 比較用の１つ上のセルと同じ値の場合は文字色を変更
                         compare_cell: Cell = ws[get_column_letter(
                             col_idx + 1) + str(base_row_idx + row_idx - 1)]
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
-                                color=col_info['equivalent_color'])
+                                color=col_info[self.EQUIVALENT_COLOR])
 
                     # ワーニング値チェック列の場合、ワーニング値セルの背景色を設定。
-                    if 'warning_value' in col_info:
-                        if value in col_info['warning_value']:
+                    if self.WARNING_VALUE in col_info:
+                        if value in col_info[self.WARNING_VALUE]:
                             target_cell.fill = PatternFill(
-                                patternType='solid', fgColor=col_info['warning_background_color'])
+                                patternType='solid', fgColor=col_info[self.WARNING_BACKGROUND_COLOR])
                             warning_flg = True
 
                     # ワーニング値超過チェック列の場合、ワーニング値超過セルの背景色を設定。
-                    if 'warning_value_over' in col_info:
+                    if self.WARNING_VALUE_OVER in col_info:
                         if value:
-                            if int(value) > col_info['warning_value_over']:
+                            if int(value) > col_info[self.WARNING_VALUE_OVER]:
                                 target_cell.fill = PatternFill(
-                                    patternType='solid', fgColor=col_info['warning_background_color'])
+                                    patternType='solid', fgColor=col_info[self.WARNING_BACKGROUND_COLOR])
                                 warning_flg = True
 
             # １つのスパイダーに対する編集が終わった段階で、次のスパイダー用にエクセルの編集行の基準を設定する。
@@ -487,7 +502,9 @@ class StatsAnalysisReportTask(ExtensionsTask):
             for cell in col:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
-            ws.column_dimensions[column].width = (max_length + 2.07)
+            # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
+            # ws.column_dimensions[column].width = (max_length + 2.07)
+            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。
         ws.freeze_panes = 'c3'

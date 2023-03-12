@@ -5,7 +5,7 @@ from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
-from BrownieAtelierMongo.models.scraped_from_response_model import ScrapedFromResponseModel
+from BrownieAtelierMongo.collection_models.scraped_from_response_model import ScrapedFromResponseModel
 
 
 class DailyClearTask(ExtensionsTask):

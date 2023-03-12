@@ -6,7 +6,7 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 from shared.directory_search_spiders import DirectorySearchSpiders
 # from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
 from news_crawl.news_crawl_input import NewsCrawlInput
@@ -35,17 +35,20 @@ class RegularObservationTask(ExtensionsTask):
         for spider_name in directory_search_spiders.spiders_name_list_get():
             spider_info = directory_search_spiders.spiders_info[spider_name]
             crawl_point_record: dict = controller.crawl_point_get(
-                spider_info['domain_name'], spider_name,)
+                spider_info[directory_search_spiders.DOMAIN_NAME], spider_name,)
+                # spider_info['domain_name'], spider_name,)
 
-            if spider_info['domain'] in stop_domain:
+            domain = spider_info[directory_search_spiders.DOMAIN]
+            # if spider_info['domain'] in stop_domain:
+            if domain in stop_domain:
                 self.logger.info(
-                    f'=== Stop domainの指定によりクロール中止 : ドメイン({spider_info["domain"]}) : spider_name({spider_name})')
+                    f'=== Stop domainの指定によりクロール中止 : ドメイン({domain}) : spider_name({spider_name})')
             elif not spider_name in spider_name_set:
                 self.logger.info(
-                    f'=== 定期観測に登録がないスパイダーは対象外 : ドメイン({spider_info["domain"]}) : spider_name({spider_name})')
+                    f'=== 定期観測に登録がないスパイダーは対象外 : ドメイン({domain}) : spider_name({spider_name})')
             elif len(crawl_point_record) == 0:
                 self.logger.info(
-                    f'=== クロールポイントがない（初回未実行）スパイダーは対象外 : ドメイン({spider_info["domain"]}) : spider_name({spider_name})')
+                    f'=== クロールポイントがない（初回未実行）スパイダーは対象外 : ドメイン({domain}) : spider_name({spider_name})')
             else:
                 crawling_target_spiders.append(spider_info)
                 crawling_target_spiders_name.append(spider_name)
@@ -75,20 +78,33 @@ class RegularObservationTask(ExtensionsTask):
         thread.start()
         thread.join()
 
-        kwargs: dict = {}
-        kwargs['start_time'] = self.start_time
-        kwargs['mongo'] = self.mongo
-        kwargs['domain'] = None
-        kwargs['urls'] = []
-        kwargs['crawling_start_time_from'] = self.start_time
-        kwargs['crawling_start_time_to'] = self.start_time
-        kwargs['scrapying_start_time_from'] = self.start_time
-        kwargs['scrapying_start_time_to'] = self.start_time
-        kwargs['scraped_save_start_time_from'] = self.start_time
-        kwargs['scraped_save_start_time_to'] = self.start_time
+        # kwargs: dict = {}
+        # kwargs['start_time'] = self.start_time
+        # kwargs['mongo'] = self.mongo
+        # kwargs['domain'] = None
+        # kwargs['urls'] = []
+        # kwargs['crawling_start_time_from'] = self.start_time
+        # kwargs['crawling_start_time_to'] = self.start_time
+        # kwargs['scrapying_start_time_from'] = self.start_time
+        # kwargs['scrapying_start_time_to'] = self.start_time
+        # kwargs['scraped_save_start_time_from'] = self.start_time
+        # kwargs['scraped_save_start_time_to'] = self.start_time
 
-        scrapying_run.exec(kwargs)
-        scraped_news_clip_master_save_run.check_and_save(kwargs)
+        # scrapying_run.exec(kwargs)
+        # scraped_news_clip_master_save_run.check_and_save(kwargs)
+        scrapying_run.exec(
+            start_time = self.start_time,
+            mongo = self.mongo,
+            domain = None,
+            urls = [],
+            target_start_time_from = self.start_time,
+            target_start_time_to = self.start_time)
+        scraped_news_clip_master_save_run.check_and_save(
+            start_time = self.start_time,
+            mongo = self.mongo,
+            domain = None,
+            target_start_time_from = self.start_time,
+            target_start_time_to = self.start_time)
 
         ### 本格開発までsolrへの連動を一時停止 ###
         # solr_news_clip_save_run.check_and_save(kwargs)

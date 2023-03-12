@@ -9,19 +9,21 @@ from pymongo.cursor import Cursor
 import pysolr
 path = os.getcwd()
 sys.path.append(path)
-from shared.timezone_recovery import timezone_recovery
-from BrownieAtelierNotice.mail_send import mail_send
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
-from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
-from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
-from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
 from models.solr_news_clip_model import SolrNewsClip
+from BrownieAtelierMongo.collection_models.asynchronous_report_model import AsynchronousReportModel
+from BrownieAtelierMongo.collection_models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierNotice.mail_send import mail_send
+from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
+from shared.timezone_recovery import timezone_recovery
 
 logger: Logger = logging.getLogger('prefect.run.crawl_urls_sync_check_run')
 
 
-def check(kwargs: dict):
+# def check(kwargs: dict):
+def check(start_time: datetime, mongo: MongoModel, domain: str, start_time_from: datetime, start_time_to: datetime):
     '''
     ①crawl対象のurlとcrawler_responseの同期チェック
     ②crawler_responseとnews_clip_masterの同期チェック
@@ -32,15 +34,16 @@ def check(kwargs: dict):
 
         # スパイダーレポートより、クロール対象となったurlのリストを取得し一覧にする。
         conditions: list = []
-        conditions.append({'record_type': 'spider_reports'})
+        conditions.append(
+            {crawler_logs.RECORD_TYPE: crawler_logs.RECORD_TYPE__SPIDER_REPORTS})
         if domain:
-            conditions.append({'domain': domain})
+            conditions.append({crawler_logs.DOMAIN: domain})
         if start_time_from:
             conditions.append(
-                {'crawling_start_time': {'$gte': start_time_from}})
+                {crawler_logs.START_TIME: {'$gte': start_time_from}})
         if start_time_to:
             conditions.append(
-                {'crawling_start_time': {'$lte': start_time_to}})
+                {crawler_logs.START_TIME: {'$lte': start_time_to}})
         if conditions:
             log_filter: Any = {'$and': conditions}
         else:
@@ -48,7 +51,8 @@ def check(kwargs: dict):
 
         log_records: Cursor = crawler_logs.find(
             filter=log_filter,
-            projection={'crawl_urls_list': 1, 'domain': 1}
+            projection={crawler_logs.CRAWL_URLS_LIST: 1,
+                        crawler_logs.DOMAIN: 1}
         )
 
         ##############################
@@ -56,13 +60,13 @@ def check(kwargs: dict):
         ##############################
         conditions: list = []
         if domain:
-            conditions.append({'domain': domain})
+            conditions.append({crawler_response.DOMAIN: domain})
         if start_time_from:
             conditions.append(
-                {'crawling_start_time': {'$gte': start_time_from}})
+                {crawler_response.CRAWLING_START_TIME: {'$gte': start_time_from}})
         if start_time_to:
             conditions.append(
-                {'crawling_start_time': {'$lte': start_time_to}})
+                {crawler_response.CRAWLING_START_TIME: {'$lte': start_time_to}})
 
         response_sync_list: list = []   # crawler_logsとcrawler_responseで同期
         response_async_list: list = []  # crawler_logsとcrawler_responseで非同期
@@ -70,39 +74,41 @@ def check(kwargs: dict):
         for log_record in log_records:
 
             # domain別の集計エリアを初期設定
-            response_async_domain_aggregate[log_record['domain']] = 0
+            response_async_domain_aggregate[log_record[crawler_logs.DOMAIN]] = 0
 
             # crawl_urls_listからをクロール対象となったurlを抽出
             loc_crawl_urls: list = []
-            for temp in log_record['crawl_urls_list']:
-                loc_crawl_urls.extend([item['loc'] for item in temp['items']])
+            for temp in log_record[crawler_logs.CRAWL_URLS_LIST]:
+                loc_crawl_urls.extend([item[crawler_logs.CRAWL_URLS_LIST__LOC]
+                                      for item in temp[crawler_logs.CRAWL_URLS_LIST__ITEMS]])
 
             # スパイダーレポートよりクロール対象となったurlを順に読み込み、crawler_responseに登録されていることを確認する。
             for crawl_url in loc_crawl_urls:
-                conditions.append({'url': crawl_url})
+                conditions.append({crawler_response.URL: crawl_url})
                 master_filter: Any = {'$and': conditions}
                 response_records: Cursor = crawler_response.find(
                     filter=master_filter,
-                    projection={'url': 1, 'response_time': 1, 'domain': 1},
+                    projection={crawler_response.URL: 1,
+                                crawler_response.RESPONSE_TIME: 1, crawler_response.DOMAIN: 1},
                 )
 
                 # crawler_response側に存在しないクロール対象urlがある場合
                 if crawler_response.count(filter=master_filter) == 0:
                     response_async_list.append(crawl_url)
                     # 非同期ドメイン集計カウントアップ
-                    response_async_domain_aggregate[log_record['domain']] += 1
+                    response_async_domain_aggregate[log_record[crawler_logs.DOMAIN]] += 1
 
                 # クロール対象とcrawler_responseで同期している場合、同期リストへ保存
                 # ※定期観測では1件しか存在しないないはずだが、start_time_from〜toで一定の範囲の
                 # 同期チェックを行った場合、複数件発生する可能性がある。
                 for response_record in response_records:
                     _ = {
-                        'url': response_record['url'],
-                        'response_time': timezone_recovery(response_record['response_time']),
-                        'domain': response_record['domain'],
+                        crawler_response.URL: response_record[crawler_response.URL],
+                        crawler_response.RESPONSE_TIME: timezone_recovery(response_record[crawler_response.RESPONSE_TIME]),
+                        crawler_response.DOMAIN: response_record[crawler_response.DOMAIN],
                     }
-                    if 'news_clip_master_register' in response_record:
-                        _['news_clip_master_register'] = response_record['news_clip_master_register']
+                    if crawler_response.NEWS_CLIP_MASTER_REGISTER in response_record:
+                        _[crawler_response.NEWS_CLIP_MASTER_REGISTER] = response_record[crawler_response.NEWS_CLIP_MASTER_REGISTER]
                     response_sync_list.append(_)
 
                 # 参照渡しなので最後に消さないと上述のresponse_recordsを参照した段階でエラーとなる
@@ -111,14 +117,14 @@ def check(kwargs: dict):
         # クロールミス分のurlがあれば、非同期レポートへ保存
         if len(response_async_list) > 0:
             asynchronous_report_model.insert_one({
-                'record_type': 'news_crawl_async',
-                'start_time': start_time,
-                'parameter': {
-                    'domain': domain,
-                    'start_time_from': start_time_from,
-                    'start_time_to': start_time_to,
+                asynchronous_report_model.RECORD_TYPE: asynchronous_report_model.RECORD_TYPE__NEWS_CRAWL_ASYNC,
+                asynchronous_report_model.START_TIME: start_time,
+                asynchronous_report_model.PARAMETER: {
+                    asynchronous_report_model.DOMAIN: domain,
+                    asynchronous_report_model.START_TIME_FROM: start_time_from,
+                    asynchronous_report_model.START_TIME_TO: start_time_to,
                 },
-                'async_list': response_async_list,
+                asynchronous_report_model.ASYNC_LIST: response_async_list,
             })
             counter = f'エラー({len(response_async_list)})/正常({len(response_sync_list)})'
             logger.error(
@@ -140,27 +146,29 @@ def check(kwargs: dict):
         # crawler_responseで同期しているリストを順に読み込み、news_clip_masterに登録されているか確認する。
         for response_sync in response_sync_list:
             mastar_conditions = []
-            mastar_conditions.append({'url': response_sync['url']})
             mastar_conditions.append(
-                {'response_time': response_sync['response_time']})
+                {news_clip_master.URL: response_sync[news_clip_master.URL]})
+            mastar_conditions.append(
+                {news_clip_master.RESPONSE_TIME: response_sync[news_clip_master.RESPONSE_TIME]})
             master_filter = {'$and': mastar_conditions}
             master_records: Cursor = news_clip_master.find(
                 filter=master_filter,
-                projection={'url': 1, 'response_time': 1, 'domain': 1}
+                projection={news_clip_master.URL: 1,
+                            news_clip_master.RESPONSE_TIME: 1, news_clip_master.DOMAIN: 1}
             )
 
             # news_clip_master側に存在しないcrawler_responseがある場合
             if news_clip_master.count(filter=master_filter) == 0:
-                if not 'news_clip_master_register' in response_sync:
-                    master_async_list.append(response_sync['url'])
+                if not crawler_response.NEWS_CLIP_MASTER_REGISTER in response_sync:
+                    master_async_list.append(response_sync[crawler_response.URL])
 
                     # 非同期ドメイン集計カウントアップ
-                    if response_sync['domain'] in master_async_domain_aggregate:
-                        master_async_domain_aggregate[response_sync['domain']] += 1
+                    if response_sync[crawler_response.DOMAIN] in master_async_domain_aggregate:
+                        master_async_domain_aggregate[response_sync[crawler_response.DOMAIN]] += 1
                     else:
-                        master_async_domain_aggregate[response_sync['domain']] = 1
+                        master_async_domain_aggregate[response_sync[crawler_response.DOMAIN]] = 1
 
-                elif response_sync['news_clip_master_register'] == '登録内容に差異なしのため不要':
+                elif response_sync[crawler_response.NEWS_CLIP_MASTER_REGISTER] == '登録内容に差異なしのため不要':
                     pass  # 内容に差異なしのため不要なデータ。問題なし
 
             # crawler_responseとnews_clip_masterで同期している場合、同期リストへ保存
@@ -168,24 +176,23 @@ def check(kwargs: dict):
             for master_record in master_records:
                 # レスポンスにあるのにマスターへの登録処理が行われていない。
                 _ = {
-                    'url': master_record['url'],
-                    # 'response_time': timezone_recovery(master_record['response_time']),
-                    'response_time': master_record['response_time'],
-                    'domain': master_record['domain'],
+                    news_clip_master.URL: master_record[news_clip_master.URL],
+                    news_clip_master.RESPONSE_TIME: master_record[news_clip_master.RESPONSE_TIME],
+                    news_clip_master.DOMAIN: master_record[news_clip_master.DOMAIN],
                 }
                 master_sync_list.append(_)
 
         # スクレイピングミス分のurlがあれば、非同期レポートへ保存
         if len(master_async_list) > 0:
             asynchronous_report_model.insert_one({
-                'record_type': 'news_clip_master_async',
-                'start_time': start_time,
-                'parameter': {
-                    'domain': domain,
-                    'start_time_from': start_time_from,
-                    'start_time_to': start_time_to,
+                asynchronous_report_model.RECORD_TYPE: asynchronous_report_model.RECORD_TYPE__NEWS_CLIP_MASTER_ASYNC,
+                asynchronous_report_model.START_TIME: start_time,
+                asynchronous_report_model.PARAMETER: {
+                    asynchronous_report_model.DOMAIN: domain,
+                    asynchronous_report_model.START_TIME_FROM: start_time_from,
+                    asynchronous_report_model.START_TIME_TO: start_time_to,
                 },
-                'async_list': master_async_list,
+                asynchronous_report_model.ASYNC_LIST: master_async_list,
             })
             counter = f'エラー({len(master_async_list)})/正常({len(master_sync_list)})'
             logger.error(f'=== 同期チェック結果(response -> master) : NG({counter})')
@@ -261,13 +268,7 @@ def check(kwargs: dict):
 
     #################################################################
     global logger
-    start_time: datetime = kwargs['start_time']
 
-    domain: str = kwargs['domain']
-    start_time_from: datetime = kwargs['start_time_from']
-    start_time_to: datetime = kwargs['start_time_to']
-
-    mongo: MongoModel = kwargs['mongo']
     crawler_logs = CrawlerLogsModel(mongo)
     crawler_response = CrawlerResponseModel(mongo)
     news_clip_master = NewsClipMasterModel(mongo)

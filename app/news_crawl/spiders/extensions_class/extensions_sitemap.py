@@ -14,10 +14,10 @@ from scrapy_selenium import SeleniumRequest
 from scrapy_splash import SplashRequest
 from selenium.webdriver.remote.webdriver import WebDriver
 #
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
-from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 from news_crawl.items import NewsCrawlItem
 from news_crawl.news_crawl_input import NewsCrawlInput
 from news_crawl.spiders.common.lastmod_term_skip_check import LastmodTermSkipCheck

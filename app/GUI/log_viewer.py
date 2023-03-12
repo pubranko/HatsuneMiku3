@@ -18,8 +18,8 @@ sys.path.append(path)
 from shared.directory_search_task import directory_search_task
 from shared.timezone_recovery import timezone_recovery
 from GUI.log_viewer_validator import LogViewerValidator
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
 
 
 class LogViewer(tkinter.Frame):

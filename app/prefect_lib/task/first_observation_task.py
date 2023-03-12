@@ -6,7 +6,7 @@ sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
 from prefect_lib.run import scrapy_crawling_run, scrapying_run, scraped_news_clip_master_save_run, solr_news_clip_save_run
 from shared.directory_search_spiders import DirectorySearchSpiders
-from BrownieAtelierMongo.models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 # from prefect_lib.data_models.scrapy_crawling_kwargs_input import ScrapyCrawlingKwargsInput
 from news_crawl.news_crawl_input import NewsCrawlInput
 
@@ -35,7 +35,7 @@ class FirstObservationTask(ExtensionsTask):
         for spider_name in directory_search_spiders.spiders_name_list_get():
             spider_info = directory_search_spiders.spiders_info[spider_name]
             crawl_point_record: dict = controller.crawl_point_get(
-                spider_info['domain_name'], spider_name,)
+                spider_info[directory_search_spiders.DOMAIN_NAME], spider_name,)
 
             if not spider_name in regular_observation_spider_name_set:
                 self.logger.info(f'=== 定期観測に登録がないスパイダーは対象外 : {spider_name}')
@@ -73,20 +73,34 @@ class FirstObservationTask(ExtensionsTask):
             thread.start()
             thread.join()
 
-            kwargs: dict = {}
-            kwargs['start_time'] = self.start_time
-            kwargs['mongo'] = self.mongo
-            kwargs['domain'] = None
-            kwargs['urls'] = []
-            kwargs['crawling_start_time_from'] = self.start_time
-            kwargs['crawling_start_time_to'] = self.start_time
-            kwargs['scrapying_start_time_from'] = self.start_time
-            kwargs['scrapying_start_time_to'] = self.start_time
-            kwargs['scraped_save_start_time_from'] = self.start_time
-            kwargs['scraped_save_start_time_to'] = self.start_time
+            # kwargs: dict = {}
+            # kwargs['start_time'] = self.start_time
+            # kwargs['mongo'] = self.mongo
+            # kwargs['domain'] = None
+            # kwargs['urls'] = []
+            # kwargs['crawling_start_time_from'] = self.start_time
+            # kwargs['crawling_start_time_to'] = self.start_time
+            # kwargs['scrapying_start_time_from'] = self.start_time
+            # kwargs['scrapying_start_time_to'] = self.start_time
+            # kwargs['scraped_save_start_time_from'] = self.start_time
+            # kwargs['scraped_save_start_time_to'] = self.start_time
 
-            scrapying_run.exec(kwargs)
-            scraped_news_clip_master_save_run.check_and_save(kwargs)
+            # scrapying_run.exec(kwargs)
+            # scraped_news_clip_master_save_run.check_and_save(kwargs)
+            scrapying_run.exec(
+                start_time = self.start_time,
+                mongo = self.mongo,
+                domain = None,
+                urls = [],
+                target_start_time_from = self.start_time,
+                target_start_time_to = self.start_time)
+            scraped_news_clip_master_save_run.check_and_save(
+                start_time = self.start_time,
+                mongo = self.mongo,
+                domain = None,
+                target_start_time_from = self.start_time,
+                target_start_time_to = self.start_time)
+
             ### 本格開発までsolrへの連動を一時停止 ###
             # solr_news_clip_save_run.check_and_save(kwargs)
         else:

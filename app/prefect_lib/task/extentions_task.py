@@ -2,7 +2,7 @@
 import os
 import sys
 import re
-from typing import Any
+from typing import Any, Final
 from logging import Logger
 from datetime import datetime
 import prefect
@@ -14,8 +14,8 @@ path = os.getcwd()
 sys.path.append(path)
 from BrownieAtelierNotice.mail_send import mail_send
 from shared.resource_check import resource_check
-from BrownieAtelierMongo.models.mongo_model import MongoModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
 from shared.settings import TIMEZONE
 
 
@@ -24,7 +24,6 @@ class ExtensionsTask(Task):
     引数: log_file_path:str = 出力ログのファイルパス , start_time:datetime = 起点となる時間 ,
     notice_level = メール通知するログレベル[CRITICAL|ERROR|WARNING]
     '''
-    mongo = MongoModel()
     start_time: datetime
     log_record: str  # 読み込んだログファイルオブジェクト
     log_file_path: str  # ログファイルのパス
@@ -32,27 +31,24 @@ class ExtensionsTask(Task):
     any: Any = prefect
     prefect_context: Context = any.context
     logger: Logger
+    mongo: MongoModel
 
-    # def __init__(self, log_file_path: str, start_time: datetime, *args, **kwargs):
+
+    ###############
+    # 定数
+    ###############
+    START_TIME: Final[str] = 'start_time'
+    '''定数: start_time'''
+    MONGO: Final[str] = 'mongo'
+    '''定数: mongo'''
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # ログファイルパス
-        # if log_file_path:
-        #     self.log_file_path = log_file_path
-        #     self.logger.info(
-        #         f'=== ExtensionsTask __init__ log_file_path : {log_file_path}')
-        # else:
-        #     raise signals.FAIL(message="引数エラー:log_file_pathが指定されていません。")
-
         # 開始時間
         self.start_time=datetime.now().astimezone(TIMEZONE)
-        # if start_time:
-        #     self.start_time = start_time
-        #     self.logger.info(
-        #         f'=== ExtensionsTask __init__ start_time : {start_time.isoformat()}')
-        # else:
-        #     raise signals.FAIL(message="引数エラー:start_timeが指定されていません。")
+
+        self.mongo = MongoModel(self.logger)
 
     def log_check(self):
         '''クリティカル、エラー、ワーニングがあったらメールで通知'''
@@ -94,10 +90,10 @@ class ExtensionsTask(Task):
         '''処理が終わったらログを保存'''
         crawler_logs = CrawlerLogsModel(self.mongo)
         crawler_logs.insert_one({
-            'start_time': self.start_time,
-            'flow_name': self.prefect_context['flow_name'],
-            'record_type': self.name,
-            'logs': self.log_record,
+            crawler_logs.START_TIME: self.start_time,
+            crawler_logs.FLOW_NAME: self.prefect_context['flow_name'],
+            crawler_logs.RECORD_TYPE: self.name,
+            crawler_logs.LOGS: self.log_record,
         })
 
     def closed(self):
@@ -125,6 +121,5 @@ class ExtensionsTask(Task):
         ここがprefectで起動するメイン処理
         '''
         self.run_init()
-        pass
         self.closed()
 

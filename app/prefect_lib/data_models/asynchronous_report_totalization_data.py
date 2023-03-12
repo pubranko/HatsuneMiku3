@@ -1,6 +1,7 @@
 from dataclasses import dataclass,field
 from urllib.parse import urlparse
 
+'''このソースは現在未使用'''
 
 @dataclass
 class AsynchronousReportTotalizationData:

@@ -11,14 +11,14 @@ from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 path = os.getcwd()
 sys.path.append(path)
-from shared.settings import TIMEZONE, BACKUP_BASE_DIR
+from shared.settings import TIMEZONE, DATA_DIR__BACKUP_BASE_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
-from BrownieAtelierMongo.models.crawler_response_model import CrawlerResponseModel
-from BrownieAtelierMongo.models.scraped_from_response_model import ScrapedFromResponseModel
-from BrownieAtelierMongo.models.news_clip_master_model import NewsClipMasterModel
-from BrownieAtelierMongo.models.crawler_logs_model import CrawlerLogsModel
-from BrownieAtelierMongo.models.controller_model import ControllerModel
-from BrownieAtelierMongo.models.asynchronous_report_model import AsynchronousReportModel
+from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
+from BrownieAtelierMongo.collection_models.scraped_from_response_model import ScrapedFromResponseModel
+from BrownieAtelierMongo.collection_models.news_clip_master_model import NewsClipMasterModel
+from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
+from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
+from BrownieAtelierMongo.collection_models.asynchronous_report_model import AsynchronousReportModel
 
 
 class MongoExportSelectorTask(ExtensionsTask):
@@ -77,7 +77,7 @@ class MongoExportSelectorTask(ExtensionsTask):
             '''
             # バックアップフォルダ直下に基準年月ごとのフォルダを作る。
             # 同一フォルダへのエクスポートは禁止。
-            dir_path = os.path.join(BACKUP_BASE_DIR, export_dir)
+            dir_path = os.path.join(DATA_DIR__BACKUP_BASE_DIR, export_dir)
             if os.path.exists(dir_path):
                 self.logger.error(
                     f'=== MongoExportSelector run : backup_dirパラメータエラー : {export_dir} は既に存在します。')

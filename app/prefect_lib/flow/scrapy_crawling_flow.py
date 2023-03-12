@@ -24,7 +24,7 @@ with Flow(
     spider_names = Parameter('spider_names')()
     spider_kwargs = Parameter('spider_kwargs')()
     following_processing_execution = Parameter(
-        'following_processing_execution', default='No')()
+        'following_processing_execution', default=False)()
     task = ScrapyCrawlingTask()
     result = task(spider_names=spider_names, spider_kwargs=spider_kwargs,
                   following_processing_execution=following_processing_execution)

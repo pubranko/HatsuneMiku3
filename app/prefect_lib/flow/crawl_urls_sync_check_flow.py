@@ -22,11 +22,11 @@ with Flow(
     name='[CHECK_001] Crawl urls sync check flow',
     state_handlers=[flow_status_change],
 ) as flow:
-    domain = Parameter('domain', required=False)()
+    domain = Parameter(CrawlUrlsSyncCheckTask.DOMAIN, required=False)()
     start_time_from = DateTimeParameter(
-        'start_time_from', required=False,)
+        CrawlUrlsSyncCheckTask.START_TIME_FROM, required=False,)
     start_time_to = DateTimeParameter(
-        'start_time_to', required=False)
+        CrawlUrlsSyncCheckTask.START_TIME_TO, required=False)
     task = CrawlUrlsSyncCheckTask()
     result = task(domain=domain,
                   start_time_from=start_time_from,

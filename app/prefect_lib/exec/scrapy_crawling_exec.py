@@ -18,12 +18,13 @@ flow.run(parameters=dict(
         # page_span_to = 3,
         lastmod_term_minutes_from = 10,
         lastmod_term_minutes_to = 9,
-        # continued = 'Yes',
+        # continued = True,
         # direct_crawl_urls = [],
         # url_pattern =  'https://www.yomiuri.co.jp/national/20220430-OYT1T50050',
     ),
     # following_processing_execution='Yes'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
-    following_processing_execution='No'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
+    # following_processing_execution='No'    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
+    following_processing_execution=False    # 後続処理実行(scrapying,news_clip_masterへの登録,solrへの登録)
     # spider_kwargs={
     #     'debug': 'Yes',
     #     'pages': '1,1',
