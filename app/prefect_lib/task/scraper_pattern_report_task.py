@@ -136,7 +136,9 @@ class ScrapyingPatternReportTask(ExtensionsTask):
 
         # スクレイパー情報集計結果報告用のワークブックの新規作成
         workbook = Workbook()
-        ws: Worksheet = workbook.active  # アクティブなワークシートを選択
+        ws: Any = workbook.active  # アクティブなワークシートを選択
+        # ws: Worksheet = workbook.active  # アクティブなワークシートを選択
+
         # スクレイパー情報集計結果報告用レポートを編集
         self.scraper_pattern_analysis_report_edit_header(ws)
         self.scraper_pattern_analysis_report_edit_body(
@@ -194,7 +196,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
 
         for i, col_info in enumerate(self.scraper_pattern_analysis_columns_info):
             # 見出し１行目
-            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            any: Any = ws[f'{get_column_letter(i + 1)}{str(1)}']
+            head1_cell: Cell = any
             ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
@@ -202,7 +205,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                 horizontal="centerContinuous")  # 選択範囲内中央寄せ
 
             # 見出し２行目
-            head2_cell: Cell = ws[get_column_letter(i + 1) + str(2)]
+            any: Any = ws[f'{get_column_letter(i + 1)}{str(2)}']
+            head2_cell: Cell = any
             ws[head2_cell.coordinate] = col_info[self.HEAD2]
             head2_cell.fill = fill2
             head2_cell.border = border
@@ -222,8 +226,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         for col_idx, col_info in enumerate(self.scraper_pattern_analysis_columns_info):
             for row_idx, value in enumerate(result_df[col_info[self.COL]]):
                 # 更新対象のセル
-                target_cell: Cell = ws[get_column_letter(
-                    col_idx + 1) + str(base_row_idx + row_idx)]
+                any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx)}']
+                target_cell: Cell = any
 
                 # 更新対象のセルに値を設定
                 ws[target_cell.coordinate] = value
@@ -231,8 +235,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                 # 同値カラー調整
                 if self.EQUIVALENT_COLOR in col_info:
                     # 比較用の１つ上のセルと同じ値の場合は文字色を変更
-                    compare_cell: Cell = ws[get_column_letter(
-                        col_idx + 1) + str(base_row_idx + row_idx - 1)]
+                    any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx - 1)}']
+                    compare_cell: Cell = any
                     if target_cell.value == compare_cell.value:
                         target_cell.font = Font(
                             color=col_info[self.EQUIVALENT_COLOR])
@@ -240,15 +244,17 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        for cells in ws[f'a3:{max_cell}']:
+        cells = ws[f'a3:{max_cell}']
+        # for cells in ws[f'a3:{max_cell}']:
+        if type(cells) is tuple:
             for cell in cells:
-                cell: Cell
                 cell.border = border
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        for col in ws.columns:
+        # for col in ws.columns:
+        for col in ws.iter_cols():
             max_length = 0
             column = col[0].column_letter  # 列名A,Bなどを取得
             for cell in col:

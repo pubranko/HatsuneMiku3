@@ -7,8 +7,8 @@ import itertools
 
 class StatsInfoCollectData:
     '''
-    スパイダーごとに１日分のデータの集計を行う。
-    ・入力データを１けんづつpandasのdataframeに格納する。
+    スパイダーごとに1日分のデータの集計を行う。
+    ・入力データを1けんづつpandasのdataframeに格納する。
     '''
     # [spider1の集計結果、spider2の集計結果]
 
@@ -46,6 +46,8 @@ class StatsInfoCollectData:
     '''定数: spider_name'''
     PARAMETER: Final[str] = 'parameter'
     '''定数: parameter'''
+    SPIDER_STATS: Final[str] = 'spider_stats'
+    '''定数: spider_stats'''
     ROBOTS_RESPONSE_STATUS: Final[str] = 'robots_response_status'
     '''定数: robots_response_status'''
     DOWNLOADER_RESPONSE_STATUS: Final[str] = 'downloader_response_status'
@@ -81,10 +83,14 @@ class StatsInfoCollectData:
     AGGREGATE_BASE_TERM: Final[str] = 'aggregate_base_term'
     '''定数: aggregate_base_term'''
 
-    SUM: Final[str] = 'sum'
-    MEAN: Final[str] = 'mean'
-    MIN: Final[str] = 'min'
-    MAX: Final[str] = 'max'
+    AGGREGATE_TYPE__SUM: Final[str] = 'sum'
+    '''定数(value): 集計タイプ 合計'''
+    AGGREGATE_TYPE__MEAN: Final[str] = 'mean'
+    '''定数(value): 集計タイプ 平均'''
+    AGGREGATE_TYPE__MIN: Final[str] = 'min'
+    '''定数(value): 集計タイプ 最小'''
+    AGGREGATE_TYPE__MAX: Final[str] = 'max'
+    '''定数(value): 集計タイプ 最大'''
 
     def __init__(self):
         self.robots_df = pd.DataFrame({
@@ -152,22 +158,22 @@ class StatsInfoCollectData:
 
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
         self.robots_result_df: dict[str, pd.DataFrame] = {
-            self.SUM: pd.DataFrame(robots_result_col),
-            self.MEAN: pd.DataFrame(robots_result_col),
-            self.MIN: pd.DataFrame(robots_result_col),
-            self.MAX: pd.DataFrame(robots_result_col),
+            self.AGGREGATE_TYPE__SUM: pd.DataFrame(robots_result_col),
+            self.AGGREGATE_TYPE__MEAN: pd.DataFrame(robots_result_col),
+            self.AGGREGATE_TYPE__MIN: pd.DataFrame(robots_result_col),
+            self.AGGREGATE_TYPE__MAX: pd.DataFrame(robots_result_col),
         }
         self.downloader_result_df: dict[str, pd.DataFrame] = {
-            self.SUM: pd.DataFrame(downloader_result_col),
-            self.MEAN: pd.DataFrame(downloader_result_col),
-            self.MIN: pd.DataFrame(downloader_result_col),
-            self.MAX: pd.DataFrame(downloader_result_col),
+            self.AGGREGATE_TYPE__SUM: pd.DataFrame(downloader_result_col),
+            self.AGGREGATE_TYPE__MEAN: pd.DataFrame(downloader_result_col),
+            self.AGGREGATE_TYPE__MIN: pd.DataFrame(downloader_result_col),
+            self.AGGREGATE_TYPE__MAX: pd.DataFrame(downloader_result_col),
         }
         self.spider_result_df: dict[str, pd.DataFrame] = {
-            self.SUM: pd.DataFrame(spider_result_col),
-            self.MEAN: pd.DataFrame(spider_result_col),
-            self.MIN: pd.DataFrame(spider_result_col),
-            self.MAX: pd.DataFrame(spider_result_col),
+            self.AGGREGATE_TYPE__SUM: pd.DataFrame(spider_result_col),
+            self.AGGREGATE_TYPE__MEAN: pd.DataFrame(spider_result_col),
+            self.AGGREGATE_TYPE__MIN: pd.DataFrame(spider_result_col),
+            self.AGGREGATE_TYPE__MAX: pd.DataFrame(spider_result_col),
         }
 
     def spider_stats_store(self, start_time: datetime, spider_name: str, stats: dict,) -> None:
@@ -180,7 +186,7 @@ class StatsInfoCollectData:
             # 例）downloader/response_status_count/200、downloader/response_status_count/404 など
             if 'robotstxt/response_status_count/' in key:
                 _ = pd.DataFrame([{
-                    self.RECORD_TYPE: 'robots_response_status',
+                    self.RECORD_TYPE: self.ROBOTS_RESPONSE_STATUS,
                     self.START_TIME: start_time,
                     self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
                     self.SPIDER_NAME: spider_name,
@@ -191,7 +197,7 @@ class StatsInfoCollectData:
                 self.robots_df = pd.concat([self.robots_df, _], ignore_index=True)
             if 'downloader/response_status_count/' in key:
                 _ = pd.DataFrame([{
-                    self.RECORD_TYPE: 'downloader_response_status',
+                    self.RECORD_TYPE: self.DOWNLOADER_RESPONSE_STATUS,
                     self.START_TIME: start_time,
                     self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
                     self.SPIDER_NAME: spider_name,
@@ -201,7 +207,7 @@ class StatsInfoCollectData:
                 self.downloader_df = pd.concat([self.downloader_df, _], ignore_index=True)
 
         _ = pd.DataFrame([{
-            self.RECORD_TYPE: 'spider_stats',
+            self.RECORD_TYPE: self.SPIDER_STATS,
             self.START_TIME: start_time,
             self.TIME_PERIOD_HOUR: start_time.strftime('%H'),
             self.SPIDER_NAME: spider_name,
@@ -238,22 +244,22 @@ class StatsInfoCollectData:
 
     def dataframe_recovery(self, stats_info_collect_record: dict) -> None:
         '''引数のレコードを基にpandasのデータフレームを復元する。'''
-        
+
         record_df = pd.DataFrame([stats_info_collect_record])
-        
-        if stats_info_collect_record['record_type'] == 'robots_response_status':
+
+        if stats_info_collect_record[self.RECORD_TYPE] == self.ROBOTS_RESPONSE_STATUS:
             self.robots_df = pd.concat([self.robots_df,record_df],
                 ignore_index=True)
-        elif stats_info_collect_record['record_type'] == 'downloader_response_status':
+        elif stats_info_collect_record[self.RECORD_TYPE] == self.DOWNLOADER_RESPONSE_STATUS:
             self.downloader_df = pd.concat([self.downloader_df,record_df],
                 ignore_index=True)
-        elif stats_info_collect_record['record_type'] == 'spider_stats':
+        elif stats_info_collect_record[self.RECORD_TYPE] == self.SPIDER_STATS:
             self.spider_df = pd.concat([self.spider_df,record_df],
                 ignore_index=True)
-        # if stats_info_collect_record['record_type'] == 'robots_response_status':
+        # if stats_info_collect_record['record_type'] == self.ROBOTS_RESPONSE_STATUS:
         #     self.robots_df = self.robots_df.append(
         #         stats_info_collect_record, ignore_index=True)
-        # elif stats_info_collect_record['record_type'] == 'downloader_response_status':
+        # elif stats_info_collect_record['record_type'] == self.DOWNLOADER_RESPONSE_STATUS:
         #     self.downloader_df = self.downloader_df.append(
         #         stats_info_collect_record, ignore_index=True)
         # elif stats_info_collect_record['record_type'] == 'spider_stats':
@@ -266,20 +272,20 @@ class StatsInfoCollectData:
         インデックスを追加したデータフレームを返す。
         '''
         df[columns] = pd.to_datetime(df[columns])
-        df.set_index(['start_time']).tz_localize(
+        df.set_index([self.START_TIME]).tz_localize(
             'UTC').tz_convert('Asia/Tokyo')
-        return df.set_index(['start_time']).tz_localize('UTC').tz_convert('Asia/Tokyo')
+        return df.set_index([self.START_TIME]).tz_localize('UTC').tz_convert('Asia/Tokyo')
 
     def stats_analysis_exec(self, datetime_term_list: list[tuple[datetime, datetime]]) -> pd.DataFrame:
         '''引数で渡された集計期間リストごとに解析を実行'''
         # start_timeをインデックスとしたdataframを生成
         # index生成後ソートを実行する。※ソートしないと将来的にエラーになると警告を受ける。
         robots_df_index = self.date_time_set_index(
-            'start_time', self.robots_df).sort_index()
+            self.START_TIME, self.robots_df).sort_index()
         downloader_df_index = self.date_time_set_index(
-            'start_time', self.downloader_df).sort_index()
+            self.START_TIME, self.downloader_df).sort_index()
         spider_df_index = self.date_time_set_index(
-            'start_time', self.spider_df).sort_index()
+            self.START_TIME, self.spider_df).sort_index()
 
         date_list: list = []
         for calc_date_from, calc_date_to in datetime_term_list:
@@ -292,11 +298,11 @@ class StatsInfoCollectData:
 
             date_from = calc_date_from.strftime('%Y-%m-%d')
             # 上記の期間抽出されたデータフレームより集計結果を求める。
-            self.aggregate_result_set(robots_select_df, ['spider_name', 'robots_response_status'],
+            self.aggregate_result_set(robots_select_df, [self.SPIDER_NAME, self.ROBOTS_RESPONSE_STATUS],
                                       date_from, self.robots_result_df)
-            self.aggregate_result_set(downloader_select_df, ['spider_name', 'downloader_response_status'],
+            self.aggregate_result_set(downloader_select_df, [self.SPIDER_NAME, self.DOWNLOADER_RESPONSE_STATUS],
                                       date_from, self.downloader_result_df)
-            self.aggregate_result_set(spider_select_df, ['spider_name'],
+            self.aggregate_result_set(spider_select_df, [self.SPIDER_NAME],
                                       date_from, self.spider_result_df)
 
             # 日付リストを作成
@@ -304,37 +310,38 @@ class StatsInfoCollectData:
 
         # 日付別のスパイダー一覧を作成する。
         self.spider_list: pd.Series = (
-            self.spider_df['spider_name'].drop_duplicates().sort_values()
+            self.spider_df[self.SPIDER_NAME].drop_duplicates().sort_values()
             )
         spider_by_date: list = [[date, spider]
                                 for date, spider in itertools.product(date_list, self.spider_list)]
         spider_by_date_df = pd.DataFrame(spider_by_date, columns=[
-                                         'aggregate_base_term', 'spider_name'])
+                                         self.AGGREGATE_BASE_TERM, self.SPIDER_NAME])
 
         # 各データフレームに対してソートを行う。
         df_sort_list: list[tuple[dict[str, pd.DataFrame], list]] = [
             (self.robots_result_df,
-             ['spider_name', 'aggregate_base_term', 'robots_response_status']),
+             [self.SPIDER_NAME, self.AGGREGATE_BASE_TERM, self.ROBOTS_RESPONSE_STATUS]),
             (self.downloader_result_df,
-             ['spider_name', 'aggregate_base_term', 'downloader_response_status']),
+             [self.SPIDER_NAME, self.AGGREGATE_BASE_TERM, self.DOWNLOADER_RESPONSE_STATUS]),
             (self.spider_result_df,
-             ['spider_name', 'aggregate_base_term']),
+             [self.SPIDER_NAME, self.AGGREGATE_BASE_TERM]),
         ]
-        for type in ['sum', 'mean', 'min', 'max']:
+        for type in [self.AGGREGATE_TYPE__SUM, self.AGGREGATE_TYPE__MEAN,
+                     self.AGGREGATE_TYPE__MIN, self.AGGREGATE_TYPE__MAX]:
             for dataframes, sort_key in df_sort_list:
                 dataframes[type] = pd.merge(spider_by_date_df, dataframes[type],how='left').sort_values(
                     by=sort_key).fillna('')
 
-        spider_result_all_df = pd.merge(self.spider_result_df['sum'],
-                     self.spider_result_df['mean'],
+        spider_result_all_df = pd.merge(self.spider_result_df[self.AGGREGATE_TYPE__SUM],
+                     self.spider_result_df[self.AGGREGATE_TYPE__MEAN],
                      suffixes=['', '_mean'],
-                     on=['aggregate_base_term', 'spider_name'])
-        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df['min'],
+                     on=[self.AGGREGATE_BASE_TERM, self.SPIDER_NAME])
+        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df[self.AGGREGATE_TYPE__MIN],
                      suffixes=['', '_min'],
-                     on=['aggregate_base_term', 'spider_name'])
-        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df['max'],
+                     on=[self.AGGREGATE_BASE_TERM, self.SPIDER_NAME])
+        spider_result_all_df = pd.merge(spider_result_all_df, self.spider_result_df[self.AGGREGATE_TYPE__MAX],
                      suffixes=['', '_max'],
-                     on=['aggregate_base_term', 'spider_name'])
+                     on=[self.AGGREGATE_BASE_TERM, self.SPIDER_NAME])
 
         return spider_result_all_df
 
@@ -342,20 +349,20 @@ class StatsInfoCollectData:
         ''''''
         #{'sum': df, 'mean': df, 'min': df, 'max': df}
         _ = select_df.groupby(by=groupby, as_index=False).sum()
-        _['aggregate_base_term'] = aggregate_base_term
-        result_df['sum'] = pd.concat([result_df['sum'], _]).round(2)
+        _[self.AGGREGATE_BASE_TERM] = aggregate_base_term
+        result_df[self.AGGREGATE_TYPE__SUM] = pd.concat([result_df[self.AGGREGATE_TYPE__SUM], _]).round(2)
 
         _ = select_df.groupby(groupby, as_index=False).mean()
-        _['aggregate_base_term'] = aggregate_base_term
-        result_df['mean'] = pd.concat([result_df['mean'], _]).round(2)
+        _[self.AGGREGATE_BASE_TERM] = aggregate_base_term
+        result_df[self.AGGREGATE_TYPE__MEAN] = pd.concat([result_df[self.AGGREGATE_TYPE__MEAN], _]).round(2)
 
         _ = select_df.groupby(groupby, as_index=False).min()
-        _['aggregate_base_term'] = aggregate_base_term
-        result_df['min'] = pd.concat([result_df['min'], _]).round(2)
+        _[self.AGGREGATE_BASE_TERM] = aggregate_base_term
+        result_df[self.AGGREGATE_TYPE__MIN] = pd.concat([result_df[self.AGGREGATE_TYPE__MIN], _]).round(2)
 
         _ = select_df.groupby(groupby, as_index=False).max()
-        _['aggregate_base_term'] = aggregate_base_term
-        result_df['max'] = pd.concat([result_df['max'], _]).round(2)
+        _[self.AGGREGATE_BASE_TERM] = aggregate_base_term
+        result_df[self.AGGREGATE_TYPE__MAX] = pd.concat([result_df[self.AGGREGATE_TYPE__MAX], _]).round(2)
 
 
     stats_image = {

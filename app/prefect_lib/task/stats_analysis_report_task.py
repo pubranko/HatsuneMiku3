@@ -1,14 +1,17 @@
 from copy import deepcopy
 import os
 import sys
-from typing import Any, Final
+from typing import Any, Final, Optional
 import pandas as pd
 from pydantic import ValidationError
 from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 from pymongo.cursor import Cursor
 from decimal import Decimal, ROUND_HALF_UP
-from openpyxl import Workbook
+# from openpyxl import Workbook
+from openpyxl.workbook.workbook import Workbook
+from openpyxl.workbook.child import _WorkbookChild
+
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell import Cell
 from openpyxl.chart.bar_chart import BarChart
@@ -171,7 +174,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
             # 統計情報解析結果報告用のワークブックの新規作成
             workbook = Workbook()
-            ws: Worksheet = workbook.active  # アクティブなワークシートを選択
+            ws: Any = workbook.active  # アクティブなワークシートを選択
 
             # スパイダー統計解析レポートを編集
             self.stats_analysis_report_edit_header(ws)
@@ -261,7 +264,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
         for i, col_info in enumerate(analysis_columns_info):
             # 見出し１行目
-            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            any: Any = ws[f'{get_column_letter(i + 1)}{str(1)}']
+            head1_cell: Cell = any   # 型ヒントエラー回避用にAnyに一度入れて、改めてCellの項目に渡す
             ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
@@ -324,14 +328,18 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 # データフレームの列ごとに１行ずつ処理を実施
                 for row_idx, value in enumerate(by_spider_df[col_info[self.COL]]):
                     # 更新対象のセルに値を設定
-                    target_cell: Cell = ws[get_column_letter(
-                        col_idx + 1) + str(base_row_idx + row_idx)]
+                    f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx)}'
+                    # any: Any = ws[get_column_letter(col_idx + 1) + str(base_row_idx + row_idx)]
+                    any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx)}']
+                    target_cell: Cell = any
                     ws[target_cell.coordinate] = value
 
                     # 同値カラー調整列の場合、更新対象セルの上と同値ならば色を変える。
                     if self.EQUIVALENT_COLOR in col_info:
-                        compare_cell: Cell = ws[get_column_letter(
-                            col_idx + 1) + str(base_row_idx + row_idx - 1)]
+                        any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx - 1)}']
+                        compare_cell: Cell = any
+                        # compare_cell: Cell = ws[get_column_letter(
+                        #     col_idx + 1) + str(base_row_idx + row_idx - 1)]
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
                                 color=col_info[self.EQUIVALENT_COLOR])
@@ -350,17 +358,25 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        cell: Cell  # 型ヒントの定義のみ
-        for cells in ws[f'a2:{max_cell}']:
+        # cell: Cell  # 型ヒントの定義のみ
+        # for cells in ws[f'a2:{max_cell}']:
+        #     for cell in cells:
+        #         cell.border = border
+        cells = ws[f'a2:{max_cell}']
+        if type(cells) is tuple:
             for cell in cells:
                 cell.border = border
+
+
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        for cols in ws.columns:
+        # for cols in ws.columns:
+        for cols in ws.iter_cols():
             max_length = 0
             column = cols[0].column_letter  # 列名A,Bなどを取得
+            # column = cols.column_letter  # 列名A,Bなどを取得
             for cell in cols:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
@@ -385,7 +401,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
         for i, col_info in enumerate(self.stats_analysis_columns_info):
             # 見出し１行目
-            head1_cell: Cell = ws[get_column_letter(i + 1) + str(1)]
+            any: Any = ws[f'{get_column_letter(i + 1)}{str(1)}']
+            head1_cell: Cell = any
             ws[head1_cell.coordinate] = col_info[self.HEAD1]
             head1_cell.fill = fill1
             head1_cell.border = border
@@ -393,7 +410,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 horizontal="centerContinuous")  # 選択範囲内中央寄せ
 
             # 見出し２行目
-            head2_cell: Cell = ws[get_column_letter(i + 1) + str(2)]
+            any: Any = ws[f'{get_column_letter(i + 1)}{str(2)}']
+            head2_cell: Cell = any
             ws[head2_cell.coordinate] = col_info[self.HEAD2]
             head2_cell.fill = fill2
             head2_cell.border = border
@@ -437,8 +455,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
             for col_idx, col_info in enumerate(columns_info_by_spider):
                 for row_idx, value in enumerate(by_spider_df[col_info[self.COL]]):
                     # 更新対象のセル
-                    target_cell: Cell = ws[get_column_letter(
-                        col_idx + 1) + str(base_row_idx + row_idx)]
+                    any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx)}']
+                    target_cell: Cell = any
 
                     # 表示単位の切り上げ (example:b -> kb)
                     custom_value = value
@@ -461,8 +479,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     # 同値カラー調整
                     if self.EQUIVALENT_COLOR in col_info:
                         # 比較用の１つ上のセルと同じ値の場合は文字色を変更
-                        compare_cell: Cell = ws[get_column_letter(
-                            col_idx + 1) + str(base_row_idx + row_idx - 1)]
+                        any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx - 1)}']
+                        compare_cell: Cell = any
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
                                 color=col_info[self.EQUIVALENT_COLOR])
@@ -488,7 +506,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        for cells in ws[f'a3:{max_cell}']:
+        cells = ws[f'a3:{max_cell}']
+        if type(cells) is tuple:
             for cell in cells:
                 cell: Cell
                 cell.border = border
@@ -496,7 +515,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        for col in ws.columns:
+        # for col in ws.columns:
+        for col in ws.iter_cols():
             max_length = 0
             column = col[0].column_letter  # 列名A,Bなどを取得
             for cell in col:
