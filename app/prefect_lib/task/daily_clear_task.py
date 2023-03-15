@@ -21,7 +21,7 @@ class DailyClearTask(ExtensionsTask):
         ###################################################################################
         self.run_init()
 
-        collections_name: list = ['scraped_from_response']
+        collections_name: list = [ScrapedFromResponseModel.COLLECTION_NAME]
 
         for collection_name in collections_name:
             collection = ScrapedFromResponseModel(self.mongo)

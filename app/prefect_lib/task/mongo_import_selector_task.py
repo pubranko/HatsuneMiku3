@@ -51,12 +51,7 @@ class MongoImportSelectorTask(ExtensionsTask):
         file_list: list = glob.glob(os.path.join(DATA_DIR__BACKUP_BASE_DIR, '**', '*'))
         for file in file_list:
             path_info = file.split(os.sep)
-            # path_info[1] = backup_files
-            # path_info[2] = 2022-02、または、prefix_2022-02
-            # if kwargs["prefix"] == '':
-            #     _ = path_info[2]
-            # else:
-            #     _ = f'{kwargs["prefix"]}_{path_info[2]}'
+
             if re.search(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[2]):
                 if kwargs["prefix"] == '':
                     _ = path_info[2]
@@ -119,17 +114,17 @@ class MongoImportSelectorTask(ExtensionsTask):
                 # 空ファイル以外はコレクションごとにインポートを実施
                 if len(collection_records):
                     collection = None
-                    if select_file['collection_name'] == 'crawler_response':
+                    if select_file['collection_name'] == CrawlerResponseModel.COLLECTION_NAME:
                         collection = CrawlerResponseModel(self.mongo)
-                    elif select_file['collection_name'] == 'scraped_from_response':
+                    elif select_file['collection_name'] == ScrapedFromResponseModel.COLLECTION_NAME:
                         collection = ScrapedFromResponseModel(self.mongo)
-                    elif select_file['collection_name'] == 'news_clip_master':
+                    elif select_file['collection_name'] == NewsClipMasterModel.COLLECTION_NAME:
                         collection = NewsClipMasterModel(self.mongo)
-                    elif select_file['collection_name'] == 'crawler_logs':
+                    elif select_file['collection_name'] == CrawlerLogsModel.COLLECTION_NAME:
                         collection = CrawlerLogsModel(self.mongo)
-                    elif select_file['collection_name'] == 'asynchronous_report':
+                    elif select_file['collection_name'] == AsynchronousReportModel.COLLECTION_NAME:
                         collection = AsynchronousReportModel(self.mongo)
-                    elif select_file['collection_name'] == 'controller':
+                    elif select_file['collection_name'] == ControllerModel.COLLECTION_NAME:
                         collection = ControllerModel(self.mongo)
 
                     if collection:

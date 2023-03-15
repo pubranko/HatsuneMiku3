@@ -90,10 +90,10 @@ class ExtensionsTask(Task):
         '''処理が終わったらログを保存'''
         crawler_logs = CrawlerLogsModel(self.mongo)
         crawler_logs.insert_one({
-            crawler_logs.START_TIME: self.start_time,
-            crawler_logs.FLOW_NAME: self.prefect_context['flow_name'],
-            crawler_logs.RECORD_TYPE: self.name,
-            crawler_logs.LOGS: self.log_record,
+            CrawlerLogsModel.START_TIME: self.start_time,
+            CrawlerLogsModel.FLOW_NAME: self.prefect_context['flow_name'],
+            CrawlerLogsModel.RECORD_TYPE: self.name,
+            CrawlerLogsModel.LOGS: self.log_record,
         })
 
     def closed(self):

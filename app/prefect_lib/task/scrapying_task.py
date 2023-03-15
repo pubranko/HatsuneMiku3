@@ -13,7 +13,6 @@ class ScrapyingTask(ExtensionsTask):
     スクレイピング用タスク
     '''
 
-    # def run(self, **kwargs):
     def run(self,
             domain: str,
             target_start_time_from: datetime,
@@ -30,9 +29,6 @@ class ScrapyingTask(ExtensionsTask):
             urls=urls,
             following_processing_execution=following_processing_execution)
 
-        # kwargs['start_time'] = self.start_time
-        # kwargs['mongo'] = self.mongo
-
         self.logger.info(f'=== ScrapyingTask run kwargs : \
                             {scrapying_input.DOMAIN} = {domain}, \
                             {scrapying_input.TARGET_START_TIME_FROM} = {target_start_time_from}, \
@@ -40,7 +36,7 @@ class ScrapyingTask(ExtensionsTask):
                             {scrapying_input.URLS} = {urls}, \
                             {scrapying_input.FOLLOWING_PROCESSING_EXECUTION} = {following_processing_execution}')
 
-        # scrapying_run.exec(kwargs)
+        # スクレイピング処理を実行
         scrapying_run.exec(
             start_time = self.start_time,
             mongo = self.mongo,
@@ -49,14 +45,8 @@ class ScrapyingTask(ExtensionsTask):
             target_start_time_from = target_start_time_from,
             target_start_time_to = target_start_time_to)
 
-        # if kwargs['following_processing_execution'] == 'Yes':
         if following_processing_execution:
-            # 必要な引数設定
-            # kwargs['scrapying_start_time_from'] = self.start_time
-            # kwargs['scrapying_start_time_to'] = self.start_time
-            # kwargs['scraped_save_start_time_from'] = self.start_time
-            # kwargs['scraped_save_start_time_to'] = self.start_time
-
+            # 後続のスクレイプ結果のニュースクリップマスターへの保存処理を実行
             scraped_news_clip_master_save_run.check_and_save(
                 # kwargs
                 start_time = self.start_time,

@@ -88,10 +88,10 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             # 対象件数を確認
             conditions: list = []
             conditions.append(
-                {news_clip_master.CRAWLING_START_TIME: {'$gte': base_date_from}})
-            conditions.append({news_clip_master.CRAWLING_START_TIME: {'$lt': base_date_to}})
+                {NewsClipMasterModel.CRAWLING_START_TIME: {'$gte': base_date_from}})
+            conditions.append({NewsClipMasterModel.CRAWLING_START_TIME: {'$lt': base_date_to}})
             conditions.append(
-                {news_clip_master.DOMAIN: scraper_info_by_domain_data.domain_get()})
+                {NewsClipMasterModel.DOMAIN: scraper_info_by_domain_data.domain_get()})
             filter: dict = {'$and': conditions}
             record_count = news_clip_master.count(filter=filter)
             self.logger.info(
@@ -107,15 +107,15 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             # 取得したレコードをデータフレーム（カウント用）へ挿入
             for master_record in news_clip_master.limited_find(
                     filter=filter, projection={
-                        news_clip_master.DOMAIN: 1,
-                        news_clip_master.CRAWLING_START_TIME: 1,
-                        news_clip_master.PATTERN: 1}):
+                        NewsClipMasterModel.DOMAIN: 1,
+                        NewsClipMasterModel.CRAWLING_START_TIME: 1,
+                        NewsClipMasterModel.PATTERN: 1}):
 
-                pattern_info: dict = master_record[news_clip_master.DOMAIN]
+                pattern_info: dict = master_record[NewsClipMasterModel.DOMAIN]
 
                 for pattern_key, pattern_value in pattern_info.items():
                     scraper_pattern_report_data.scraper_info_counter_store({
-                        scraper_pattern_report_data.DOMAIN: master_record[news_clip_master.DOMAIN],
+                        scraper_pattern_report_data.DOMAIN: master_record[NewsClipMasterModel.DOMAIN],
                         scraper_pattern_report_data.SCRAPER_ITEM: pattern_key,
                         scraper_pattern_report_data.PATTERN: pattern_value,
                         scraper_pattern_report_data.COUNT_OF_USE: 1,
@@ -137,7 +137,6 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # スクレイパー情報集計結果報告用のワークブックの新規作成
         workbook = Workbook()
         ws: Any = workbook.active  # アクティブなワークシートを選択
-        # ws: Worksheet = workbook.active  # アクティブなワークシートを選択
 
         # スクレイパー情報集計結果報告用レポートを編集
         self.scraper_pattern_analysis_report_edit_header(ws)
@@ -165,24 +164,6 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         scraper_info_by_domain = ScraperInfoByDomainModel(self.mongo)
 
         return scraper_info_by_domain.find_and_data_models_get()
-        # scraper_info_by_domain_records: Cursor = scraper_info_by_domain.find()
-        # self.logger.info(
-        #     f'=== ドメイン別スクレイパー情報({scraper_info_by_domain.count()})')
-
-        # scraper_info_list: list = []
-        # for scraper_info_by_domain_record in scraper_info_by_domain_records:
-        #     try:
-        #         scraper_info_by_domain_data = ScraperInfoByDomainData(
-        #             scraper=scraper_info_by_domain_record)
-        #     except ValidationError as e:
-        #         # ここでエラーが発生することは基本的にありえないはず。
-        #         error_info: list = e.errors()
-        #         self.logger.error(
-        #             f'=== ScrapyingPatternReportTask scraper_info_by_domain_get エラー : {error_info[0]["msg"]} : ({scraper_info_by_domain_record})')
-        #     else:
-        #         scraper_info_list.append(scraper_info_by_domain_data)
-
-        # return scraper_info_list
 
     def scraper_pattern_analysis_report_edit_header(self, ws: Worksheet):
         '''スクレイパー情報解析レポート用Excelの見出し編集'''
@@ -245,7 +226,6 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
         cells = ws[f'a3:{max_cell}']
-        # for cells in ws[f'a3:{max_cell}']:
         if type(cells) is tuple:
             for cell in cells:
                 cell.border = border
@@ -253,7 +233,6 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        # for col in ws.columns:
         for col in ws.iter_cols():
             max_length = 0
             column = col[0].column_letter  # 列名A,Bなどを取得
@@ -262,7 +241,6 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                     max_length = len(str(cell.value))
 
             # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            # ws.column_dimensions[column].width = (max_length + 2.2)
             getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.2)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。

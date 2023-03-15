@@ -38,30 +38,16 @@ class MonthlyDeleteTask(ExtensionsTask):
         self.run_init()
 
         self.logger.info(f'=== Monthly delete task run kwargs : {str(kwargs)}')
-
         collections_name: list = kwargs['collections_name']
-        # base_monthの指定がなかった場合は自動補正
-        # if kwargs['base_month']:
-        #     base_yyyy: int = int(str(kwargs['base_month'])[0:4])
-        #     base_mm: int = int(str(kwargs['base_month'])[5:7])
-        # else:
-        #     previous_month = date.today() - relativedelta(months=3)  # ３ヶ月前
-        #     base_yyyy: int = int(previous_month.strftime('%Y'))
-        #     base_mm: int = int(previous_month.strftime('%m'))
-
-        # delete_time_from: datetime = datetime(
-        #     base_yyyy, base_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
-        # delete_time_to: datetime = datetime(
-        #     base_yyyy, base_mm, 1, 23, 59, 59, 999999).astimezone(TIMEZONE) + relativedelta(day=99)
-
-        #
         delete_time_from: datetime = datetime.min
         delete_time_to: datetime = datetime.max
+
         if kwargs['delete_period_from']:
             from_yyyy: int = int(str(kwargs['delete_period_from'])[0:4])
             from_mm: int = int(str(kwargs['delete_period_from'])[5:7])
             delete_time_from: datetime = datetime(
                 from_yyyy, from_mm, 1, 0, 0, 0).astimezone(TIMEZONE)
+
         if kwargs['delete_period_to']:
             to_yyyy: int = int(str(kwargs['delete_period_to'])[0:4])
             to_mm: int = int(str(kwargs['delete_period_to'])[5:7])
@@ -84,42 +70,42 @@ class MonthlyDeleteTask(ExtensionsTask):
         collection = None
         for collection_name in collections_name:
             conditions: list = []
-            if collection_name == 'crawler_response':
+            if collection_name == CrawlerResponseModel.COLLECTION_NAME:
                 collection = CrawlerResponseModel(self.mongo)
                 conditions.append(
-                    {'crawling_start_time': {'$gte': delete_time_from}})
+                    {CrawlerResponseModel.CRAWLING_START_TIME: {'$gte': delete_time_from}})
                 conditions.append(
-                    {'crawling_start_time': {'$lte': delete_time_to}})
+                    {CrawlerResponseModel.CRAWLING_START_TIME: {'$lte': delete_time_to}})
 
-            elif collection_name == 'scraped_from_response':
+            elif collection_name == ScrapedFromResponseModel.COLLECTION_NAME:
                 collection = ScrapedFromResponseModel(self.mongo)
                 conditions.append(
-                    {'scrapying_start_time': {'$gte': delete_time_from}})
+                    {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$gte': delete_time_from}})
                 conditions.append(
-                    {'scrapying_start_time': {'$lte': delete_time_to}})
+                    {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$lte': delete_time_to}})
 
-            elif collection_name == 'news_clip_master':
+            elif collection_name == NewsClipMasterModel.COLLECTION_NAME:
                 collection = NewsClipMasterModel(self.mongo)
                 conditions.append(
-                    {'scraped_save_start_time': {'$gte': delete_time_from}})
+                    {NewsClipMasterModel.SCRAPED_SAVE_START_TIME: {'$gte': delete_time_from}})
                 conditions.append(
-                    {'scraped_save_start_time': {'$lte': delete_time_to}})
+                    {NewsClipMasterModel.SCRAPED_SAVE_START_TIME: {'$lte': delete_time_to}})
 
-            elif collection_name == 'crawler_logs':
+            elif collection_name == CrawlerLogsModel.COLLECTION_NAME:
                 collection = CrawlerLogsModel(self.mongo)
                 conditions.append(
-                    {'start_time': {'$gte': delete_time_from}})
+                    {CrawlerLogsModel.START_TIME: {'$gte': delete_time_from}})
                 conditions.append(
-                    {'start_time': {'$lte': delete_time_to}})
+                    {CrawlerLogsModel.START_TIME: {'$lte': delete_time_to}})
 
-            elif collection_name == 'asynchronous_report':
+            elif collection_name == AsynchronousReportModel.COLLECTION_NAME:
                 collection = AsynchronousReportModel(self.mongo)
                 conditions.append(
-                    {'start_time': {'$gte': delete_time_from}})
+                    {AsynchronousReportModel.START_TIME: {'$gte': delete_time_from}})
                 conditions.append(
-                    {'start_time': {'$lte': delete_time_to}})
+                    {AsynchronousReportModel.START_TIME: {'$lte': delete_time_to}})
 
-            elif collection_name == 'controller':
+            elif collection_name == ControllerModel.COLLECTION_NAME:
                 collection = ControllerModel(self.mongo)
 
             if collection:

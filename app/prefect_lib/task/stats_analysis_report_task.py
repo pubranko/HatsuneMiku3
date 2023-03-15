@@ -8,10 +8,7 @@ from prefect.engine import state
 from prefect.engine.runner import ENDRUN
 from pymongo.cursor import Cursor
 from decimal import Decimal, ROUND_HALF_UP
-# from openpyxl import Workbook
 from openpyxl.workbook.workbook import Workbook
-from openpyxl.workbook.child import _WorkbookChild
-
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell import Cell
 from openpyxl.chart.bar_chart import BarChart
@@ -142,9 +139,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 report_term=kwargs[self.stats_analysis_report_input.REPORT_TERM],
                 totalling_term=kwargs[self.stats_analysis_report_input.TOTALLING_TERM],
                 base_date=kwargs[self.stats_analysis_report_input.BASE_DATE],
-                # report_term=kwargs['report_term'],
-                # totalling_term=kwargs['totalling_term'],
-                # base_date=kwargs['base_date'],
             )
         except ValidationError as e:
             self.logger.error(
@@ -232,8 +226,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
         base_date_from, base_date_to = self.stats_analysis_report_input.base_date_get()
 
         conditions: list = []
-        conditions.append({'start_time': {'$gte': base_date_from}})
-        conditions.append({'start_time': {'$lt': base_date_to}})
+        conditions.append({StatsInfoCollectModel.START_TIME: {'$gte': base_date_from}})
+        conditions.append({StatsInfoCollectModel.START_TIME: {'$lt': base_date_to}})
         log_filter: Any = {'$and': conditions}
 
         record_count:int = stats_info_collect_model.count(filter=log_filter)
@@ -338,8 +332,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
                     if self.EQUIVALENT_COLOR in col_info:
                         any: Any = ws[f'{get_column_letter(col_idx + 1)}{str(base_row_idx + row_idx - 1)}']
                         compare_cell: Cell = any
-                        # compare_cell: Cell = ws[get_column_letter(
-                        #     col_idx + 1) + str(base_row_idx + row_idx - 1)]
+
                         if target_cell.value == compare_cell.value:
                             target_cell.font = Font(
                                 color=col_info[self.EQUIVALENT_COLOR])
@@ -358,30 +351,22 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        # cell: Cell  # 型ヒントの定義のみ
-        # for cells in ws[f'a2:{max_cell}']:
-        #     for cell in cells:
-        #         cell.border = border
         cells = ws[f'a2:{max_cell}']
         if type(cells) is tuple:
             for cell in cells:
                 cell.border = border
 
 
-
         # 列ごとに次の処理を行う。
         # 最大幅を確認
         # それに合わせた幅を設定する。
-        # for cols in ws.columns:
         for cols in ws.iter_cols():
             max_length = 0
             column = cols[0].column_letter  # 列名A,Bなどを取得
-            # column = cols.column_letter  # 列名A,Bなどを取得
             for cell in cols:
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             # #型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            # ws.column_dimensions[column].width = (max_length + 2.07)
             getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。１行２列は常に表示させる。
@@ -523,7 +508,6 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            # ws.column_dimensions[column].width = (max_length + 2.07)
             getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。

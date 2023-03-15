@@ -16,16 +16,13 @@ from news_crawl.news_crawl_input import NewsCrawlInput
 class DirectCrawlTask(ExtensionsTask):
     '''
     '''
-    def run(self, **kwargs):
+    # def run(self, **kwargs):
+    def run(self, spider_name:str, file:str):
         '''Direct Crawl Task'''
         self.run_init()
 
-        kwargs['start_time'] = self.start_time
-        kwargs['logger'] = self.logger
-        self.logger.info(f'=== Direct crwal run kwargs : {str(kwargs)}')
+        self.logger.info(f'=== Direct crwal run kwargs : spider_name = {spider_name}, file = {file}')
 
-        spider_name: str = kwargs['spider_name']
-        file: str = kwargs['file']
         file_path: str = os.path.join(DATA_DIR__DIRECT_CRAWL_FILES_DIR, file)
         urls: list = []
         if os.path.exists(file_path):
@@ -48,18 +45,10 @@ class DirectCrawlTask(ExtensionsTask):
 
         spider_info = directory_search_spiders.spiders_info[spider_name]
 
-        # spider_kwargsで指定された引数より、scrapyを実行するための引数へ補正を行う。
-        # scrapy_crawling_kwargs_input = ScrapyCrawlingKwargsInput({
-        #     'direct_crawl_urls':urls,})
-        # kwargs['crawling_start_time'] = self.start_time
-        # kwargs['direct_crawl_urls'] = urls
+        # 引数よりscrapyを実行するための引数へ補正を行う。
         news_crawl_input = NewsCrawlInput(**dict(
             crawling_start_time = self.start_time,
-            direct_crawl_urls = urls,
-        ))
-        # news_crawl_input.DIRECT_CRAWL_URLS: urls,
-
-        # news_crawl_input = NewsCrawlInput(**kwargs)
+            direct_crawl_urls = urls,))
 
 
         self.logger.info(f'=== ダイレクト 対象スパイダー : {spider_name}')
@@ -69,7 +58,6 @@ class DirectCrawlTask(ExtensionsTask):
             target=scrapy_crawling_run.custom_runner_run(
                 logger=self.logger,
                 start_time=self.start_time,
-                # scrapy_crawling_kwargs=scrapy_crawling_kwargs_input.spider_kwargs_correction(),
                 scrapy_crawling_kwargs=news_crawl_input.__dict__,
                 spiders_info=[spider_info]))
 

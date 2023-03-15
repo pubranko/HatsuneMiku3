@@ -24,6 +24,9 @@ from prefect_lib.scraper.publish_date_scraper import scraper as publish_date_scr
 from prefect_lib.scraper.title_scraper import scraper as title_scraper
 from shared.settings import DATA_DIR__DEBUG_FILE_DIR
 
+'''
+URLを直接指定し、レスポンスの中身を調査するためのソース。
+'''
 
 logger: Logger = logging.getLogger('prefect.run.scrapying_deco')
 
@@ -41,11 +44,13 @@ urls: list[str] = [
     'https://www.sankei.com/article/20220521-FYEUS72WDRMTRLILLWPA5DHRAA/',
 ]
 scrape_parm = [{
-    "pattern": 1,
-    "css_selecter": "head > meta[name=\"pubdate\"]",
+    # "pattern": 1,
+    # "css_selecter": "head > meta[name=\"pubdate\"]",
+    ScraperInfoByDomainModel.ITEM__PATTERN: 1,
+    ScraperInfoByDomainModel.ITEM__CSS_SELECTER: "head > meta[name=\"pubdate\"]",
 }]
 
-conditions.append({'url': {'$in': urls}})
+conditions.append({CrawlerResponseModel.URL: {'$in': urls}})
 if conditions:
     filter: Any = {'$and': conditions}
 else:
@@ -56,12 +61,13 @@ logger.info(f'=== crawler_responseへのfilter: {str(filter)}')
 records: Cursor = crawler_response.find(
     projection=None,
     filter=filter,
-    sort=[('domain', ASCENDING), ('response_time', ASCENDING)],
+    # sort=[('domain', ASCENDING), ('response_time', ASCENDING)],
+    sort=[(CrawlerResponseModel.DOMAIN, ASCENDING), (CrawlerResponseModel.RESPONSE_TIME, ASCENDING)],
 )
 for record in records:
     # 各サイト共通の項目を設定
     # response_bodyをbs4で解析
-    response_body: str = pickle.loads(record['response_body'])
+    response_body: str = pickle.loads(record[CrawlerResponseModel.RESPONSE_BODY])
     #print('\n\n\n',response_body)
     soup: bs4 = bs4(response_body, 'lxml')
     #page_source = soup.select_one('html')
@@ -74,7 +80,8 @@ for record in records:
 
     #print('\n\n\n',response_body)
 
-    scrape_parm = sorted(scrape_parm, key=lambda d: d['pattern'], reverse=True)
+    # scrape_parm = sorted(scrape_parm, key=lambda d: d['pattern'], reverse=True)
+    scrape_parm = sorted(scrape_parm, key=lambda d: d[ScraperInfoByDomainModel.ITEM__PATTERN], reverse=True)
     print('\n\n=== scrape_parm ===', scrape_parm)
 
     result = publish_date_scraper(

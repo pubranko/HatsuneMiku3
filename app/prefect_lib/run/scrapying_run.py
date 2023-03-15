@@ -34,36 +34,27 @@ def exec(start_time: datetime,
          target_start_time_to: Optional[datetime]):
     '''あとで'''
     global logger
-    # start_time: datetime = kwargs['start_time']
-    # mongo: MongoModel = kwargs['mongo']
 
     crawler_response: CrawlerResponseModel = CrawlerResponseModel(mongo)
     scraped_from_response: ScrapedFromResponseModel = ScrapedFromResponseModel(mongo)
     scraper_info_by_domain: ScraperInfoByDomainModel = ScraperInfoByDomainModel(mongo)
     controller: ControllerModel = ControllerModel(mongo)
 
-    # domain: str = kwargs['domain']
-    # crawling_start_time_from: datetime = kwargs['crawling_start_time_from']
-    # crawling_start_time_to: datetime = kwargs['crawling_start_time_to']
-    # crawling_start_time_from: datetime = target_start_time_from
-    # crawling_start_time_to: datetime = target_start_time_to
-    # urls: list = kwargs['urls']
-
     stop_domain: list = controller.scrapying_stop_domain_list_get()
 
     conditions: list = []
     if domain:
-        conditions.append({crawler_response.DOMAIN: domain})
+        conditions.append({CrawlerResponseModel.DOMAIN: domain})
     if target_start_time_from:
         conditions.append(
-            {crawler_response.CRAWLING_START_TIME: {'$gte': target_start_time_from}})
+            {CrawlerResponseModel.CRAWLING_START_TIME: {'$gte': target_start_time_from}})
     if target_start_time_to:
         conditions.append(
-            {crawler_response.CRAWLING_START_TIME: {'$lte': target_start_time_to}})
+            {CrawlerResponseModel.CRAWLING_START_TIME: {'$lte': target_start_time_to}})
     if urls:
-        conditions.append({crawler_response.URL: {'$in': urls}})
+        conditions.append({CrawlerResponseModel.URL: {'$in': urls}})
     if len(stop_domain) > 0:
-        conditions.append({crawler_response.DOMAIN: {'$nin': stop_domain}})
+        conditions.append({CrawlerResponseModel.DOMAIN: {'$nin': stop_domain}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -86,38 +77,36 @@ def exec(start_time: datetime,
         records: Cursor = crawler_response.find(
             projection=None,
             filter=filter,
-            sort=[(crawler_response.DOMAIN, ASCENDING), (crawler_response.RESPONSE_TIME, ASCENDING)],
+            sort=[(CrawlerResponseModel.DOMAIN, ASCENDING), (CrawlerResponseModel.RESPONSE_TIME, ASCENDING)],
             # sort=[('domain', ASCENDING), ('response_time', ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
             # 各サイト共通の項目を設定
             scraped:dict = {}
-            scraped[scraper_info_by_domain.DOMAIN] = record[crawler_response.DOMAIN]
-            scraped[scraped_from_response.URL] = record[crawler_response.URL]
-            scraped[scraped_from_response.RESPONSE_TIME] = timezone_recovery(
-                record[crawler_response.RESPONSE_TIME])
-            scraped[scraped_from_response.CRAWLING_START_TIME] = timezone_recovery(
-                record[crawler_response.CRAWLING_START_TIME])
-            scraped[scraped_from_response.SCRAPYING_START_TIME] = start_time
-            scraped[scraped_from_response.SOURCE_OF_INFORMATION] = record[crawler_response.SOURCE_OF_INFORMATION]
+            scraped[ScraperInfoByDomainModel.DOMAIN] = record[CrawlerResponseModel.DOMAIN]
+            scraped[ScrapedFromResponseModel.URL] = record[CrawlerResponseModel.URL]
+            scraped[ScrapedFromResponseModel.RESPONSE_TIME] = timezone_recovery(
+                record[CrawlerResponseModel.RESPONSE_TIME])
+            scraped[ScrapedFromResponseModel.CRAWLING_START_TIME] = timezone_recovery(
+                record[CrawlerResponseModel.CRAWLING_START_TIME])
+            scraped[ScrapedFromResponseModel.SCRAPYING_START_TIME] = start_time
+            scraped[ScrapedFromResponseModel.SOURCE_OF_INFORMATION] = record[CrawlerResponseModel.SOURCE_OF_INFORMATION]
 
             # response_bodyをbs4で解析
-            response_body: str = pickle.loads(record[crawler_response.RESPONSE_BODY])
+            response_body: str = pickle.loads(record[CrawlerResponseModel.RESPONSE_BODY])
             soup: bs4 = bs4(response_body, 'lxml')
-            scraped[scraped_from_response.PATTERN] = {}
+            scraped[ScrapedFromResponseModel.PATTERN] = {}
 
             # ドメイン別スクレイパー情報をDBより取得
             scraper_info_by_domain_data_list: list[ScraperInfoByDomainData] = []
-            if not old_domain == record[crawler_response.DOMAIN]:
+            if not old_domain == record[CrawlerResponseModel.DOMAIN]:
                 scraper_info_by_domain_data_list = scraper_info_by_domain.find_and_data_models_get(
-                    filter={scraper_info_by_domain.DOMAIN: record[crawler_response.DOMAIN]})
-                # scraper_by_domain.record_read(filter={'domain': record['domain']})
+                    filter={ScraperInfoByDomainModel.DOMAIN: record[CrawlerResponseModel.DOMAIN]})
                 logger.info(
-                    f'=== scrapying_run run  ドメイン別スクレイパー情報取得 (domain: {record[crawler_response.DOMAIN]})')
+                    f'=== scrapying_run run  ドメイン別スクレイパー情報取得 (domain: {record[CrawlerResponseModel.DOMAIN]})')
 
             scraper_info_by_domain_data = scraper_info_by_domain_data_list[0]   # ドメイン単位で取得しているため常に１件
-            # for scraper, pattern_list in scraper_by_domain.scrape_item_get():
             for scraper, pattern_list in scraper_info_by_domain_data.scrape_item_get():
                 if not scraper in scraper_mod:
                     scraper_mod[scraper] = import_module(
@@ -125,16 +114,14 @@ def exec(start_time: datetime,
                 scraped_result, scraped_pattern = getattr(scraper_mod[scraper], 'scraper')(
                     soup=soup, scraper=scraper, scrape_parm=pattern_list,)
                 scraped.update(scraped_result)
-                scraped[scraped_from_response.PATTERN].update(scraped_pattern)
-            #print('date: ',scraped['publish_date'])
-            #print('article: ',scraped['article'])
+                scraped[ScrapedFromResponseModel.PATTERN].update(scraped_pattern)
 
             # データチェック
             error_flg: bool = scraped_record_error_check(scraped)
             if not error_flg:
                 scraped_from_response.insert_one(scraped)
                 logger.info(
-                    f'=== scrapying_run run  処理対象url : {record[crawler_response.URL]}')
+                    f'=== scrapying_run run  処理対象url : {record[CrawlerResponseModel.URL]}')
 
             # 最後に今回処理を行ったdomainを保存
-            old_domain = record[crawler_response.DOMAIN]
+            old_domain = record[CrawlerResponseModel.DOMAIN]

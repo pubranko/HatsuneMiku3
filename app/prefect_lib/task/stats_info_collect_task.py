@@ -85,12 +85,11 @@ class StatsInfoCollectTask(ExtensionsTask):
         #
         conditions: list = []
         conditions.append(
-            {crawler_logs.RECORD_TYPE: crawler_logs.RECORD_TYPE__SPIDER_REPORTS})
-            # {'record_type': 'spider_reports'})
+            {CrawlerLogsModel.RECORD_TYPE: CrawlerLogsModel.RECORD_TYPE__SPIDER_REPORTS})
         conditions.append(
-            {crawler_logs.START_TIME: {'$gte': base_date_from}})
+            {CrawlerLogsModel.START_TIME: {'$gte': base_date_from}})
         conditions.append(
-            {crawler_logs.START_TIME: {'$lt': base_date_to}})
+            {CrawlerLogsModel.START_TIME: {'$lt': base_date_to}})
 
         filter: Any = {'$and': conditions}
 
@@ -105,7 +104,7 @@ class StatsInfoCollectTask(ExtensionsTask):
 
         for crawler_logs_record in crawler_logs_records:
             crawler_logs_data.spider_stats_store(
-                timezone_recovery(crawler_logs_record[crawler_logs.START_TIME]), crawler_logs_record[crawler_logs.SPIDER_NAME], crawler_logs_record[crawler_logs.STATS])
+                timezone_recovery(crawler_logs_record[CrawlerLogsModel.START_TIME]), crawler_logs_record[CrawlerLogsModel.SPIDER_NAME], crawler_logs_record[CrawlerLogsModel.STATS])
 
     # def asynchronous_report_totalization(
     #         self, stats_info_collect_input: StatsInfoCollectInput,

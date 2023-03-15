@@ -25,7 +25,6 @@ class ScraperInfoUploaderTask(ExtensionsTask):
 
         scraper_info_by_domain_model = ScraperInfoByDomainModel(self.mongo)
 
-        #scraper_info_by_domain_files: list = kwargs['scraper_info_by_domain_files']
         scraper_info_by_domain_files: list = []
         files: list = kwargs['scraper_info_by_domain_files']
         if len(files) == 0:
@@ -50,7 +49,6 @@ class ScraperInfoUploaderTask(ExtensionsTask):
             scraper_info: dict = json.loads(file)
 
             try:
-                # ScraperInfoByDomainData(scraper=scraper_info)
                 scraper_info_by_domain_model.data_check(scraper=scraper_info)
             except ValidationError as e:
                 error_info: list = e.errors()
@@ -58,7 +56,6 @@ class ScraperInfoUploaderTask(ExtensionsTask):
                     f'=== ScraperInfoUploaderTask run エラー({file_name}) : {error_info[0]["msg"]}')
             else:
                 scraper_info_by_domain_model.update_one(
-                    # filter={'domain': scraper_info['domain']},
                     filter={scraper_info_by_domain_model.DOMAIN: scraper_info[scraper_info_by_domain_model.DOMAIN]},
                     record={"$set":scraper_info})
                 self.logger.info(

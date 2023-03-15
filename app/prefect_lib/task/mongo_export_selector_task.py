@@ -40,13 +40,7 @@ class MongoExportSelectorTask(ExtensionsTask):
             self.logger.info(f'=== {collection_name} へのfilter: {str(filter)}')
 
             # エクスポート対象件数を確認
-            # if filter:
-            #     record_count = collection.count_documents(filter=filter)
-            # else:
-            #     # filterなしの場合、総数のカウント
-            #     record_count = collection.estimated_document_count()
             record_count = collection.count(filter)
-            #record_count = collection.find(filter=filter,).count()
             self.logger.info(
                 f'=== {collection_name} バックアップ対象件数 : {str(record_count)}')
 
@@ -95,46 +89,46 @@ class MongoExportSelectorTask(ExtensionsTask):
                 collection = None
                 conditions: list = []
 
-                if collection_name == 'crawler_response':
+                if collection_name == CrawlerResponseModel.COLLECTION_NAME:
                     collection = CrawlerResponseModel(self.mongo)
-                    sort_parameter = [('response_time', ASCENDING)]
+                    sort_parameter = [(CrawlerResponseModel.RESPONSE_TIME, ASCENDING)]
                     if kwargs['crawler_response__registered']:
                         conditions.append(
-                            {'crawling_start_time': {'$gte': start_time_from}})
+                            {CrawlerResponseModel.CRAWLING_START_TIME: {'$gte': start_time_from}})
                         conditions.append(
-                            {'crawling_start_time': {'$lte': start_time_to}})
+                            {CrawlerResponseModel.CRAWLING_START_TIME: {'$lte': start_time_to}})
                         conditions.append(
-                            {'news_clip_master_register': '登録完了'})  # crawler_responseの場合、登録完了のレコードのみ保存する。
+                            {CrawlerResponseModel.NEWS_CLIP_MASTER_REGISTER: CrawlerResponseModel.NEWS_CLIP_MASTER_REGISTER__COMPLETE})  # crawler_responseの場合、登録完了のレコードのみ保存する。
 
-                elif collection_name == 'scraped_from_response':
+                elif collection_name == ScrapedFromResponseModel.COLLECTION_NAME:
                     collection = ScrapedFromResponseModel(self.mongo)
                     sort_parameter = []
                     conditions.append(
-                        {'scrapying_start_time': {'$gte': start_time_from}})
+                        {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$gte': start_time_from}})
                     conditions.append(
-                        {'scrapying_start_time': {'$lte': start_time_to}})
+                        {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$lte': start_time_to}})
 
-                elif collection_name == 'news_clip_master':
+                elif collection_name == NewsClipMasterModel.COLLECTION_NAME:
                     collection = NewsClipMasterModel(self.mongo)
-                    sort_parameter = [('response_time', ASCENDING)]
+                    sort_parameter = [(NewsClipMasterModel.RESPONSE_TIME, ASCENDING)]
                     conditions.append(
-                        {'scraped_save_start_time': {'$gte': start_time_from}})
+                        {NewsClipMasterModel.SCRAPED_SAVE_START_TIME: {'$gte': start_time_from}})
                     conditions.append(
-                        {'scraped_save_start_time': {'$lte': start_time_to}})
+                        {NewsClipMasterModel.SCRAPED_SAVE_START_TIME: {'$lte': start_time_to}})
 
-                elif collection_name == 'crawler_logs':
+                elif collection_name == CrawlerLogsModel.COLLECTION_NAME:
                     collection = CrawlerLogsModel(self.mongo)
                     conditions.append(
-                        {'start_time': {'$gte': start_time_from}})
-                    conditions.append({'start_time': {'$lte': start_time_to}})
+                        {CrawlerLogsModel.START_TIME: {'$gte': start_time_from}})
+                    conditions.append({CrawlerLogsModel.START_TIME: {'$lte': start_time_to}})
 
-                elif collection_name == 'asynchronous_report':
+                elif collection_name == AsynchronousReportModel.COLLECTION_NAME:
                     collection = AsynchronousReportModel(self.mongo)
                     conditions.append(
-                        {'start_time': {'$gte': start_time_from}})
-                    conditions.append({'start_time': {'$lte': start_time_to}})
+                        {AsynchronousReportModel.START_TIME: {'$gte': start_time_from}})
+                    conditions.append({AsynchronousReportModel.START_TIME: {'$lte': start_time_to}})
 
-                elif collection_name == 'controller':
+                elif collection_name == ControllerModel.COLLECTION_NAME:
                     collection = ControllerModel(self.mongo)
 
                 if collection:
@@ -154,8 +148,6 @@ class MongoExportSelectorTask(ExtensionsTask):
         # base_monthとbackup_dirの指定がなかった場合は自動補正
         previous_month = date.today() - relativedelta(months=1)
         _ = previous_month.strftime('%Y-%m')
-        # if not kwargs['base_month']:
-        #     kwargs['base_month'] = _
         if not kwargs['export_period_from']:
             kwargs['export_period_from'] = _
             kwargs['export_period_to'] = _
@@ -163,8 +155,6 @@ class MongoExportSelectorTask(ExtensionsTask):
             kwargs['export_period_to'] = date.today().strftime('%Y-%m')
         if not kwargs['prefix']:
             kwargs['prefix'] = ''
-        # if not kwargs['backup_dir']:
-        #    kwargs['backup_dir'] = _
 
         _ = str(kwargs['export_period_from']).split('-')
         start_month: date = date(int(_[0]), int(_[1]), 1)
@@ -187,8 +177,6 @@ class MongoExportSelectorTask(ExtensionsTask):
             else:
                 export_dir = f'{kwargs["prefix"]}_{base_date.strftime("%Y-%m")}'
                   # 拡張名 + yyyy-mm
-            # export_dir = base_date.strftime(
-            #     '%Y-%m') + kwargs['prefix']  # yyyy-mm + 拡張名
 
             self.logger.info(
                 f"=== MongoExportSelector run {base_date.strftime('%Y年%m月')}のエクスポート開始")

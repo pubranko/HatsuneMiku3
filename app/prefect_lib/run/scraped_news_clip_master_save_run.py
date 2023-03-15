@@ -38,13 +38,13 @@ def check_and_save(start_time: datetime,
 
     conditions: list = []
     if domain:
-        conditions.append({scraped_from_response.DOMAIN: domain})
+        conditions.append({ScrapedFromResponseModel.DOMAIN: domain})
     if target_start_time_from:
         conditions.append(
-            {scraped_from_response.SCRAPYING_START_TIME: {'$gte': target_start_time_from}})
+            {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$gte': target_start_time_from}})
     if target_start_time_to:
         conditions.append(
-            {scraped_from_response.SCRAPYING_START_TIME: {'$lte': target_start_time_to}})
+            {ScrapedFromResponseModel.SCRAPYING_START_TIME: {'$lte': target_start_time_to}})
 
     if conditions:
         filter: Any = {'$and': conditions}
@@ -64,7 +64,7 @@ def check_and_save(start_time: datetime,
     for skip in skip_list:
         records: Cursor = scraped_from_response.find(
             filter=filter,
-            sort=[(scraped_from_response.RESPONSE_TIME,ASCENDING)],
+            sort=[(ScrapedFromResponseModel.RESPONSE_TIME,ASCENDING)],
         ).skip(skip).limit(limit)
 
         for record in records:
@@ -72,9 +72,9 @@ def check_and_save(start_time: datetime,
             if not scraped_record_error_check(record):
                 # 重複チェック
                 filter={'$and': [
-                        {news_clip_master.URL: record[scraped_from_response.URL]},
-                        {news_clip_master.TITLE: record[scraped_from_response.TITLE]},
-                        {news_clip_master.ARTICLE: record[scraped_from_response.ARTICLE]},
+                        {NewsClipMasterModel.URL: record[ScrapedFromResponseModel.URL]},
+                        {NewsClipMasterModel.TITLE: record[ScrapedFromResponseModel.TITLE]},
+                        {NewsClipMasterModel.ARTICLE: record[ScrapedFromResponseModel.ARTICLE]},
                     ]}
                 news_clip_records = news_clip_master.find(filter=filter)
 
@@ -82,24 +82,24 @@ def check_and_save(start_time: datetime,
                 if news_clip_master.count(filter) == 0:
                     # record[news_clip_master.SCRAPED_SAVE_START_TIME] = start_time
                     _ = {}
-                    _[news_clip_master.SCRAPED_SAVE_START_TIME] = start_time
+                    _[NewsClipMasterModel.SCRAPED_SAVE_START_TIME] = start_time
                     _.update(record)
                     news_clip_master.insert_one(_)
-                    logger.info(f'=== news_clip_master への登録 : {record[scraped_from_response.URL]}')
+                    logger.info(f'=== news_clip_master への登録 : {record[ScrapedFromResponseModel.URL]}')
 
-                    news_clip_master_register:str = crawler_response.NEWS_CLIP_MASTER_REGISTER__COMPLETE #'登録完了'
-                    crawler_response.news_clip_master_register_result(record[scraped_from_response.URL],
-                                                                      record[scraped_from_response.RESPONSE_TIME],
+                    news_clip_master_register:str = CrawlerResponseModel.NEWS_CLIP_MASTER_REGISTER__COMPLETE #'登録完了'
+                    crawler_response.news_clip_master_register_result(record[ScrapedFromResponseModel.URL],
+                                                                      record[ScrapedFromResponseModel.RESPONSE_TIME],
                                                                       news_clip_master_register)
                 else:
                     for news_clip_record in news_clip_records:
-                        if news_clip_record[news_clip_master.RESPONSE_TIME] == record[scraped_from_response.RESPONSE_TIME]:
+                        if news_clip_record[NewsClipMasterModel.RESPONSE_TIME] == record[ScrapedFromResponseModel.RESPONSE_TIME]:
                             logger.info(
-                                f'=== news_clip_master への登録処理済みデータのためスキップ : {record[scraped_from_response.URL]}')
+                                f'=== news_clip_master への登録処理済みデータのためスキップ : {record[ScrapedFromResponseModel.URL]}')
                         else:
-                            news_clip_master_register:str = crawler_response.NEWS_CLIP_MASTER_REGISTER__SKIP #'登録内容に差異なしのため不要'
-                            crawler_response.news_clip_master_register_result(record[scraped_from_response.URL],
-                                                                              record[scraped_from_response.RESPONSE_TIME],
+                            news_clip_master_register:str = CrawlerResponseModel.NEWS_CLIP_MASTER_REGISTER__SKIP #'登録内容に差異なしのため不要'
+                            crawler_response.news_clip_master_register_result(record[ScrapedFromResponseModel.URL],
+                                                                              record[ScrapedFromResponseModel.RESPONSE_TIME],
                                                                               news_clip_master_register)
                             logger.info(
-                                f'=== news_clip_master の登録内容に変更がないためスキップ : {record[scraped_from_response.URL]}')
+                                f'=== news_clip_master の登録内容に変更がないためスキップ : {record[ScrapedFromResponseModel.URL]}')

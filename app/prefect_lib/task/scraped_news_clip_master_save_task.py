@@ -12,8 +12,6 @@ class ScrapedNewsClipMasterSaveTask(ExtensionsTask):
     '''
     スクレイプ結果の保存タスク
     '''
-    # def run(self, **kwargs):
-    # def run(self, domain: str, target_start_time_from: datetime, target_start_time_to: datetime):
     def run(self,
             domain: str,
             target_start_time_from: datetime,
@@ -30,9 +28,6 @@ class ScrapedNewsClipMasterSaveTask(ExtensionsTask):
             urls=urls,
             following_processing_execution=following_processing_execution)
 
-        # kwargs['mongo'] = self.mongo
-        # kwargs['start_time'] = self.start_time
-        # self.logger.info('=== Scraped Save run kwargs : ' + str(kwargs))
         self.logger.info(f'=== Scraped Save run kwargs : \
                             {scrapying_input.DOMAIN} = {domain}, \
                             {scrapying_input.TARGET_START_TIME_FROM} = {target_start_time_from}, \
@@ -41,7 +36,6 @@ class ScrapedNewsClipMasterSaveTask(ExtensionsTask):
                             {scrapying_input.FOLLOWING_PROCESSING_EXECUTION} = {following_processing_execution}')
 
 
-        # scraped_news_clip_master_save_run.check_and_save(kwargs)
         scraped_news_clip_master_save_run.check_and_save(
             start_time = self.start_time,
             mongo = self.mongo,

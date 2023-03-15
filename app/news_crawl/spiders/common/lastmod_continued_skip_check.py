@@ -54,9 +54,9 @@ class LastmodContinuedSkipCheck(object):
                 raise CloseSpider()
 
             # lastmodがあるサイトの場合、タイムゾーンがmongoDBから取得する際消えているため復元する。
-            if self.controller.LATEST_LASTMOD in self.crawl_point:
+            if ControllerModel.LATEST_LASTMOD in self.crawl_point:
                 self.latest_lastmod = timezone_recovery(
-                    self.crawl_point[self.controller.LATEST_LASTMOD])
+                    self.crawl_point[ControllerModel.LATEST_LASTMOD])
 
 
     def skip_check(self, lastmod: datetime) -> bool:
