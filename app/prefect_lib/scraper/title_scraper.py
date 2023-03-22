@@ -13,7 +13,7 @@ from dateutil.parser import parse
 from shared.settings import TIMEZONE
 import time
 import requests
-from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainConst
 
 
 def scraper(soup: bs4, scraper:str, scrape_parm: list[dict[str, str]]) -> tuple[dict, dict]:
@@ -24,9 +24,9 @@ def scraper(soup: bs4, scraper:str, scrape_parm: list[dict[str, str]]) -> tuple[
     scrape_info: dict = {}
     ### cssセレクターでスクレイプ対象を取得できるまで繰り返し ###
     for scrape_info in scrape_parm:
-        scraped_item = soup.select_one(scrape_info[ScraperInfoByDomainModel.ITEM__CSS_SELECTER])
+        scraped_item = soup.select_one(scrape_info[ScraperInfoByDomainConst.ITEM__CSS_SELECTER])
         if type(scraped_item) is Tag:
-            scraped_pattern = {scraper: scrape_info[ScraperInfoByDomainModel.ITEM__PATTERN]}
+            scraped_pattern = {scraper: scrape_info[ScraperInfoByDomainConst.ITEM__PATTERN]}
             scraped_result['title'] = scraped_item.get_text()
             break
 

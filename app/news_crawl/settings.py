@@ -33,8 +33,8 @@ ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 # 同時平行処理するリクエストの最大値
-#CONCURRENT_REQUESTS = 32
-CONCURRENT_REQUESTS = 100
+CONCURRENT_REQUESTS = 32
+# CONCURRENT_REQUESTS = 100
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
@@ -161,10 +161,10 @@ HTTPCACHE_DIR = 'httpcache'
 ##########################################
 # 異なるドメインを並列にクロールさせるための設定
 # 単一のドメインへ最適化された設定（デフォルト）
-#SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.ScrapyPriorityQueue'
+SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.ScrapyPriorityQueue'
 # 広範囲なドメインへ最適化された設定
-SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
-REACTOR_THREADPOOL_MAXSIZE = 100
+# SCHEDULER_PRIORITY_QUEUE = 'scrapy.pqueues.DownloaderAwarePriorityQueue'
+# REACTOR_THREADPOOL_MAXSIZE = 100
 #AJAXCRAWL_ENABLED = True
 
 #DEPTH_LIMIT = 2
@@ -209,8 +209,8 @@ INSTALL_ROOT_HANDLER=False
 # Scrapy-Seleniumの設定。上述のDOWNLOADER_MIDDLEWARES={}にも設定を行っている。
 SELENIUM_DRIVER_NAME = 'firefox'
 SELENIUM_DRIVER_EXECUTABLE_PATH = which('geckodriver')
-SELENIUM_DRIVER_ARGUMENTS = ['-headless']
-#SELENIUM_DRIVER_ARGUMENTS = []
+# SELENIUM_DRIVER_ARGUMENTS = ['-headless']
+SELENIUM_DRIVER_ARGUMENTS = []
 # ブラウザ・通信の不可軽減のため、独自の設定を追加してみた。
 #   その他の設定については、ここが参考になりそう https://www.programcreek.com/python/example/100026/selenium.webdriver.FirefoxProfile
 #   1:通常、2:禁止

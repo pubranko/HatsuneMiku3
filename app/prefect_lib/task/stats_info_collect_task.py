@@ -23,7 +23,7 @@ class StatsInfoCollectTask(ExtensionsTask):
     '''
 
     def run(self, base_date):
-        '''ここがprefectで起動するメイン処理'''
+        '''あとで'''
         self.run_init()
 
         self.logger.info(

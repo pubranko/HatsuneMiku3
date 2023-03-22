@@ -48,26 +48,33 @@ class MongoImportSelectorTask(ExtensionsTask):
         # 頭がyyyy-mmで始まるディレクトリ内のファイル情報を取得し、
         # そのファイルのディレクトリ、基準年月、コレクション名、ファイルパスをリストに保存する。
         # 参考）~/backup_files/2021-10/20211114_153856-asynchronous_report
-        file_list: list = glob.glob(os.path.join(DATA_DIR__BACKUP_BASE_DIR, '**', '*'))
-        for file in file_list:
-            path_info = file.split(os.sep)
+        full_pash_list: list = glob.glob(os.path.join(DATA_DIR__BACKUP_BASE_DIR, '**', '*'))
+        for full_path in full_pash_list:                                                    # 例) full_path = '/home/user/～～/data_dir/backup_files/test1_2023-03/20230320_212005-crawler_response'
+            relative_path = full_path.replace(DATA_DIR__BACKUP_BASE_DIR + os.sep,'')        # 例）relative_path = 'test1_2023-03/20230320_212005-crawler_response'
+            path_info = relative_path.split(os.sep)                                         # 例）path_info = ['test1_2023-03', '20230320_212005-crawler_response']
 
-            if re.search(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[2]):
+            if kwargs["prefix"] == '':
+                file_pattarn = r'[0-9]{4}-[0[0-9]|1[0-2]]'
+            else:
+                file_pattarn = rf'{kwargs["prefix"]}_\d\d\d\d-[0[1-9]|1[0-2]]'
+
+            # if re.search(r'[0-9]{4}-[0[1-9]|1[0-2]]', path_info[2]):
+            if re.search(file_pattarn, path_info[0]):
                 if kwargs["prefix"] == '':
-                    _ = path_info[2]
+                    _ = path_info[0]
                 else:
-                    _ = path_info[2].replace(f'{kwargs["prefix"]}_','')
-                yyyy_mm = str(_).split('-')
-                base_monthly: date = date(
-                    int(yyyy_mm[0]), int(yyyy_mm[1]), 1) + relativedelta(day=99)
-                _ = path_info[3].split('-')
-                collection_name: str = _[1]
+                    _ = path_info[0].replace(f'{kwargs["prefix"]}_','')                     # 例）_ = '2023-03'
+                yyyy_mm = str(_).split('-')                                                 # 例）yyyy_mm = ['2023', '03']
+                base_monthly: date = date(                                                  # 例）base_monthly = 2023/3/31
+                    int(yyyy_mm[0]), int(yyyy_mm[1]), 1) + relativedelta(day=99)    #月末
+                _ = path_info[1].split('-')                                                 # 例）_ = ['20230320_212005', 'crawler_response']
+                collection_name: str = _[1]                                                 # 例）collection_name = 'crawler_response'
 
                 import_files_info.append({
-                    'dir': path_info[1],
+                    'dir': path_info[1],                #未使用
                     'base_monthly': base_monthly,
                     'collection_name': collection_name,
-                    'file': file,})
+                    'file': full_path,})
 
         if len(import_files_info) == 0:
             self.logger.error(
@@ -105,8 +112,8 @@ class MongoImportSelectorTask(ExtensionsTask):
                 #ファイルからオブジェクトへ復元
                 collection_records: list = []
                 if os.path.getsize(select_file['file']):
-                    with open(select_file['file'], 'rb') as file:
-                        documents: list = pickle.loads(file.read())
+                    with open(select_file['file'], 'rb') as full_path:
+                        documents: list = pickle.loads(full_path.read())
                         for document in documents:
                             del document['_id']
                             collection_records.append(document)

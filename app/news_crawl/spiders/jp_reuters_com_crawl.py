@@ -37,6 +37,9 @@ class JpReutersComCrawlSpider(ExtensionsCrawlSpider):
         },
     }
 
+    # _crawl_point: dict = {}
+    # '''次回クロールポイント情報 (ExtensionsCrawlSpiderの同項目をオーバーライド必須)'''
+
     # rules = (
     #     Rule(LinkExtractor(
     #         allow=(r'/article/')), callback='parse_news'),

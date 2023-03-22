@@ -15,6 +15,8 @@ class StopControllerUpdateTask(ExtensionsTask):
     # 定数定義
     REGISTER_ADD:Final[str] = 'add'         # 登録方法：追加
     REGISTER_DELETE:Final[str] = 'delete'   # 登録方法：削除
+    CRAWLING: Final[str] = 'crawling'       # 停止対象：クローリング
+    SCRAPYING: Final[str] = 'scrapying'     # 停止対象：スクレイピング
 
     def run(self, domain: str, register: str, destination: str):
         '''ここがprefectで起動するメイン処理'''

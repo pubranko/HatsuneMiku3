@@ -1,5 +1,5 @@
 from __future__ import annotations  # ExtensionsSitemapSpiderの循環参照を回避するため
-from typing import Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING, Any
 from scrapy.exceptions import CloseSpider
 from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
 from BrownieAtelierMongo.collection_models.controller_model import ControllerModel

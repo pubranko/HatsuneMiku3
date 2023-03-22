@@ -41,7 +41,7 @@ class ScrapyCrawlingTask(ExtensionsTask):
             raise ENDRUN(state=state.Failed())
 
         # spider_kwargsで指定された引数にスタートタイムを追加し、scrapyを実行するための引数へ補正を行う。
-        _ = {NewsCrawlInput.CRAWLING_START_TIME: self.start_time}
+        _ = dict(crawling_start_time=self.start_time)
         _.update(spider_kwargs)
         news_crawl_input = NewsCrawlInput(**_)
         # seleniumの使用有無により分けられた単位でマルチスレッド処理を実行する。

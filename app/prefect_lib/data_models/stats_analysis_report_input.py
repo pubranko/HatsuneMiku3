@@ -15,18 +15,20 @@ from shared.settings import TIMEZONE
 # ※クラス内で定義したかったが、その場合クラス内で参照できなかった。
 #   次善の策としてモジュール定数側で定義。
 ############################################
-CONST__START_TIME: Final[str] = 'start_time'
-CONST__REPORT_TERM: Final[str] = 'report_term'
-CONST__TOTALLING_TERM: Final[str] = 'totalling_term'
-CONST__BASE_DATE: Final[str] = 'base_date'
-CONST__REPORT_TERM__DAILY: Final[str] = 'daily'
-CONST__REPORT_TERM__WEEKLY: Final[str] = 'weekly'
-CONST__REPORT_TERM__MONTHLY: Final[str] = 'monthly'
-CONST__REPORT_TERM__YEARLY: Final[str] = 'yearly'
-CONST__TOTALLING_TERM__DAILY: Final[str] = 'daily'
-CONST__TOTALLING_TERM__WEEKLY: Final[str] = 'weekly'
-CONST__TOTALLING_TERM__MONTHLY: Final[str] = 'monthly'
-CONST__TOTALLING_TERM__YEARLY: Final[str] = 'yearly'
+class StatsAnalysisReportConst:
+    '''StatsAnalysisReportInputクラスに関する定数'''
+    START_TIME: Final[str] = 'start_time'
+    REPORT_TERM: Final[str] = 'report_term'
+    TOTALLING_TERM: Final[str] = 'totalling_term'
+    BASE_DATE: Final[str] = 'base_date'
+    REPORT_TERM__DAILY: Final[str] = 'daily'
+    REPORT_TERM__WEEKLY: Final[str] = 'weekly'
+    REPORT_TERM__MONTHLY: Final[str] = 'monthly'
+    REPORT_TERM__YEARLY: Final[str] = 'yearly'
+    TOTALLING_TERM__DAILY: Final[str] = 'daily'
+    TOTALLING_TERM__WEEKLY: Final[str] = 'weekly'
+    TOTALLING_TERM__MONTHLY: Final[str] = 'monthly'
+    TOTALLING_TERM__YEARLY: Final[str] = 'yearly'
 
 
 class StatsAnalysisReportInput(BaseModel):
@@ -38,29 +40,29 @@ class StatsAnalysisReportInput(BaseModel):
     #####################
     # 定数
     #####################
-    START_TIME:str = Field(CONST__START_TIME, const=True)
+    START_TIME:str = Field(StatsAnalysisReportConst.START_TIME, const=True)
     '''定数: start_time '''
-    REPORT_TERM:str = Field(CONST__REPORT_TERM, const=True)
+    REPORT_TERM:str = Field(StatsAnalysisReportConst.REPORT_TERM, const=True)
     '''定数: report_term '''
-    TOTALLING_TERM:str = Field(CONST__TOTALLING_TERM, const=True)
+    TOTALLING_TERM:str = Field(StatsAnalysisReportConst.TOTALLING_TERM, const=True)
     '''定数: totalling_term '''
-    BASE_DATE:str = Field(CONST__BASE_DATE, const=True)
+    BASE_DATE:str = Field(StatsAnalysisReportConst.BASE_DATE, const=True)
     '''定数: base_date '''
-    REPORT_TERM__DAILY:str = Field(CONST__REPORT_TERM__DAILY, const=True)
+    REPORT_TERM__DAILY:str = Field(StatsAnalysisReportConst.REPORT_TERM__DAILY, const=True)
     '''定数: report_term__daily '''
-    REPORT_TERM__WEEKLY:str = Field(CONST__REPORT_TERM__WEEKLY, const=True)
+    REPORT_TERM__WEEKLY:str = Field(StatsAnalysisReportConst.REPORT_TERM__WEEKLY, const=True)
     '''定数: report_term__weekly '''
-    REPORT_TERM__MONTHLY:str = Field(CONST__REPORT_TERM__MONTHLY, const=True)
+    REPORT_TERM__MONTHLY:str = Field(StatsAnalysisReportConst.REPORT_TERM__MONTHLY, const=True)
     '''定数: report_term__monthly '''
-    REPORT_TERM__YEARLY:str = Field(CONST__REPORT_TERM__YEARLY, const=True)
+    REPORT_TERM__YEARLY:str = Field(StatsAnalysisReportConst.REPORT_TERM__YEARLY, const=True)
     '''定数: report_term__yearly '''
-    TOTALLING_TERM__DAILY:str = Field(CONST__TOTALLING_TERM__DAILY, const=True)
+    TOTALLING_TERM__DAILY:str = Field(StatsAnalysisReportConst.TOTALLING_TERM__DAILY, const=True)
     '''定数: totalling_term__daily '''
-    TOTALLING_TERM__WEEKLY:str = Field(CONST__TOTALLING_TERM__WEEKLY, const=True)
+    TOTALLING_TERM__WEEKLY:str = Field(StatsAnalysisReportConst.TOTALLING_TERM__WEEKLY, const=True)
     '''定数: totalling_term__weekly '''
-    TOTALLING_TERM__MONTHLY:str = Field(CONST__TOTALLING_TERM__MONTHLY, const=True)
+    TOTALLING_TERM__MONTHLY:str = Field(StatsAnalysisReportConst.TOTALLING_TERM__MONTHLY, const=True)
     '''定数: totalling_term__monthly '''
-    TOTALLING_TERM__YEARLY:str = Field(CONST__TOTALLING_TERM__YEARLY, const=True)
+    TOTALLING_TERM__YEARLY:str = Field(StatsAnalysisReportConst.TOTALLING_TERM__YEARLY, const=True)
     '''定数: totalling_term__yearly '''
 
 
@@ -75,35 +77,35 @@ class StatsAnalysisReportInput(BaseModel):
     ##################################
     # 単項目チェック、省略時の値設定
     ##################################
-    @validator(CONST__START_TIME)
+    @validator(StatsAnalysisReportConst.START_TIME)
     def start_time_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, datetime), '日付型以外がエラー'
         return value
 
-    @validator(CONST__REPORT_TERM)
+    @validator(StatsAnalysisReportConst.REPORT_TERM)
     def report_term_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, str), '文字列型以外がエラー'
             # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
             # if value not in ['daily', 'weekly', 'monthly', 'yearly']:
-            if value not in [CONST__REPORT_TERM__DAILY, CONST__REPORT_TERM__WEEKLY, CONST__REPORT_TERM__MONTHLY, CONST__REPORT_TERM__YEARLY]:
+            if value not in [StatsAnalysisReportConst.REPORT_TERM__DAILY, StatsAnalysisReportConst.REPORT_TERM__WEEKLY, StatsAnalysisReportConst.REPORT_TERM__MONTHLY, StatsAnalysisReportConst.REPORT_TERM__YEARLY]:
                 raise ValueError(
                     'レポート期間の指定ミス。daily, weekly, monthly, yearlyで入力してください。')
         return value
 
-    @validator(CONST__TOTALLING_TERM)
+    @validator(StatsAnalysisReportConst.TOTALLING_TERM)
     def totalling_term_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, str), '文字列型以外がエラー'
             # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
             # if value not in ['daily', 'weekly', 'monthly', 'yearly']:
-            if value not in [CONST__TOTALLING_TERM__DAILY, CONST__TOTALLING_TERM__WEEKLY, CONST__TOTALLING_TERM__MONTHLY, CONST__TOTALLING_TERM__YEARLY]:
+            if value not in [StatsAnalysisReportConst.TOTALLING_TERM__DAILY, StatsAnalysisReportConst.TOTALLING_TERM__WEEKLY, StatsAnalysisReportConst.TOTALLING_TERM__MONTHLY, StatsAnalysisReportConst.TOTALLING_TERM__YEARLY]:
                 raise ValueError(
                     'レポート期間の指定ミス。daily, weekly, monthly, yearlyで入力してください。')
         return value
 
-    @validator(CONST__BASE_DATE)
+    @validator(StatsAnalysisReportConst.BASE_DATE)
     def base_date_check(cls, value: Optional[datetime], values: dict) -> Optional[datetime]:
         if value:
             assert isinstance(value, datetime), '日時型以外がエラー'
@@ -129,11 +131,11 @@ class StatsAnalysisReportInput(BaseModel):
             base_date_to = start_time.replace(
                 hour=0, minute=0, second=0, microsecond=0)
 
-        if self.report_term == CONST__REPORT_TERM__DAILY:
+        if self.report_term == StatsAnalysisReportConst.REPORT_TERM__DAILY:
             base_date_from = base_date_to - relativedelta(days=1)
-        elif self.report_term == CONST__REPORT_TERM__WEEKLY:
+        elif self.report_term == StatsAnalysisReportConst.REPORT_TERM__WEEKLY:
             base_date_from = base_date_to - relativedelta(weeks=1)
-        elif self.report_term == CONST__REPORT_TERM__MONTHLY:
+        elif self.report_term == StatsAnalysisReportConst.REPORT_TERM__MONTHLY:
             base_date_from = base_date_to - relativedelta(months=1)
         else:
             base_date_from = base_date_to - relativedelta(years=1)
@@ -148,11 +150,11 @@ class StatsAnalysisReportInput(BaseModel):
         term_list: list[tuple[datetime, datetime]] = []
         base_date_from, base_date_to = self.base_date_get()
 
-        if self.totalling_term == CONST__TOTALLING_TERM__DAILY:
+        if self.totalling_term == StatsAnalysisReportConst.TOTALLING_TERM__DAILY:
             term = relativedelta(days=1)
-        elif self.totalling_term == CONST__TOTALLING_TERM__WEEKLY:
+        elif self.totalling_term == StatsAnalysisReportConst.TOTALLING_TERM__WEEKLY:
             term = relativedelta(weeks=1)
-        elif self.totalling_term == CONST__TOTALLING_TERM__MONTHLY:
+        elif self.totalling_term == StatsAnalysisReportConst.TOTALLING_TERM__MONTHLY:
             term = relativedelta(months=1)
         else:
             term = relativedelta(years=1)

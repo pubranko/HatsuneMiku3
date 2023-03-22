@@ -1,6 +1,8 @@
 import urllib.parse
 import scrapy
+import time
 from datetime import datetime
+from dateutil import parser
 import urllib.parse
 from typing import Any
 from scrapy.http import TextResponse
@@ -15,6 +17,7 @@ from news_crawl.spiders.common.start_request_debug_file_generate import start_re
 from news_crawl.spiders.common.urls_continued_skip_check import UrlsContinuedSkipCheck
 from news_crawl.spiders.common.url_pattern_skip_check import url_pattern_skip_check
 
+
 class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
     name: str = 'mainichi_jp_crawl'
     allowed_domains: list = ['mainichi.jp']
@@ -27,10 +30,13 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
     custom_settings: dict = {
         'DEPTH_LIMIT': 0,
         'DEPTH_STATS_VERBOSE': True,
-        'DOWNLOADER_MIDDLEWARES' : {
+        'DOWNLOADER_MIDDLEWARES': {
             'news_crawl.scrapy_selenium_custom_middlewares.SeleniumMiddleware': 585,
         },
     }
+
+    # _crawl_point: dict = {}
+    # '''次回クロールポイント情報 (ExtensionsCrawlSpiderの同項目をオーバーライド必須)'''
 
     # rules = (
     #     Rule(LinkExtractor(
@@ -74,65 +80,95 @@ class MainichiJpCrawlSpider(ExtensionsCrawlSpider):
         r: Any = response.request
         driver: WebDriver = r.meta['driver']
 
-        number_of_details_in_page:int = 20  # 1ページ内の明細数
+        number_of_details_in_page: int = 20  # 1ページ内の明細数
 
-        while self.page <= self.page_to:
-            self.logger.info(
-                f'=== parse_start_response_selenium 現在解析中のURL = {driver.current_url}')
-            driver.set_page_load_timeout(60)
-            driver.set_script_timeout(60)
+        self.logger.info(
+            f'=== parse_start_response_selenium 現在解析中のURL = {driver.current_url}')
+        driver.set_page_load_timeout(60)
+        driver.set_script_timeout(60)
 
-            target_article_element = f'#article-list > ul > li:nth-child({number_of_details_in_page * self.page})'
-            WebDriverWait(driver, 10).until(
+        # 毎日はSPAであるため、まず一覧ページ上で１ページ目から対象ページまでのロードを行わせる。(２ページ目から表示などできないため、、、)
+        load_page: int = 1
+        while load_page <= self.page_to:
+
+            # 各ページ内の末尾の明細が表示されるまで待機。
+            target_article_element = f'#article-list > ul > li:nth-child({number_of_details_in_page * load_page})'
+            WebDriverWait(driver, 60).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, target_article_element)))
 
-            # ページ内の対象urlを抽出
-            _ = driver.find_elements_by_css_selector('#article-list > ul > li > a[href]')
-            links: list = [link.get_attribute("href") for link in _]
-            self.logger.info(
-                f'=== ページ内の記事件数 = {len(links)}')
-            # 1ページ内の明細数以外の場合はワーニングメール通知（環境によって違うかも、、、）
-            if not len(links) == number_of_details_in_page * self.page:
-                self.logger.warning(
-                    f'=== parse_start_response_selenium ページ内で取得できた件数が想定の{number_of_details_in_page * self.page}件と異なる。確認要。 ( {len(links)} 件)')
-
-            for link in links:
-                # crwal_flg = True
-                # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
-                url: str = urllib.parse.unquote(response.urljoin(link))
-                self.all_urls_list.append({debug_file__LOC: url, debug_file__LASTMOD: ''})
-
-                # 前回からの続きの指定がある場合、
-                # 前回取得したurlまで確認できたらそれ移行は対象外
-                if self.url_continued.skip_check(url):
-                    pass
-                # urlパターンの絞り込みで対象外となった場合
-                elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
-                    pass
-                else:
-                # if crwal_flg:
-                    # クロール対象のURL情報を保存
-                    self.crawl_urls_list.append(
-                        {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: '', self.CRAWL_URLS_LIST__SOURCE_URL: driver.current_url})
-                    self.crawl_target_urls.append(url)
-
-            # debug指定がある場合、現ページの明細数分をデバック用ファイルに保存
-            start_request_debug_file_generate(
-                self.name, driver.current_url, self.all_urls_list[-number_of_details_in_page:], self.news_crawl_input.debug)
-
-            # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
-            if self.url_continued.skip_flg == False:
-                self.logger.info(
-                    f'=== parse_start_response_selenium 前回の続きまで再取得完了 ({driver.current_url})', )
-                self.page = self.page_to + 1
-                break
+            target_next_page_element = f'div.main-contents span.link-more'
+            WebDriverWait(driver, 60).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, target_next_page_element)))
 
             # 次のページを読み込む
-            self.page += 1
             elem: WebElement = driver.find_element_by_css_selector(
-                'div.main-contents span.link-more')
+                target_next_page_element)
             elem.location_once_scrolled_into_view   # 要素までスクロールを移動してボタンをウィンドウに表示させる。
+            time.sleep(1)
             elem.click()
+
+            load_page += 1
+
+        # 記事の一覧ページより、各記事へのリンクと最終更新日時を取得
+        url_find_elems = driver.find_elements_by_css_selector(
+            '#article-list > ul > li > a[href]')
+        lastmod_find_elems = driver.find_elements_by_css_selector(
+            '#article-list > ul > li > a > div > div.articlelist-detail > div > span.articletag-date')
+
+        # 各記事のリンク（element）よりリンクのみ抽出したリストを生成
+        links: list = [link.get_attribute("href") for link in url_find_elems]
+        self.logger.info(
+            f'=== ページ内の記事件数 = {len(links)}')
+        # 上記リストよりnews_crawl起動時のパラメータから対象部分の開始インデックス、終了インデックスを求める。
+        start_link: int = number_of_details_in_page * (self.page_from - 1)
+        end_link: int = number_of_details_in_page * (self.page_to)
+        if end_link > len(links):
+            end_link = len(links)   # 万が一取得したリンク数を超える位置にend_linkになってしまった場合の備え。
+
+        # 上記開始〜終了インデックス部分のみ抽出したリスト（クロール対象リンクのリスト）を生成
+        select_links: list = links[start_link: end_link]
+        # ついでに上記開始〜終了インデックスに合わせて最終更新日時のリストを生成
+        select_lastmods: list[datetime] = [ parser.parse(_.text) for _ in lastmod_find_elems[start_link: end_link]]
+
+        self.logger.info(f'=== ページ内の記事件数 = {len(links)}')
+        self.logger.info(f'=== 抽出対象の記事件数 = {len(select_links)}')
+        # 想定件数とことなる場合はワーニングメール通知（環境によって違うかも、、、）
+        assumed_number_of_cases: int = number_of_details_in_page * \
+            (self.page_to - self.page_from + 1)
+        if not len(select_links) == assumed_number_of_cases:
+            self.logger.warning(
+                f'=== parse_start_response_selenium ページ内で取得できた件数が想定の{assumed_number_of_cases}件と異なる。確認要。 ( {len(select_links)} 件)')
+
+        for idx, link in enumerate(select_links):
+            # 相対パスの場合絶対パスへ変換。また%エスケープされたものはUTF-8へ変換
+            url: str = urllib.parse.unquote(response.urljoin(link))
+            self.all_urls_list.append(
+                {debug_file__LOC: url, debug_file__LASTMOD: select_lastmods[idx]})
+
+            # 前回からの続きの指定がある場合、
+            # 前回取得したurlまで確認できたらそれ移行は対象外
+            if self.url_continued.skip_check(url):
+                pass
+            # urlパターンの絞り込みで対象外となった場合
+            elif url_pattern_skip_check(url, self.news_crawl_input.url_pattern):
+                pass
+            else:
+                # クロール対象のURL情報を保存
+                self.crawl_urls_list.append(
+                    {self.CRAWL_URLS_LIST__LOC: url, self.CRAWL_URLS_LIST__LASTMOD: select_lastmods[idx], self.CRAWL_URLS_LIST__SOURCE_URL: driver.current_url})
+                self.crawl_target_urls.append(url)
+
+            # 前回からの続きの指定がある場合、前回の5件のurlが全て確認できたら前回以降に追加された記事は全て取得完了と考えられるため終了する。
+            if self.news_crawl_input.continued:
+                if self.url_continued.skip_flg == False:
+                    self.logger.info(
+                        f'=== parse_start_response_selenium 前回の続きまで再取得完了 ({driver.current_url})', )
+                    self.page = self.page_to + 1
+                    break
+
+        # debug指定がある場合、現ページの明細数分をデバック用ファイルに保存
+        start_request_debug_file_generate(
+            self.name, driver.current_url, self.all_urls_list, self.news_crawl_input.debug)
 
         # リスト(self.urls_list)に溜めたurlをリクエストへ登録する。
         for _ in self.crawl_urls_list:

@@ -21,7 +21,7 @@ from shared.timezone_recovery import timezone_recovery
 from BrownieAtelierNotice.mail_attach_send import mail_attach_send
 from BrownieAtelierMongo.collection_models.stats_info_collect_model import StatsInfoCollectModel
 from prefect_lib.task.extentions_task import ExtensionsTask
-from prefect_lib.data_models.stats_analysis_report_input import StatsAnalysisReportInput
+from prefect_lib.data_models.stats_analysis_report_input import StatsAnalysisReportInput, StatsAnalysisReportConst
 from prefect_lib.data_models.stats_info_collect_data import StatsInfoCollectData
 
 
@@ -136,9 +136,9 @@ class StatsAnalysisReportTask(ExtensionsTask):
         try:
             self.stats_analysis_report_input = StatsAnalysisReportInput(
                 start_time=self.start_time,
-                report_term=kwargs[self.stats_analysis_report_input.REPORT_TERM],
-                totalling_term=kwargs[self.stats_analysis_report_input.TOTALLING_TERM],
-                base_date=kwargs[self.stats_analysis_report_input.BASE_DATE],
+                report_term=kwargs[StatsAnalysisReportConst.REPORT_TERM],
+                totalling_term=kwargs[StatsAnalysisReportConst.TOTALLING_TERM],
+                base_date=kwargs[StatsAnalysisReportConst.BASE_DATE],
             )
         except ValidationError as e:
             self.logger.error(
@@ -243,7 +243,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
         return stats_info_collect_records, record_count
 
     def collect_result_analysis_report_edit_header(
-            self, ws: Worksheet,            # レポートの出力先のワークシート
+            self, ws: Any,            # レポートの出力先のワークシート
             sheet_name: str,                # レポートの出力先のワークシートのシート名
             analysis_columns_info: list,):  # レポート出力対象カラムに関する情報リスト
         '''集計結果解析レポート用Excelの編集(見出し)'''
@@ -268,7 +268,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
     def collect_result_analysis_report_edit_body(
             self,
-            ws: Worksheet,                  # レポートの出力先のワークシート
+            ws: Any,                  # レポートの出力先のワークシート
             spider_list: pd.Series,         # スパイダーの一覧
             result_df: pd.DataFrame,        # mongoDBへの集計結果より作成したデータフレーム
             check_col: str,                 # チェックを行いたいカラム
@@ -351,10 +351,12 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        cells = ws[f'a2:{max_cell}']
-        if type(cells) is tuple:
-            for cell in cells:
-                cell.border = border
+        rows = ws[f'a2:{max_cell}']
+        if type(rows) is tuple:
+            for cells in rows:
+                cells: Any
+                for cell in cells:
+                    cell.border = border
 
 
         # 列ごとに次の処理を行う。
@@ -367,7 +369,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             # #型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
+            # getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
+            ws.column_dimensions[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。１行２列は常に表示させる。
         ws.freeze_panes = 'c2'
@@ -404,7 +407,7 @@ class StatsAnalysisReportTask(ExtensionsTask):
 
     def stats_analysis_report_edit_body(
         self,
-        ws: Worksheet,
+        ws: Any,
         spider_list: pd.Series,         # スパイダーの一覧
         result_df: pd.DataFrame,
         analysis_columns_info: list,
@@ -491,11 +494,13 @@ class StatsAnalysisReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        cells = ws[f'a3:{max_cell}']
-        if type(cells) is tuple:
-            for cell in cells:
-                cell: Cell
-                cell.border = border
+        rows = ws[f'a3:{max_cell}']
+        if type(rows) is tuple:
+            for cells in rows:
+                cells: Any
+                for cell in cells:
+                    cell: Cell
+                    cell.border = border
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
@@ -508,7 +513,8 @@ class StatsAnalysisReportTask(ExtensionsTask):
                 if len(str(cell.value)) > max_length:
                     max_length = len(str(cell.value))
             # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
+            # getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.07)
+            ws.column_dimensions[column].width = (max_length + 2.07)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。
         ws.freeze_panes = 'c3'

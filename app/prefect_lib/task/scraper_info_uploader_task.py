@@ -9,7 +9,7 @@ path = os.getcwd()
 sys.path.append(path)
 from shared.settings import DATA_DIR__SCRAPER_INFO_BY_DOMAIN_DIR
 from prefect_lib.task.extentions_task import ExtensionsTask
-from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
+from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainConst
 from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
 from prefect.agent.local import LocalAgent
 
@@ -56,7 +56,7 @@ class ScraperInfoUploaderTask(ExtensionsTask):
                     f'=== ScraperInfoUploaderTask run エラー({file_name}) : {error_info[0]["msg"]}')
             else:
                 scraper_info_by_domain_model.update_one(
-                    filter={scraper_info_by_domain_model.DOMAIN: scraper_info[scraper_info_by_domain_model.DOMAIN]},
+                    filter={ScraperInfoByDomainConst.DOMAIN: scraper_info[ScraperInfoByDomainConst.DOMAIN]},
                     record={"$set":scraper_info})
                 self.logger.info(
                     f'=== ScraperInfoUploaderTask run 登録完了 : {file_name}')

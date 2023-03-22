@@ -15,13 +15,14 @@ from shared.settings import TIMEZONE
 # ※クラス内で定義したかったが、その場合クラス内で参照できなかった。
 #   次善の策としてモジュール定数側で定義。
 ############################################
-CONST__START_TIME: Final[str] = 'start_time'
-CONST__REPORT_TERM: Final[str] = 'report_term'
-CONST__BASE_DATE: Final[str] = 'base_date'
-CONST__REPORT_TERM__DAILY: Final[str] = 'daily'
-CONST__REPORT_TERM__WEEKLY: Final[str] = 'weekly'
-CONST__REPORT_TERM__MONTHLY: Final[str] = 'monthly'
-CONST__REPORT_TERM__YEARLY: Final[str] = 'yearly'
+class ScraperPatternReportConst:
+    START_TIME: Final[str] = 'start_time'
+    REPORT_TERM: Final[str] = 'report_term'
+    BASE_DATE: Final[str] = 'base_date'
+    REPORT_TERM__DAILY: Final[str] = 'daily'
+    REPORT_TERM__WEEKLY: Final[str] = 'weekly'
+    REPORT_TERM__MONTHLY: Final[str] = 'monthly'
+    REPORT_TERM__YEARLY: Final[str] = 'yearly'
 
 
 class ScraperPatternReportInput(BaseModel):
@@ -35,19 +36,19 @@ class ScraperPatternReportInput(BaseModel):
     #####################
     # 定数
     #####################
-    START_TIME: str = Field(CONST__START_TIME, const=True)
+    START_TIME: str = Field(ScraperPatternReportConst.START_TIME, const=True)
     '''定数: start_time '''
-    REPORT_TERM: str = Field(CONST__REPORT_TERM, const=True)
+    REPORT_TERM: str = Field(ScraperPatternReportConst.REPORT_TERM, const=True)
     '''定数: report_term '''
-    BASE_DATE: str = Field(CONST__BASE_DATE, const=True)
+    BASE_DATE: str = Field(ScraperPatternReportConst.BASE_DATE, const=True)
     '''定数: base_date '''
-    REPORT_TERM__DAILY: str = Field(CONST__REPORT_TERM__DAILY, const=True)
+    REPORT_TERM__DAILY: str = Field(ScraperPatternReportConst.REPORT_TERM__DAILY, const=True)
     '''区分値: report_term__daily '''
-    REPORT_TERM__WEEKLY: str = Field(CONST__REPORT_TERM__WEEKLY, const=True)
+    REPORT_TERM__WEEKLY: str = Field(ScraperPatternReportConst.REPORT_TERM__WEEKLY, const=True)
     '''区分値: rreport_term__weekly '''
-    REPORT_TERM__MONTHLY: str = Field(CONST__REPORT_TERM__MONTHLY, const=True)
+    REPORT_TERM__MONTHLY: str = Field(ScraperPatternReportConst.REPORT_TERM__MONTHLY, const=True)
     '''区分値: rreport_term__monthly '''
-    REPORT_TERM__YEARLY: str = Field(CONST__REPORT_TERM__YEARLY, const=True)
+    REPORT_TERM__YEARLY: str = Field(ScraperPatternReportConst.REPORT_TERM__YEARLY, const=True)
     '''区分値: rreport_term__yearly '''
 
 
@@ -64,23 +65,23 @@ class ScraperPatternReportInput(BaseModel):
     ##################################
     # 単項目チェック、省略時の値設定
     ##################################
-    @validator(CONST__START_TIME)
+    @validator(ScraperPatternReportConst.START_TIME)
     def start_time_check(cls, value: datetime, values: dict) -> datetime:
         if value:
             assert isinstance(value, datetime), '日付型以外がエラー'
         return value
 
-    @validator(CONST__REPORT_TERM)
+    @validator(ScraperPatternReportConst.REPORT_TERM)
     def report_term_check(cls, value: str, values: dict) -> str:
         if value:
             assert isinstance(value, str), '文字列型以外がエラー'
             # 本番には3ヶ月以上のデータ残さないからyearlyはいらないかも、、、
-            if value not in [CONST__REPORT_TERM__DAILY, CONST__REPORT_TERM__WEEKLY, CONST__REPORT_TERM__MONTHLY, CONST__REPORT_TERM__YEARLY]:
+            if value not in [ScraperPatternReportConst.REPORT_TERM__DAILY, ScraperPatternReportConst.REPORT_TERM__WEEKLY, ScraperPatternReportConst.REPORT_TERM__MONTHLY, ScraperPatternReportConst.REPORT_TERM__YEARLY]:
                 raise ValueError(
-                    f'レポート期間の指定ミス。{CONST__REPORT_TERM__DAILY}, {CONST__REPORT_TERM__WEEKLY}, {CONST__REPORT_TERM__MONTHLY}, {CONST__REPORT_TERM__YEARLY}で入力してください。')
+                    f'レポート期間の指定ミス。{ScraperPatternReportConst.REPORT_TERM__DAILY}, {ScraperPatternReportConst.REPORT_TERM__WEEKLY}, {ScraperPatternReportConst.REPORT_TERM__MONTHLY}, {ScraperPatternReportConst.REPORT_TERM__YEARLY}で入力してください。')
         return value
 
-    @validator(CONST__BASE_DATE)
+    @validator(ScraperPatternReportConst.BASE_DATE)
     def base_date_check(cls, value: Optional[datetime], values: dict) -> Optional[datetime]:
         if value:
             assert isinstance(value, datetime), '日時型以外がエラー'
@@ -106,11 +107,11 @@ class ScraperPatternReportInput(BaseModel):
             base_date_to = start_time.replace(
                 hour=0, minute=0, second=0, microsecond=0)
 
-        if self.report_term == CONST__REPORT_TERM__DAILY:
+        if self.report_term == ScraperPatternReportConst.REPORT_TERM__DAILY:
             base_date_from = base_date_to - relativedelta(days=1)
-        elif self.report_term == CONST__REPORT_TERM__WEEKLY:
+        elif self.report_term == ScraperPatternReportConst.REPORT_TERM__WEEKLY:
             base_date_from = base_date_to - relativedelta(weeks=1)
-        elif self.report_term == CONST__REPORT_TERM__MONTHLY:
+        elif self.report_term == ScraperPatternReportConst.REPORT_TERM__MONTHLY:
             base_date_from = base_date_to - relativedelta(months=1)
         else:
             base_date_from = base_date_to - relativedelta(years=1)

@@ -16,7 +16,6 @@ from BrownieAtelierMongo.collection_models.crawler_response_model import Crawler
 from BrownieAtelierMongo.collection_models.crawler_logs_model import CrawlerLogsModel
 from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
 from BrownieAtelierNotice.mail_send import mail_send
-from prefect_lib.task.crawl_urls_sync_check_task import CrawlUrlsSyncCheckTask
 from shared.timezone_recovery import timezone_recovery
 
 logger: Logger = logging.getLogger('prefect.run.crawl_urls_sync_check_run')
@@ -127,7 +126,7 @@ def check(start_time: datetime, mongo: MongoModel, domain: str, start_time_from:
                 AsynchronousReportModel.ASYNC_LIST: response_async_list,
             })
             counter = f'エラー({len(response_async_list)})/正常({len(response_sync_list)})'
-            logger.error(
+            logger.warning(
                 f'=== 同期チェック結果(crawler -> response) : NG({counter})')
         else:
             logger.info(
@@ -195,7 +194,7 @@ def check(start_time: datetime, mongo: MongoModel, domain: str, start_time_from:
                 AsynchronousReportModel.ASYNC_LIST: master_async_list,
             })
             counter = f'エラー({len(master_async_list)})/正常({len(master_sync_list)})'
-            logger.error(f'=== 同期チェック結果(response -> master) : NG({counter})')
+            logger.warning(f'=== 同期チェック結果(response -> master) : NG({counter})')
         else:
             logger.info(
                 f'=== 同期チェック結果(response -> master) : OK(件数 : {len(master_sync_list)})')
@@ -259,7 +258,7 @@ def check(start_time: datetime, mongo: MongoModel, domain: str, start_time_from:
                 'async_list': solr_async_list,
             })
             counter = f'エラー({len(solr_async_list)})/正常({len(solr_sync_list)})'
-            logger.error(f'=== 同期チェック結果(master -> solr) : NG({counter})')
+            logger.warning(f'=== 同期チェック結果(master -> solr) : NG({counter})')
         else:
             logger.info(
                 '=== 同期チェック結果(master -> solr) : OK(件数 : {len(solr_sync_list)})')

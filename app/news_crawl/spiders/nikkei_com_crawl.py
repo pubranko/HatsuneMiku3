@@ -23,6 +23,9 @@ class NikkeiComCrawlSpider(ExtensionsCrawlSpider):
         'DEPTH_STATS_VERBOSE': True,
     }
 
+    # _crawl_point: dict = {}
+    # '''次回クロールポイント情報 (ExtensionsCrawlSpiderの同項目をオーバーライド必須)'''
+
     # rules = (
     #     Rule(LinkExtractor(
     #         allow=(r'/article/')), callback='parse_news'),

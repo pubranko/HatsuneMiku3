@@ -14,9 +14,9 @@ flow.run(parameters=dict(
         NewsClipMasterModel.COLLECTION_NAME,
         CrawlerLogsModel.COLLECTION_NAME,
         AsynchronousReportModel.COLLECTION_NAME,
-        ControllerModel.COLLECTION_NAME,
+        # ControllerModel.COLLECTION_NAME,
     ],
-    prefix='test',
-    backup_dir_from='2022-02',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
-    backup_dir_to='2022-05',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    prefix='test1',
+    backup_dir_from='2023-03',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
+    backup_dir_to='2023-03',    # prefect_lib.settings.BACKUP_BASE_DIR内のディレクトリを指定
 ))

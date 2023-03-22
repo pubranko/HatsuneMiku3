@@ -15,9 +15,9 @@ path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.common_module.scraped_record_error_check import scraped_record_error_check
 from shared.timezone_recovery import timezone_recovery
-from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
 from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
 from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
+from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData, ScraperInfoByDomainConst
 from BrownieAtelierMongo.collection_models.scraped_from_response_model import ScrapedFromResponseModel
 from BrownieAtelierMongo.collection_models.crawler_response_model import CrawlerResponseModel
 from BrownieAtelierMongo.collection_models.mongo_model import MongoModel
@@ -72,6 +72,7 @@ def exec(start_time: datetime,
     scraped: dict = {}
     scraper_mod: dict = {}
     old_domain: str = ''
+    scraper_info_by_domain_data_list: list[ScraperInfoByDomainData] = []
 
     for skip in skip_list:
         records: Cursor = crawler_response.find(
@@ -84,7 +85,7 @@ def exec(start_time: datetime,
         for record in records:
             # 各サイト共通の項目を設定
             scraped:dict = {}
-            scraped[ScraperInfoByDomainModel.DOMAIN] = record[CrawlerResponseModel.DOMAIN]
+            scraped[ScrapedFromResponseModel.DOMAIN] = record[CrawlerResponseModel.DOMAIN]
             scraped[ScrapedFromResponseModel.URL] = record[CrawlerResponseModel.URL]
             scraped[ScrapedFromResponseModel.RESPONSE_TIME] = timezone_recovery(
                 record[CrawlerResponseModel.RESPONSE_TIME])
@@ -99,10 +100,10 @@ def exec(start_time: datetime,
             scraped[ScrapedFromResponseModel.PATTERN] = {}
 
             # ドメイン別スクレイパー情報をDBより取得
-            scraper_info_by_domain_data_list: list[ScraperInfoByDomainData] = []
             if not old_domain == record[CrawlerResponseModel.DOMAIN]:
+                scraper_info_by_domain_data_list: list[ScraperInfoByDomainData] = []
                 scraper_info_by_domain_data_list = scraper_info_by_domain.find_and_data_models_get(
-                    filter={ScraperInfoByDomainModel.DOMAIN: record[CrawlerResponseModel.DOMAIN]})
+                    filter={ScraperInfoByDomainConst.DOMAIN: record[CrawlerResponseModel.DOMAIN]})
                 logger.info(
                     f'=== scrapying_run run  ドメイン別スクレイパー情報取得 (domain: {record[CrawlerResponseModel.DOMAIN]})')
 
@@ -117,11 +118,15 @@ def exec(start_time: datetime,
                 scraped[ScrapedFromResponseModel.PATTERN].update(scraped_pattern)
 
             # データチェック
-            error_flg: bool = scraped_record_error_check(scraped)
-            if not error_flg:
-                scraped_from_response.insert_one(scraped)
-                logger.info(
-                    f'=== scrapying_run run  処理対象url : {record[CrawlerResponseModel.URL]}')
+            warning_flg: bool = scraped_record_error_check(scraped)
+            # if not warning_flg:
+            #     scraped_from_response.insert_one(scraped)
+            #     logger.info(
+            #         f'=== scrapying_run run  処理対象url : {record[CrawlerResponseModel.URL]}')
+            # タイトルしか無い記事も稀に存在する。有料会員にしか本文を見せていないニュースサイトもあるため、データが欠損していても保存はするよう見直し。
+            scraped_from_response.insert_one(scraped)
+            logger.info(
+                f'=== scrapying_run run  処理対象url : {record[CrawlerResponseModel.URL]}')
 
             # 最後に今回処理を行ったdomainを保存
             old_domain = record[CrawlerResponseModel.DOMAIN]

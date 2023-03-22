@@ -15,7 +15,7 @@ from openpyxl.utils import get_column_letter
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.data_models.scraper_pattern_report_data import ScraperPatternReportData
-from prefect_lib.data_models.scraper_pattern_report_input import ScraperPatternReportInput
+from prefect_lib.data_models.scraper_pattern_report_input import ScraperPatternReportInput, ScraperPatternReportConst
 from prefect_lib.task.extentions_task import ExtensionsTask
 from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainData
 from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
@@ -30,11 +30,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
     HEAD1: Final[str] = 'head1'
     HEAD2: Final[str] = 'head2'
     COL: Final[str] = 'col'
-    DOMAIN: Final[str] = 'domain'
     EQUIVALENT_COLOR: Final[str] = 'equivalent_color'
-    SCRAPER_ITEM: Final[str] = 'scraper_item'
-    PRIORITY: Final[str] = 'priority'
-    PATTERN: Final[str] = 'pattern'
 
     scraper_pattern_analysis_columns_info: list = [
         # head1                     : 必須 : 見出し１行目
@@ -48,12 +44,13 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # warning_value_over        : 任意 : 超過したらワーニングとする値
         # warning_background_color  : 任意 : ワーンングとなったセルの背景色
         #{'head1': '集計期間', 'head2': '', 'col': 'aggregate_base_term'},
-        {HEAD1: 'スクレイパー情報', HEAD2: 'ドメイン', COL: DOMAIN,
+        {HEAD1: 'スクレイパー情報', HEAD2: 'ドメイン', COL: ScraperPatternReportData.DOMAIN,
          EQUIVALENT_COLOR: 'bbbbbb'},
-        {HEAD1: '', HEAD2: 'アイテム', COL: SCRAPER_ITEM,
+        {HEAD1: '', HEAD2: 'アイテム', COL: ScraperPatternReportData.SCRAPE_ITEMS,
          EQUIVALENT_COLOR: 'bbbbbb'},
-        {HEAD1: '', HEAD2: '優先順位', COL: PRIORITY},
-        {HEAD1: '', HEAD2: 'パターン', COL: PATTERN},
+        {HEAD1: '', HEAD2: '優先順位', COL: ScraperPatternReportData.PRIORITY},
+        {HEAD1: '', HEAD2: 'パターン', COL: ScraperPatternReportData.PATTERN},
+        {HEAD1: '', HEAD2: '使用回数', COL: ScraperPatternReportData.COUNT_OF_USE},
     ]
 
     def run(self, **kwargs):
@@ -67,8 +64,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         try:
             self.scraper_pattern_report_input = ScraperPatternReportInput(
                 start_time=self.start_time,
-                report_term=kwargs[self.scraper_pattern_report_input.REPORT_TERM],
-                base_date=kwargs[self.scraper_pattern_report_input.BASE_DATE],
+                report_term=kwargs[ScraperPatternReportConst.REPORT_TERM],
+                base_date=kwargs[ScraperPatternReportConst.BASE_DATE],
             )
         except ValidationError as e:
             self.logger.error(
@@ -111,12 +108,12 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                         NewsClipMasterModel.CRAWLING_START_TIME: 1,
                         NewsClipMasterModel.PATTERN: 1}):
 
-                pattern_info: dict = master_record[NewsClipMasterModel.DOMAIN]
+                pattern_info: dict = master_record[NewsClipMasterModel.PATTERN]
 
                 for pattern_key, pattern_value in pattern_info.items():
                     scraper_pattern_report_data.scraper_info_counter_store({
                         scraper_pattern_report_data.DOMAIN: master_record[NewsClipMasterModel.DOMAIN],
-                        scraper_pattern_report_data.SCRAPER_ITEM: pattern_key,
+                        scraper_pattern_report_data.SCRAPE_ITEMS: pattern_key,
                         scraper_pattern_report_data.PATTERN: pattern_value,
                         scraper_pattern_report_data.COUNT_OF_USE: 1,
                     })
@@ -193,7 +190,7 @@ class ScrapyingPatternReportTask(ExtensionsTask):
             head2_cell.border = border
             head2_cell.alignment = Alignment(horizontal="center")  # 中央寄せ
 
-    def scraper_pattern_analysis_report_edit_body(self, ws: Worksheet, result_df: pd.DataFrame):
+    def scraper_pattern_analysis_report_edit_body(self, ws: Any, result_df: pd.DataFrame):
         '''
         スクレイパー情報解析レポート用Excelの編集。
         '''
@@ -225,10 +222,12 @@ class ScrapyingPatternReportTask(ExtensionsTask):
         # 各明細行のセルに罫線を設定する。
         max_cell: str = get_column_letter(
             ws.max_column) + str(ws.max_row)  # "BC55"のようなセル番地を生成
-        cells = ws[f'a3:{max_cell}']
-        if type(cells) is tuple:
-            for cell in cells:
-                cell.border = border
+        rows = ws[f'a3:{max_cell}']
+        if type(rows) is tuple:
+            for cells in rows:
+                cells: Any
+                for cell in cells:
+                    cell.border = border
 
         # 列ごとに次の処理を行う。
         # 最大幅を確認
@@ -241,7 +240,8 @@ class ScrapyingPatternReportTask(ExtensionsTask):
                     max_length = len(str(cell.value))
 
             # 型ヒントでcolumn_dimensionsが存在しないものとみなされエラーが出るため、動的メソッドの実行形式で記述
-            getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.2)
+            # getattr(ws, 'column_dimensions')()[column].width = (max_length + 2.2)
+            ws.column_dimensions[column].width = (max_length + 5.0)
 
         # ウィンドウ枠の固定。２行２列は常に表示させる。
         ws.freeze_panes = 'c3'

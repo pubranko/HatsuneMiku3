@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+from typing import Optional
 path = os.getcwd()
 sys.path.append(path)
 from prefect_lib.task.extentions_task import ExtensionsTask
@@ -16,8 +17,8 @@ class ScrapedNewsClipMasterSaveTask(ExtensionsTask):
             domain: str,
             target_start_time_from: datetime,
             target_start_time_to: datetime,
-            urls: list[str],                            # 現在未使用
-            following_processing_execution: bool):      # 現在未使用
+            urls: Optional[list[str]] = None,                            # 現在未使用
+            following_processing_execution: Optional[bool] = None):      # 現在未使用
         '''あとで'''
 
         self.run_init()

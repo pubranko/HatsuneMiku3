@@ -18,6 +18,7 @@ from BrownieAtelierMongo.collection_models.crawler_response_model import Crawler
 from BrownieAtelierMongo.collection_models.scraped_from_response_model import ScrapedFromResponseModel
 from BrownieAtelierMongo.collection_models.scraper_info_by_domain_model import ScraperInfoByDomainModel
 from BrownieAtelierMongo.collection_models.controller_model import ControllerModel
+from BrownieAtelierMongo.data_models.scraper_info_by_domain_data import ScraperInfoByDomainConst
 from shared.timezone_recovery import timezone_recovery
 from prefect_lib.scraper.article_scraper import scraper as artcle_scraper
 from prefect_lib.scraper.publish_date_scraper import scraper as publish_date_scraper
@@ -46,8 +47,8 @@ urls: list[str] = [
 scrape_parm = [{
     # "pattern": 1,
     # "css_selecter": "head > meta[name=\"pubdate\"]",
-    ScraperInfoByDomainModel.ITEM__PATTERN: 1,
-    ScraperInfoByDomainModel.ITEM__CSS_SELECTER: "head > meta[name=\"pubdate\"]",
+    ScraperInfoByDomainConst.ITEM__PATTERN: 1,
+    ScraperInfoByDomainConst.ITEM__CSS_SELECTER: "head > meta[name=\"pubdate\"]",
 }]
 
 conditions.append({CrawlerResponseModel.URL: {'$in': urls}})
@@ -81,7 +82,7 @@ for record in records:
     #print('\n\n\n',response_body)
 
     # scrape_parm = sorted(scrape_parm, key=lambda d: d['pattern'], reverse=True)
-    scrape_parm = sorted(scrape_parm, key=lambda d: d[ScraperInfoByDomainModel.ITEM__PATTERN], reverse=True)
+    scrape_parm = sorted(scrape_parm, key=lambda d: d[ScraperInfoByDomainConst.ITEM__PATTERN], reverse=True)
     print('\n\n=== scrape_parm ===', scrape_parm)
 
     result = publish_date_scraper(

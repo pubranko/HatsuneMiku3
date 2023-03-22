@@ -141,6 +141,14 @@ class ExtensionsSitemapSpider(SitemapSpider):
 
         spider_init(self, *args, **kwargs)
 
+        # Extensionsクラス変数を初期化。インスタンス生成時に初期化しないと各スパイダーで変数を共有してしまう。
+        self._crawl_point = {}
+        self.crawl_urls_list = []
+        self.crawl_target_urls = []
+        self._sitemap_urls_count = 0
+        self.known_pagination_css_selectors = []
+        self.pagination_selected_urls = set()
+
         self.pagination_check = PaginationCheck()
 
     def start_requests(self):
@@ -365,8 +373,8 @@ class ExtensionsSitemapSpider(SitemapSpider):
         any: Any = response.request
         driver: WebDriver = any.meta['driver']
 
-        driver.set_page_load_timeout(60)
-        driver.set_script_timeout(60)
+        # driver.set_page_load_timeout(10)
+        driver.set_script_timeout(10)
 
         # ページ内の全リンクを抽出（重複分はsetで削除）
         # driverから直接リンク要素を取得しても、DOMで参照中に変わってしまうことが発生した。

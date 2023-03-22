@@ -14,8 +14,8 @@ class ScraperPatternReportData:
     ################
     DOMAIN: Final[str] = 'domain'
     '''定数: domain'''
-    SCRAPER_ITEM: Final[str] = 'scraper_item'
-    '''定数: scraper_item'''
+    SCRAPE_ITEMS: Final[str] = 'scrape_items'
+    '''定数: scrape_items'''
     PATTERN: Final[str] = 'pattern'
     '''定数: pattern'''
     PRIORITY: Final[str] = 'priority'
@@ -27,7 +27,7 @@ class ScraperPatternReportData:
         # データフレーム（マスター）
         self.scraper_pattern_master_df = pd.DataFrame({
             self.DOMAIN: [],
-            self.SCRAPER_ITEM: [],
+            self.SCRAPE_ITEMS: [],
             self.PATTERN: [],
             self.PRIORITY: [],
             # 'count_of_use': [],
@@ -36,7 +36,7 @@ class ScraperPatternReportData:
         # データフレーム（カウント用）
         self.scraper_pattern_counter_df = pd.DataFrame({
             self.DOMAIN: [],
-            self.SCRAPER_ITEM: [],
+            self.SCRAPE_ITEMS: [],
             self.PATTERN: [],
             # self.PRIORITY: [],
             self.COUNT_OF_USE: [],
@@ -65,6 +65,6 @@ class ScraperPatternReportData:
         '''
         self.result_df = pd.merge(self.scraper_pattern_master_df,
                                   self.scraper_pattern_counter_df.groupby(
-                                      by=[self.DOMAIN, self.SCRAPER_ITEM, self.PATTERN], as_index=False).sum(),
-                                  on=[self.DOMAIN, self.SCRAPER_ITEM, self.PATTERN],
+                                      by=[self.DOMAIN, self.SCRAPE_ITEMS, self.PATTERN], as_index=False).sum(),
+                                  on=[self.DOMAIN, self.SCRAPE_ITEMS, self.PATTERN],
                                   how='outer').fillna(0)

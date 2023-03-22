@@ -12,7 +12,8 @@ flow.run(parameters=dict(
     # register='in',
     # destination='scrapying',
     domain='sankei.com',
-    register=StopControllerUpdateTask.REGISTER_ADD,
-    # register=StopControllerUpdateTask.REGISTER_DELETE,
-    destination='crawling',
+    # register=StopControllerUpdateTask.REGISTER_ADD,
+    register=StopControllerUpdateTask.REGISTER_DELETE,
+    # destination=StopControllerUpdateTask.CRAWLING,
+    destination=StopControllerUpdateTask.SCRAPYING,
 ))

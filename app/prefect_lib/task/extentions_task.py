@@ -92,7 +92,8 @@ class ExtensionsTask(Task):
         crawler_logs.insert_one({
             CrawlerLogsModel.START_TIME: self.start_time,
             CrawlerLogsModel.FLOW_NAME: self.prefect_context['flow_name'],
-            CrawlerLogsModel.RECORD_TYPE: self.name,
+            # CrawlerLogsModel.RECORD_TYPE: self.name,
+            CrawlerLogsModel.RECORD_TYPE: CrawlerLogsModel.RECORD_TYPE__FLOW_REPORTS,
             CrawlerLogsModel.LOGS: self.log_record,
         })
 

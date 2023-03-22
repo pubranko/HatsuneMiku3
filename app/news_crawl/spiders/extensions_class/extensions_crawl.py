@@ -42,8 +42,10 @@ class ExtensionsCrawlSpider(CrawlSpider):
     # スパイダーの挙動制御関連、固有の情報など
     _domain_name = 'sample_com'         # 各種処理で使用するドメイン名の一元管理。継承先で上書き要。
 
-    # 次回クロールポイント情報
+    # 次回クロールポイント情報 (オーバーライド必須)
+    # 各クローラー側でオーバーライドしないと、複数のクローラーでこのdictを共有してしまいます。
     _crawl_point: dict = {}
+    '''オーバーライド必須 この説明がvscodeで見えているということは、オーバーライドが漏れています。'''
 
     # seleniumモード
     selenium_mode: bool = False
@@ -98,6 +100,10 @@ class ExtensionsCrawlSpider(CrawlSpider):
         super().__init__(*args, **kwargs)
 
         spider_init(self, *args, **kwargs)
+        # Extensionsクラス変数を初期化。インスタンス生成時に初期化しないと各スパイダーで変数を共有してしまう。
+        self._crawl_point = {}
+        self.crawl_urls_list = []
+        self.crawl_target_urls = []
 
         self.pagination_check = PaginationCheck()
 
@@ -171,6 +177,8 @@ class ExtensionsCrawlSpider(CrawlSpider):
         ・それ以外は、各サイトの標準値に従う。
         '''
         if self.news_crawl_input.page_span_from and self.news_crawl_input.page_span_to:  # ページ範囲指定ありの場合
+            self.logger.info(f'=== page_span_from ~ page_span_to {self.news_crawl_input.page_span_from} : {self.news_crawl_input.page_span_to}')
             return self.news_crawl_input.page_span_from, self.news_crawl_input.page_span_to
         else:
+            self.logger.info(f'=== page_span_from ~ page_span_to {default_page_span_from} : {default_page_span_to}')
             return default_page_span_from, default_page_span_to

@@ -14,8 +14,8 @@ flow.run(parameters=dict(
         NewsClipMasterModel.COLLECTION_NAME,
         CrawlerLogsModel.COLLECTION_NAME,
         AsynchronousReportModel.COLLECTION_NAME,
-        ControllerModel.COLLECTION_NAME,
+        # ControllerModel.COLLECTION_NAME,  #これは基本消してはいけない。
     ],
-    delete_period_from='2022-02',  # 月次削除を行うデータの基準年月
-    delete_period_to='2022-05',  # 月次削除を行うデータの基準年月
+    delete_period_from='2023-03',  # 月次削除を行うデータの基準年月
+    delete_period_to='2023-03',  # 月次削除を行うデータの基準年月
 ))

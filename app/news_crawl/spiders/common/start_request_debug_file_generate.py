@@ -5,10 +5,9 @@ from typing import Final
 path = os.getcwd()
 sys.path.append(path)
 from shared.settings import DATA_DIR__DEBUG_FILE_DIR
-from news_crawl.spiders.extensions_class.extensions_sitemap import ExtensionsSitemapSpider
 
-LOC: Final[str] = ExtensionsSitemapSpider.SITEMAP__LOC
-LASTMOD: Final[str] = ExtensionsSitemapSpider.SITEMAP__LASTMOD
+LASTMOD: Final[str] = 'lastmod'
+LOC: Final[str] = 'loc'
 
 def start_request_debug_file_generate(spider_name: str, start_url: str, entries: Iterable, debug: bool):
     '''
